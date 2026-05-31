@@ -95,6 +95,11 @@ export const ALL_TOPICS = {
   ...Object.fromEntries(Object.entries(PROCEDURES).map(([k, v]) => [k, { ...v, kind: 'procedure' }])),
 };
 
-// Only generate a topic×city page when the city has at least this many clinics,
-// so we never ship thin pages (helpful-content compliance).
-export const MIN_CLINICS_FOR_TOPIC_PAGE = 2;
+// Only generate a topic×city page when the city has at least this many clinics.
+// FREE-PLAN NATIONAL LAUNCH: set very high (effectively off) so the build stays
+// under Cloudflare's 20,000-file limit — clinic + city + state pages alone are
+// ~15-16k files nationally. To re-enable condition/procedure pages later, move
+// to the $5/mo Workers Paid plan (100,000-file limit) and lower this to ~10-15
+// (watch the "N page(s) built" count in the Cloudflare build log; keep it < 19k).
+// Disabling here also hides the topic links on city pages, so no broken links.
+export const MIN_CLINICS_FOR_TOPIC_PAGE = 100000;
