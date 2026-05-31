@@ -68,8 +68,10 @@ const rows = Object.entries(RANK_WEIGHTS).map(([k, v]) => ({ label: labels[k], p
       )}
       {' '}See our <a href="/ownership-disclosure/">ownership disclosure</a>.
     </p>
-    <p class="muted">
-      Reviewed by {SITE.medicalReviewer.name}, {SITE.medicalReviewer.credentials}.
-    </p>
+    {SITE.medicalReviewer.active && (
+      <p class="muted">
+        Reviewed by {SITE.medicalReviewer.name}, {SITE.medicalReviewer.credentials}.
+      </p>
+    )}
   </div>
 </Base>

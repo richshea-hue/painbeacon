@@ -53,8 +53,9 @@ const crumbs = [{ name: 'Home', href: '/' }, { name: 'Ownership disclosure', hre
     <hr class="rule" />
     <p class="muted">
       Questions about this disclosure can be directed to the directory's editorial team.
-      This page is maintained alongside our ranking methodology and reviewed by
-      {' '}{SITE.medicalReviewer.name}.
+      This page is maintained alongside our ranking methodology{SITE.medicalReviewer.active && (
+        <> and reviewed by {SITE.medicalReviewer.name}</>
+      )}.
     </p>
   </div>
 </Base>

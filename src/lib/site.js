@@ -13,11 +13,14 @@ export const SITE = {
     'objective, published criteria.',
 
   // E-E-A-T: real, named editorial accountability on every page (YMYL).
-  // Replace with the actual reviewer you retain before launch.
+  // IMPORTANT: keep active=false until a real, named clinician agrees to review.
+  // Never display a fabricated reviewer on a health site. When you retain one,
+  // set active:true and fill name/credentials/bio with their real details.
   medicalReviewer: {
-    name: 'Dr. [Name], MD',
-    credentials: 'Board-certified, Pain Medicine',
-    bio: 'Reviews directory methodology and clinical descriptions for accuracy.',
+    active: false,
+    name: '',
+    credentials: '',
+    bio: '',
   },
   editorial: {
     publisher: 'PainBeacon Directory',

@@ -74,10 +74,17 @@ const blocks = Array.isArray(jsonld) ? jsonld : [jsonld];
             <span class="dot"></span>{SITE.name}
           </div>
           <p style="max-width:32rem;">{SITE.description}</p>
-          <p class="muted">
-            Medically reviewed by {SITE.medicalReviewer.name},
-            {' '}{SITE.medicalReviewer.credentials}. Last reviewed {SITE.editorial.lastReviewed}.
-          </p>
+          {SITE.medicalReviewer.active ? (
+            <p class="muted">
+              Medically reviewed by {SITE.medicalReviewer.name},
+              {' '}{SITE.medicalReviewer.credentials}. Last reviewed {SITE.editorial.lastReviewed}.
+            </p>
+          ) : (
+            <p class="muted">
+              Editorially maintained — last updated {SITE.editorial.lastReviewed}.
+              Informational only and not a substitute for professional medical advice.
+            </p>
+          )}
         </div>
         <div>
           <p><strong>Directory</strong></p>
