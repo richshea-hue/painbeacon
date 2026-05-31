@@ -1,0 +1,99 @@
+---
+import Base from '../../layouts/Base.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import { getClinics, titleCase, stateName } from '../../lib/data.js';
+import { scoreClinic } from '../../lib/ranking.js';
+import { breadcrumbLd, clinicLd } from '../../lib/schema.js';
+import { SITE } from '../../lib/site.js';
+
+export async function getStaticPaths() {
+  const clinics = await getClinics();
+  return clinics.map((c) => ({ params: { slug: c.slug }, props: { clinic: c } }));
+}
+
+const { clinic: c } = Astro.props;
+const name = titleCase(c.name);
+const interventional = (c.all_taxonomy_codes || '').includes('208VP0014X');
+const { score } = scoreClinic(c);
+const addr = [c.address_1 && titleCase(c.address_1), c.address_2 && titleCase(c.address_2)].filter(Boolean).join(', ');
+const yearsInPractice = c.enumeration_date
+  ? Math.floor((Date.now() - new Date(c.enumeration_date).getTime()) / 3.15576e10) : null;
+
+const crumbs = [
+  { name: 'Home', href: '/' },
+  { name: 'States', href: '/pain-clinics/' },
+  { name: stateName(c.state), href: `/pain-clinics/${c.stateSlug}/` },
+  { name: c.cityLabel, href: `/pain-clinics/${c.stateSlug}/${c.citySlug}/` },
+  { name },
+];
+const mapHref = c.google_maps_uri ||
+  `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${name} ${addr} ${c.cityLabel} ${c.state}`)}`;
+---
+<Base title={`${name} — ${c.cityLabel}, ${c.state}`}
+      description={`${name} is a pain medicine clinic in ${c.cityLabel}, ${c.state}. Location, contact, credentials, and verified reviews.`}
+      jsonld={[breadcrumbLd(crumbs), clinicLd(c)]}>
+  <div class="wrap narrow">
+    <Breadcrumbs items={crumbs} />
+
+    {SITE.disclosureActive && c.candor_owned && (
+      <div class="notice" style="border-left-color:var(--amber)">
+        <strong>Ownership disclosure:</strong> This clinic is owned by an affiliate of
+        this directory. See our <a href="/ownership-disclosure/">disclosure</a> and
+        <a href="/how-we-rank/"> ranking methodology</a> for how this is handled.
+      </div>
+    )}
+
+    <div class="profile-head">
+      <div>
+        <p class="eyebrow">{c.primary_taxonomy_desc || 'Pain Medicine'}</p>
+        <h1 style="margin-bottom:0.25rem;">{name}</h1>
+        <p class="nap">
+          <strong>{addr || 'Address on file'}</strong><br />
+          {c.cityLabel}, {c.state} {(c.postal_code || '').slice(0, 5)}<br />
+          {c.phone && <>{c.phone}</>}
+        </p>
+      </div>
+      <div class="rating">
+        {c.aggregate_rating ? (
+          <>
+            <div class="stars" style="font-size:1.3rem;">{'★'.repeat(Math.round(Number(c.aggregate_rating)))}</div>
+            <div class="count">{c.aggregate_rating} · {c.review_count || 0} reviews</div>
+          </>
+        ) : <div class="count">No reviews yet</div>}
+      </div>
+    </div>
+
+    <div style="display:flex;gap:0.6rem;margin:1.5rem 0;flex-wrap:wrap;">
+      {c.website && <a class="btn" href={c.website} rel="nofollow noopener" target="_blank">Visit website</a>}
+      <a class="btn ghost" href={mapHref} rel="nofollow noopener" target="_blank">Get directions</a>
+      {c.phone && <a class="btn ghost" href={`tel:${c.phone.replace(/[^0-9+]/g, '')}`}>Call</a>}
+    </div>
+
+    <ul class="facts">
+      <li><div class="k">Specialty</div><div class="v">{interventional ? 'Interventional pain' : 'Pain medicine'}</div></li>
+      {yearsInPractice !== null && <li><div class="k">Years registered</div><div class="v">{yearsInPractice}</div></li>}
+      <li><div class="k">Hours</div><div class="v">{c.hours ? c.hours.split(';')[0] : '—'}</div></li>
+      <li><div class="k">Qualification score</div><div class="v">{score} / 100</div></li>
+    </ul>
+
+    {c.hours && (
+      <details style="margin:1rem 0;">
+        <summary class="muted">Full hours</summary>
+        <ul class="muted" style="margin-top:0.5rem;">
+          {c.hours.split(';').map((h) => <li>{h.trim()}</li>)}
+        </ul>
+      </details>
+    )}
+
+    <div class="notice">
+      Listing built from public federal provider records (NPI registry) and enriched
+      with verified location and review data. See <a href="/how-we-rank/">how we rank</a>.
+      {c.nppes_last_updated && <> Provider record last updated {c.nppes_last_updated}.</>}
+    </div>
+
+    <p class="muted">
+      Informational only and not medical advice. Confirm credentials, services, and
+      insurance directly with the clinic before scheduling.
+    </p>
+  </div>
+</Base>

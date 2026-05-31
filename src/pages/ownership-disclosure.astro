@@ -1,0 +1,60 @@
+---
+import Base from '../layouts/Base.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { breadcrumbLd } from '../lib/schema.js';
+import { SITE } from '../lib/site.js';
+
+const crumbs = [{ name: 'Home', href: '/' }, { name: 'Ownership disclosure', href: '/ownership-disclosure/' }];
+---
+<Base title="Ownership disclosure"
+      description="Who is behind this directory, and how clinic ownership is disclosed."
+      jsonld={breadcrumbLd(crumbs)}>
+  <div class="wrap narrow prose">
+    <Breadcrumbs items={crumbs} />
+    <h1>Ownership disclosure</h1>
+
+    {!SITE.disclosureActive ? (
+      <>
+        <p class="lede">
+          As of {SITE.editorial.lastReviewed}, the organization behind {SITE.name} owns
+          no pain clinics. Nothing in this directory is influenced by clinic ownership.
+        </p>
+        <p>
+          Rankings are produced solely by our published
+          <a href="/how-we-rank/"> objective methodology</a>. We do not accept payment in
+          exchange for a higher ranking.
+        </p>
+        <p>
+          If that ever changes — if an affiliated organization acquires a clinic listed
+          here — we will disclose it plainly: a site-wide notice, a clear label on every
+          affiliated clinic's listing, and an explanation here. Our ranking criteria will
+          not change to favor affiliated clinics.
+        </p>
+      </>
+    ) : (
+      <>
+        <p class="lede">
+          Some clinics listed in this directory are owned by an affiliate of {SITE.name}.
+        </p>
+        <p>
+          Affiliated clinics are clearly labeled wherever they appear, including on their
+          individual listings. Ownership does <strong>not</strong> change a clinic's
+          position in our rankings: every clinic — affiliated or independent — is ordered
+          by the same objective <a href="/how-we-rank/">methodology</a>, which we have not
+          altered to favor affiliated clinics.
+        </p>
+        <p>
+          We do not accept payment in exchange for a higher ranking. Any sponsored
+          placement is labeled separately from the objective ranking.
+        </p>
+      </>
+    )}
+
+    <hr class="rule" />
+    <p class="muted">
+      Questions about this disclosure can be directed to the directory's editorial team.
+      This page is maintained alongside our ranking methodology and reviewed by
+      {' '}{SITE.medicalReviewer.name}.
+    </p>
+  </div>
+</Base>

@@ -1,0 +1,81 @@
+---
+import Base from '../layouts/Base.astro';
+import { SITE } from '../lib/site.js';
+import { getClinics, groupBy, stateName } from '../lib/data.js';
+import { websiteLd } from '../lib/schema.js';
+
+const clinics = await getClinics();
+const byState = groupBy(clinics, (c) => c.state);
+const states = [...byState.keys()].sort().map((s) => ({
+  abbr: s, name: stateName(s), count: byState.get(s).length,
+}));
+
+// Compact city index for client-side search (city pages are the local workhorse).
+const cityIndex = [...groupBy(clinics, (c) => `${c.state}/${c.citySlug}`).entries()]
+  .map(([k, list]) => {
+    const c = list[0];
+    return { label: `${c.cityLabel}, ${c.state}`, href: `/pain-clinics/${c.stateSlug}/${c.citySlug}/`, n: list.length };
+  })
+  .sort((a, b) => b.n - a.n);
+
+const total = clinics.length;
+---
+<Base description={SITE.description} jsonld={websiteLd()}>
+  <section class="hero">
+    <div class="wrap narrow">
+      <p class="eyebrow">Independent pain medicine directory</p>
+      <h1>Find the right pain clinic near you.</h1>
+      <p class="lede">
+        {total.toLocaleString()} pain medicine clinics, ranked on objective,
+        published criteria — board certification, interventional capability,
+        verified patient reviews, and years in practice.
+      </p>
+
+      <div class="search">
+        <input id="q" type="text" placeholder="Search a city — e.g. Providence, Austin…"
+               autocomplete="off" aria-label="Search by city" />
+      </div>
+      <ul id="results" class="tile-grid" style="margin-top:0.75rem"></ul>
+    </div>
+  </section>
+
+  <section class="wrap" style="padding:2.5rem 0;">
+    <p class="eyebrow">Browse by state</p>
+    <ul class="tile-grid">
+      {states.map((s) => (
+        <li><a class="tile" href={`/pain-clinics/${s.abbr.toLowerCase()}/`}>
+          <span class="label">{s.name}</span><span class="n">{s.count}</span>
+        </a></li>
+      ))}
+    </ul>
+  </section>
+
+  <section class="wrap narrow prose" style="padding:1rem 0 2rem;">
+    <hr class="rule" />
+    <h2>How this directory works</h2>
+    <p>
+      Every listing is built from public federal provider data and enriched with
+      verified location and review information. We don't accept payment to rank a
+      clinic higher. Our <a href="/how-we-rank/">ranking methodology</a> is published
+      in full, and our <a href="/ownership-disclosure/">ownership disclosure</a>
+      explains exactly who is behind this directory.
+    </p>
+  </section>
+
+  <script type="application/json" id="city-index" set:html={JSON.stringify(cityIndex)}></script>
+  <script>
+    const idx = JSON.parse(document.getElementById('city-index').textContent);
+    const q = document.getElementById('q');
+    const out = document.getElementById('results');
+    function render(list) {
+      out.innerHTML = list.slice(0, 8).map((c) =>
+        `<li><a class="tile" href="${c.href}"><span class="label">${c.label}</span><span class="n">${c.n}</span></a></li>`
+      ).join('');
+    }
+    q.addEventListener('input', () => {
+      const v = q.value.trim().toLowerCase();
+      if (!v) { out.innerHTML = ''; return; }
+      render(idx.filter((c) => c.label.toLowerCase().includes(v)));
+    });
+  </script>
+</Base>

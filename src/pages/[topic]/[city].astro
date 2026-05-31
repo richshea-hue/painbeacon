@@ -1,0 +1,64 @@
+---
+import Base from '../../layouts/Base.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import ClinicCard from '../../components/ClinicCard.astro';
+import { getClinics, groupBy, stateName } from '../../lib/data.js';
+import { rankClinics } from '../../lib/ranking.js';
+import { breadcrumbLd, itemListLd } from '../../lib/schema.js';
+import { ALL_TOPICS, MIN_CLINICS_FOR_TOPIC_PAGE } from '../../lib/topics.js';
+
+// One route for both conditions and procedures: /[topic]/[city]. We only emit
+// (topic × city) combinations where the city clears the thin-page threshold.
+export async function getStaticPaths() {
+  const clinics = await getClinics();
+  const byCity = groupBy(clinics, (c) => `${c.stateSlug}|${c.citySlug}`);
+  const paths = [];
+  for (const [key, list] of byCity.entries()) {
+    if (list.length < MIN_CLINICS_FOR_TOPIC_PAGE) continue;
+    const [, city] = key.split('|');
+    for (const [topic, meta] of Object.entries(ALL_TOPICS)) {
+      paths.push({ params: { topic, city }, props: { clinics: list, topic, meta } });
+    }
+  }
+  return paths;
+}
+
+const { topic, city } = Astro.params;
+const { clinics, meta } = Astro.props;
+const c0 = clinics[0];
+const name = stateName(c0.state);
+const ranked = rankClinics(clinics);
+const verb = meta.kind === 'procedure' ? 'offering' : 'treating';
+
+const crumbs = [
+  { name: 'Home', href: '/' },
+  { name, href: `/pain-clinics/${c0.stateSlug}/` },
+  { name: c0.cityLabel, href: `/pain-clinics/${c0.stateSlug}/${city}/` },
+  { name: meta.label },
+];
+---
+<Base title={`${meta.label} — pain clinics in ${c0.cityLabel}, ${c0.state}`}
+      description={`Pain clinics in ${c0.cityLabel}, ${c0.state} ${verb} ${meta.label.toLowerCase()}. ${meta.blurb.slice(0, 110)}`}
+      jsonld={[breadcrumbLd(crumbs), itemListLd(ranked, `${meta.label} — ${c0.cityLabel}, ${c0.state}`)]}>
+  <div class="wrap narrow">
+    <Breadcrumbs items={crumbs} />
+    <p class="eyebrow">{meta.kind === 'procedure' ? 'Procedure' : 'Condition'} · {c0.cityLabel}, {c0.state}</p>
+    <h1>{meta.label} in {c0.cityLabel}, {c0.state}</h1>
+    <p class="lede prose">{meta.blurb}</p>
+    <div class="notice">
+      The clinics below are pain medicine practices in {c0.cityLabel} that typically
+      {' '}{meta.kind === 'procedure' ? 'offer this procedure' : 'treat this condition'} as
+      part of routine pain care. Confirm availability with the clinic directly.
+    </div>
+  </div>
+
+  <div class="wrap narrow">
+    <ul class="clinic-list">
+      {ranked.map((c, i) => <ClinicCard clinic={c} rank={i + 1} />)}
+    </ul>
+    <p class="muted">
+      Ordered by our <a href="/how-we-rank/">ranking methodology</a>. Informational
+      only — not medical advice.
+    </p>
+  </div>
+</Base>

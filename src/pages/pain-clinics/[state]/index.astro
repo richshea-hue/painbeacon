@@ -1,0 +1,47 @@
+---
+import Base from '../../../layouts/Base.astro';
+import Breadcrumbs from '../../../components/Breadcrumbs.astro';
+import { getClinics, groupBy, stateName } from '../../../lib/data.js';
+import { breadcrumbLd, itemListLd } from '../../../lib/schema.js';
+
+export async function getStaticPaths() {
+  const clinics = await getClinics();
+  const byState = groupBy(clinics, (c) => c.stateSlug);
+  return [...byState.keys()].map((state) => ({
+    params: { state },
+    props: { clinics: byState.get(state) },
+  }));
+}
+
+const { state } = Astro.params;
+const { clinics } = Astro.props;
+const abbr = clinics[0].state;
+const name = stateName(abbr);
+
+const byCity = groupBy(clinics, (c) => c.citySlug);
+const cities = [...byCity.entries()]
+  .map(([slug, list]) => ({ slug, label: list[0].cityLabel, count: list.length }))
+  .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+
+const crumbs = [
+  { name: 'Home', href: '/' },
+  { name: 'States', href: '/pain-clinics/' },
+  { name, href: `/pain-clinics/${state}/` },
+];
+---
+<Base title={`Pain clinics in ${name}`}
+      description={`${clinics.length} pain medicine clinics across ${cities.length} cities in ${name}. Ranked on objective, published criteria.`}
+      jsonld={[breadcrumbLd(crumbs), itemListLd(clinics, `Pain clinics in ${name}`)]}>
+  <div class="wrap">
+    <Breadcrumbs items={crumbs} />
+    <h1>Pain clinics in {name}</h1>
+    <p class="lede">{clinics.length} clinics across {cities.length} cities. Choose a city.</p>
+    <ul class="tile-grid">
+      {cities.map((c) => (
+        <li><a class="tile" href={`/pain-clinics/${state}/${c.slug}/`}>
+          <span class="label">{c.label}</span><span class="n">{c.count}</span>
+        </a></li>
+      ))}
+    </ul>
+  </div>
+</Base>

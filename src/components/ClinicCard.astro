@@ -1,0 +1,35 @@
+---
+import { titleCase } from '../lib/data.js';
+import { SITE } from '../lib/site.js';
+const { clinic, rank } = Astro.props;
+const c = clinic;
+const interventional = (c.all_taxonomy_codes || '').includes('208VP0014X');
+const stars = c.aggregate_rating ? '★'.repeat(Math.round(Number(c.aggregate_rating))) : '';
+---
+<li class="clinic">
+  {rank ? <div class="rank-badge">{rank}</div> : <div></div>}
+  <div>
+    <h3><a href={`/clinic/${c.slug}/`}>{titleCase(c.name)}</a>
+      {SITE.disclosureActive && c.candor_owned && <span class="owned-flag">Affiliated clinic</span>}
+    </h3>
+    <p class="meta">
+      {[c.address_1 && titleCase(c.address_1), c.cityLabel, c.state].filter(Boolean).join(', ')}
+      {c.phone && <> · {c.phone}</>}
+    </p>
+    <div class="tags">
+      {interventional && <span class="tag intervention">Interventional pain</span>}
+      {c.primary_taxonomy_desc && !interventional && <span class="tag">{c.primary_taxonomy_desc.split(' - ').pop()}</span>}
+      {c.website && <span class="tag">Website</span>}
+    </div>
+  </div>
+  <div class="rating">
+    {c.aggregate_rating ? (
+      <>
+        <div class="stars" title={`${c.aggregate_rating} out of 5`}>{stars}</div>
+        <div class="count">{c.review_count || 0} reviews</div>
+      </>
+    ) : (
+      <div class="count">No rating yet</div>
+    )}
+  </div>
+</li>

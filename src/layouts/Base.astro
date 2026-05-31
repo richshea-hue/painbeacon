@@ -1,0 +1,97 @@
+---
+import '../styles/global.css';
+import { SITE } from '../lib/site.js';
+
+const {
+  title,
+  description = SITE.description,
+  canonical,
+  jsonld = [],
+  noindex = false,
+} = Astro.props;
+
+const fullTitle = title ? `${title} — ${SITE.name}` : `${SITE.name} — ${SITE.tagline}`;
+const canonicalUrl = canonical || new URL(Astro.url.pathname, SITE.url).href;
+const blocks = Array.isArray(jsonld) ? jsonld : [jsonld];
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalUrl} />
+    {noindex && <meta name="robots" content="noindex,follow" />}
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta name="twitter:card" content="summary" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+
+    {blocks.map((b) => (
+      <script type="application/ld+json" set:html={JSON.stringify(b)} />
+    ))}
+  </head>
+  <body>
+    {SITE.disclosureActive && (
+      <div class="disclosure">
+        <div class="wrap">
+          Some clinics in this directory are owned by our affiliate. Clinics we own
+          are clearly labeled. See our <a href="/ownership-disclosure/">ownership disclosure</a>.
+        </div>
+      </div>
+    )}
+
+    <header class="site-head">
+      <div class="wrap bar">
+        <a class="brand" href="/"><span class="dot"></span>{SITE.name}</a>
+        <nav class="nav">
+          <a href="/pain-clinics/">Browse by state</a>
+          <a href="/how-we-rank/">How we rank</a>
+          <a href="/ownership-disclosure/">Disclosure</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <slot />
+    </main>
+
+    <footer class="site-foot">
+      <div class="wrap cols">
+        <div>
+          <div class="brand" style="font-size:1.2rem;margin-bottom:0.5rem;">
+            <span class="dot"></span>{SITE.name}
+          </div>
+          <p style="max-width:32rem;">{SITE.description}</p>
+          <p class="muted">
+            Medically reviewed by {SITE.medicalReviewer.name},
+            {' '}{SITE.medicalReviewer.credentials}. Last reviewed {SITE.editorial.lastReviewed}.
+          </p>
+        </div>
+        <div>
+          <p><strong>Directory</strong></p>
+          <p><a href="/pain-clinics/">All states</a></p>
+          <p><a href="/how-we-rank/">Ranking methodology</a></p>
+        </div>
+        <div>
+          <p><strong>About</strong></p>
+          <p><a href="/ownership-disclosure/">Ownership disclosure</a></p>
+          <p class="muted" style="margin-top:1rem;">
+            Informational only — not medical advice. Always consult a licensed clinician.
+          </p>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

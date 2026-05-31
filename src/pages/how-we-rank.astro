@@ -1,0 +1,75 @@
+---
+import Base from '../layouts/Base.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { RANK_WEIGHTS } from '../lib/ranking.js';
+import { breadcrumbLd } from '../lib/schema.js';
+import { SITE } from '../lib/site.js';
+
+const crumbs = [{ name: 'Home', href: '/' }, { name: 'How we rank', href: '/how-we-rank/' }];
+const labels = {
+  interventional: 'Interventional pain capability',
+  rating: 'Verified patient rating',
+  reviews: 'Verified review volume',
+  tenure: 'Years in practice',
+  transparency: 'Contact transparency',
+};
+const total = Object.values(RANK_WEIGHTS).reduce((a, b) => a + b, 0);
+const rows = Object.entries(RANK_WEIGHTS).map(([k, v]) => ({ label: labels[k], pct: Math.round((v / total) * 100) }));
+---
+<Base title="How we rank clinics"
+      description="Our objective, published methodology for ranking pain clinics — board certification, interventional capability, verified reviews, and years in practice."
+      jsonld={breadcrumbLd(crumbs)}>
+  <div class="wrap narrow prose">
+    <Breadcrumbs items={crumbs} />
+    <h1>How we rank clinics</h1>
+    <p class="lede">
+      We rank clinics on objective, checkable signals — never on payment. Here is
+      exactly what goes into the order you see.
+    </p>
+
+    <ul class="weights">
+      {rows.map((r) => (
+        <li>
+          <span>{r.label}</span>
+          <span class="bar"><span style={`width:${r.pct}%`}></span></span>
+          <span class="pct">{r.pct}%</span>
+        </li>
+      ))}
+    </ul>
+
+    <h2>What each signal means</h2>
+    <p><strong>Interventional pain capability.</strong> Whether the practice carries the
+      interventional pain medicine credential (NUCC taxonomy 208VP0014X), indicating
+      image-guided procedural capability beyond medication management.</p>
+    <p><strong>Verified patient rating &amp; review volume.</strong> Aggregate rating and the
+      number of verified reviews from public sources. Volume is scaled so a long track
+      record counts without letting a single five-star review dominate.</p>
+    <p><strong>Years in practice.</strong> Time since the practice's national provider
+      record was established, capped so very established and moderately established
+      practices aren't separated unfairly.</p>
+    <p><strong>Contact transparency.</strong> Whether the clinic publishes a working
+      website and phone number — a basic marker of accessibility.</p>
+
+    <hr class="rule" />
+    <h2>What we're still adding</h2>
+    <p class="muted">
+      As data coverage expands, we will fold in insurance breadth and the range of
+      procedures offered. We publish changes to this methodology rather than adjusting
+      rankings silently.</p>
+
+    <hr class="rule" />
+    <h2>Independence</h2>
+    <p>
+      We do not accept payment in exchange for a higher ranking. Sponsored placements,
+      if any, are clearly labeled and never alter the objective order above.
+      {!SITE.disclosureActive && (
+        <> Today, the organization behind this directory owns no clinics, so these
+        rankings carry no ownership conflict.</>
+      )}
+      {' '}See our <a href="/ownership-disclosure/">ownership disclosure</a>.
+    </p>
+    <p class="muted">
+      Reviewed by {SITE.medicalReviewer.name}, {SITE.medicalReviewer.credentials}.
+    </p>
+  </div>
+</Base>

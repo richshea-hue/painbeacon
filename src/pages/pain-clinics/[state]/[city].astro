@@ -1,0 +1,66 @@
+---
+import Base from '../../../layouts/Base.astro';
+import Breadcrumbs from '../../../components/Breadcrumbs.astro';
+import ClinicCard from '../../../components/ClinicCard.astro';
+import { getClinics, groupBy, stateName } from '../../../lib/data.js';
+import { rankClinics } from '../../../lib/ranking.js';
+import { breadcrumbLd, itemListLd } from '../../../lib/schema.js';
+import { ALL_TOPICS, MIN_CLINICS_FOR_TOPIC_PAGE } from '../../../lib/topics.js';
+
+export async function getStaticPaths() {
+  const clinics = await getClinics();
+  const byCity = groupBy(clinics, (c) => `${c.stateSlug}|${c.citySlug}`);
+  return [...byCity.entries()].map(([key, list]) => {
+    const [state, city] = key.split('|');
+    return { params: { state, city }, props: { clinics: list } };
+  });
+}
+
+const { state, city } = Astro.params;
+const { clinics } = Astro.props;
+const c0 = clinics[0];
+const name = stateName(c0.state);
+const ranked = rankClinics(clinics);
+
+const crumbs = [
+  { name: 'Home', href: '/' },
+  { name: 'States', href: '/pain-clinics/' },
+  { name, href: `/pain-clinics/${state}/` },
+  { name: c0.cityLabel, href: `/pain-clinics/${state}/${city}/` },
+];
+
+// Related condition/procedure pages exist for this city only if it clears the
+// thin-page threshold (internal linking: city -> condition/procedure).
+const relatedTopics = clinics.length >= MIN_CLINICS_FOR_TOPIC_PAGE
+  ? Object.entries(ALL_TOPICS).map(([slug, t]) => ({ slug, label: t.label }))
+  : [];
+---
+<Base title={`Pain clinics in ${c0.cityLabel}, ${c0.state}`}
+      description={`${clinics.length} pain medicine clinics in ${c0.cityLabel}, ${c0.state}, ranked by board certification, interventional capability, and verified reviews.`}
+      jsonld={[breadcrumbLd(crumbs), itemListLd(ranked, `Pain clinics in ${c0.cityLabel}, ${c0.state}`)]}>
+  <div class="wrap">
+    <Breadcrumbs items={crumbs} />
+    <h1>Pain clinics in {c0.cityLabel}, {c0.state}</h1>
+    <p class="lede">
+      {clinics.length} {clinics.length === 1 ? 'clinic' : 'clinics'}, ordered by our
+      <a href="/how-we-rank/"> ranking methodology</a>.
+    </p>
+
+    <ul class="clinic-list">
+      {ranked.map((c, i) => <ClinicCard clinic={c} rank={i + 1} />)}
+    </ul>
+
+    {relatedTopics.length > 0 && (
+      <section style="margin-top:2.5rem;">
+        <p class="eyebrow">By condition &amp; procedure in {c0.cityLabel}</p>
+        <ul class="tile-grid">
+          {relatedTopics.map((t) => (
+            <li><a class="tile" href={`/${t.slug}/${city}/`}>
+              <span class="label">{t.label}</span><span class="n">›</span>
+            </a></li>
+          ))}
+        </ul>
+      </section>
+    )}
+  </div>
+</Base>

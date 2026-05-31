@@ -1,0 +1,12 @@
+# Cloudflare Pages headers (also respected by most static hosts).
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: SAMEORIGIN
+
+# Programmatic pages are rebuilt on deploy; let the CDN cache them.
+/clinic/*
+  Cache-Control: public, max-age=3600, s-maxage=86400
+
+/pain-clinics/*
+  Cache-Control: public, max-age=3600, s-maxage=86400
