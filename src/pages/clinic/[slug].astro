@@ -1,6 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import ClinicMap from '../../components/ClinicMap.astro';
 import { getClinics, titleCase, stateName } from '../../lib/data.js';
 import { scoreClinic } from '../../lib/ranking.js';
 import { breadcrumbLd, clinicLd } from '../../lib/schema.js';
@@ -28,6 +29,12 @@ const crumbs = [
 ];
 const mapHref = c.google_maps_uri ||
   `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${name} ${addr} ${c.cityLabel} ${c.state}`)}`;
+
+// Single-location map pin (only when this clinic was matched and has coordinates).
+const mapMarkers = (c.latitude != null && c.longitude != null)
+  ? [{ lat: c.latitude, lng: c.longitude, name,
+       address: [addr, `${c.cityLabel}, ${c.state}`].filter(Boolean).join(', ') }]
+  : [];
 ---
 <Base title={`${name} — ${c.cityLabel}, ${c.state}`}
       description={`${name} is a pain medicine clinic in ${c.cityLabel}, ${c.state}. Location, contact, credentials, and verified reviews.`}
@@ -68,6 +75,8 @@ const mapHref = c.google_maps_uri ||
       <a class="btn ghost" href={mapHref} rel="nofollow noopener" target="_blank">Get directions</a>
       {c.phone && <a class="btn ghost" href={`tel:${c.phone.replace(/[^0-9+]/g, '')}`}>Call</a>}
     </div>
+
+    <ClinicMap markers={mapMarkers} height="320px" zoom={15} />
 
     <ul class="facts">
       <li><div class="k">Specialty</div><div class="v">{interventional ? 'Interventional pain' : 'Pain medicine'}</div></li>

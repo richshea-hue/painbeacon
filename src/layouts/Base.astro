@@ -100,5 +100,50 @@ const blocks = Array.isArray(jsonld) ? jsonld : [jsonld];
         </div>
       </div>
     </footer>
+
+    <script is:inline>
+      // Lazy-load Leaflet (free OpenStreetMap maps) ONLY on pages that have a
+      // .clinic-map container — keeps mapless pages (home, state hubs) light.
+      (function () {
+        var maps = document.querySelectorAll('.clinic-map');
+        if (!maps.length) return;
+        var css = document.createElement('link');
+        css.rel = 'stylesheet';
+        css.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+        document.head.appendChild(css);
+        var js = document.createElement('script');
+        js.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+        js.onload = function () {
+          maps.forEach(function (el) {
+            var pts;
+            try { pts = JSON.parse(el.getAttribute('data-points') || '[]'); }
+            catch (e) { return; }
+            if (!pts.length) return;
+            var map = L.map(el, { scrollWheelZoom: false });
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+              maxZoom: 19,
+              attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            }).addTo(map);
+            var coords = [];
+            pts.forEach(function (p) {
+              var mk = L.marker([p.lat, p.lng]).addTo(map);
+              var label = p.slug
+                ? '<a href="/clinic/' + p.slug + '/"><strong>' + p.name + '</strong></a>'
+                : '<strong>' + p.name + '</strong>';
+              if (p.address) label += '<br>' + p.address;
+              mk.bindPopup(label);
+              coords.push([p.lat, p.lng]);
+            });
+            var z = parseInt(el.getAttribute('data-zoom'), 10);
+            if (coords.length === 1) {
+              map.setView(coords[0], isNaN(z) ? 14 : z);
+            } else {
+              map.fitBounds(coords, { padding: [30, 30], maxZoom: 14 });
+            }
+          });
+        };
+        document.body.appendChild(js);
+      })();
+    </script>
   </body>
 </html>

@@ -1,0 +1,42 @@
+---
+// Free OpenStreetMap / Leaflet map. Pass `markers` = [{lat,lng,name,slug,address}].
+// Leaflet is lazy-loaded once per page by Base.astro (only when a .clinic-map
+// element is present), so this component only emits the container + its data.
+// No API key, no per-view cost.
+const { markers = [], height = '380px', zoom } = Astro.props;
+
+const pts = (markers || [])
+  .map((m) => ({
+    lat: Number(m.lat),
+    lng: Number(m.lng),
+    name: m.name || '',
+    slug: m.slug || '',
+    address: m.address || '',
+  }))
+  // Drop missing/invalid coords and the 0,0 "null island" sentinel.
+  .filter((m) => Number.isFinite(m.lat) && Number.isFinite(m.lng) && (m.lat !== 0 || m.lng !== 0));
+---
+{pts.length > 0 && (
+  <div
+    class="clinic-map"
+    style={`height:${height}`}
+    data-points={JSON.stringify(pts)}
+    data-zoom={zoom ?? ''}
+    role="img"
+    aria-label={pts.length === 1
+      ? `Map showing the location of ${pts[0].name}`
+      : `Map showing ${pts.length} pain clinics on this page`}
+  ></div>
+)}
+
+<style>
+  .clinic-map {
+    width: 100%;
+    margin: 1.25rem 0;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border, #e5e7eb);
+    background: #e9eef2;
+    z-index: 0;
+  }
+</style>

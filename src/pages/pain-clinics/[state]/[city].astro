@@ -2,7 +2,8 @@
 import Base from '../../../layouts/Base.astro';
 import Breadcrumbs from '../../../components/Breadcrumbs.astro';
 import ClinicCard from '../../../components/ClinicCard.astro';
-import { getClinics, groupBy, stateName } from '../../../lib/data.js';
+import ClinicMap from '../../../components/ClinicMap.astro';
+import { getClinics, groupBy, stateName, titleCase } from '../../../lib/data.js';
 import { rankClinics } from '../../../lib/ranking.js';
 import { breadcrumbLd, itemListLd } from '../../../lib/schema.js';
 import { ALL_TOPICS, MIN_CLINICS_FOR_TOPIC_PAGE } from '../../../lib/topics.js';
@@ -21,6 +22,17 @@ const { clinics } = Astro.props;
 const c0 = clinics[0];
 const name = stateName(c0.state);
 const ranked = rankClinics(clinics);
+
+// Map pins for every clinic in this city that has coordinates (matched ones).
+const mapMarkers = ranked
+  .filter((c) => c.latitude != null && c.longitude != null)
+  .map((c) => ({
+    lat: c.latitude,
+    lng: c.longitude,
+    name: titleCase(c.name),
+    slug: c.slug,
+    address: `${c.cityLabel}, ${c.state}`,
+  }));
 
 const crumbs = [
   { name: 'Home', href: '/' },
@@ -45,6 +57,8 @@ const relatedTopics = clinics.length >= MIN_CLINICS_FOR_TOPIC_PAGE
       {clinics.length} {clinics.length === 1 ? 'clinic' : 'clinics'}, ordered by our
       <a href="/how-we-rank/"> ranking methodology</a>.
     </p>
+
+    <ClinicMap markers={mapMarkers} />
 
     <ul class="clinic-list">
       {ranked.map((c, i) => <ClinicCard clinic={c} rank={i + 1} />)}
