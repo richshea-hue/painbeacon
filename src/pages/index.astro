@@ -1,6 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 import { SITE } from '../lib/site.js';
+import LeadFinder from '../components/LeadFinder.astro';
 import { getClinics, groupBy, stateName } from '../lib/data.js';
 import { websiteLd } from '../lib/schema.js';
 
@@ -37,6 +38,10 @@ const total = clinics.length;
       </div>
       <ul id="results" class="tile-grid" style="margin-top:0.75rem"></ul>
     </div>
+  </section>
+
+  <section class="wrap narrow" style="padding:0 0 0.5rem;">
+    <LeadFinder />
   </section>
 
   <section class="wrap" style="padding:2.5rem 0;">

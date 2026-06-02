@@ -1,0 +1,116 @@
+---
+// "Find your pain specialist" — guided, chat-style lead capture (demand test).
+// Each completed flow writes one row to the Supabase `leads` table via the
+// PUBLIC anon key (RLS allows anon INSERT only, never SELECT). We capture
+// location + care type for EVERY completion, plus an OPTIONAL contact opt-in.
+// The opt-in rate (wants_contact = true) is your lead-gen demand signal.
+//
+// IMPORTANT: only the anon/publishable key is embedded here — never the service
+// key. The anon key is designed to be public and is gated by RLS.
+const SUPABASE_URL = process.env.SUPABASE_URL || '';
+const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || '';
+---
+<div class="lead-finder" id="leadFinder" data-su={SUPABASE_URL} data-sk={SUPABASE_KEY}>
+  <div class="lf-head"><span class="lf-dot"></span><strong>Find your pain specialist</strong></div>
+
+  <div class="lf-step" data-step="1">
+    <p class="lf-bot">Hi — I can help you find a pain clinic. What city or ZIP are you near?</p>
+    <input class="lf-input" id="lfLoc" type="text" placeholder="e.g. Austin or 78701" autocomplete="off" />
+    <input class="lf-hp" id="lfCompany" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" />
+    <button class="btn lf-next">Next</button>
+  </div>
+
+  <div class="lf-step" data-step="2" hidden>
+    <p class="lf-bot">What kind of care are you looking for?</p>
+    <div class="lf-options">
+      <button class="lf-opt" data-care="Interventional pain (injections / nerve blocks)">Injections / nerve blocks</button>
+      <button class="lf-opt" data-care="General pain management">General pain management</button>
+      <button class="lf-opt" data-care="Back or spine pain">Back or spine pain</button>
+      <button class="lf-opt" data-care="Nerve pain / neuropathy">Nerve pain / neuropathy</button>
+      <button class="lf-opt" data-care="Not sure — show top-rated clinics">Not sure / show top-rated</button>
+    </div>
+  </div>
+
+  <div class="lf-step" data-step="3" hidden>
+    <p class="lf-bot">Want a top-rated clinic near you to reach out and help you book? <span class="lf-muted">(optional)</span></p>
+    <input class="lf-input" id="lfName" type="text" placeholder="Your name" autocomplete="name" />
+    <input class="lf-input" id="lfContact" type="text" placeholder="Phone or email" autocomplete="tel" />
+    <button class="btn lf-connect">Yes, connect me</button>
+    <button class="btn ghost lf-skip">No thanks — just show clinics</button>
+    <p class="lf-fine">By choosing “connect me,” you agree we may share your contact with a clinic to help you book.
+      PainBeacon is a directory, not a medical provider; this isn’t medical advice.</p>
+  </div>
+
+  <div class="lf-step" data-step="done" hidden>
+    <p class="lf-bot" id="lfDone">Thanks! Browse top-rated pain clinics near you below.</p>
+    <a class="btn" href="/pain-clinics/">Browse clinics</a>
+  </div>
+</div>
+
+<style>
+  .lead-finder { border:1px solid var(--border,#e5e7eb); border-radius:14px; background:var(--card,#fff);
+    padding:1.1rem 1.2rem; max-width:540px; box-shadow:0 1px 3px rgba(0,0,0,.06); }
+  .lf-head { display:flex; align-items:center; gap:.5rem; font-size:.95rem; margin-bottom:.6rem; }
+  .lf-dot { width:.6rem; height:.6rem; border-radius:50%; background:#16a34a; box-shadow:0 0 0 3px rgba(22,163,74,.18); }
+  .lf-bot { margin:.2rem 0 .7rem; }
+  .lf-muted { color:var(--muted,#6b7280); font-weight:400; }
+  .lf-input { width:100%; padding:.6rem .7rem; margin:.3rem 0; border:1px solid var(--border,#e5e7eb);
+    border-radius:9px; font-size:1rem; box-sizing:border-box; }
+  .lf-options { display:flex; flex-direction:column; gap:.45rem; }
+  .lf-opt { text-align:left; padding:.6rem .75rem; border:1px solid var(--border,#e5e7eb); border-radius:9px;
+    background:#fff; cursor:pointer; font-size:.95rem; }
+  .lf-opt:hover { border-color:var(--accent,#2563eb); background:#f8fafc; }
+  .lead-finder .btn { margin-top:.5rem; }
+  .lead-finder .btn.ghost { margin-left:.4rem; }
+  .lf-fine { font-size:.72rem; color:var(--muted,#6b7280); margin-top:.7rem; line-height:1.4; }
+  .lf-hp { position:absolute; left:-9999px; width:1px; height:1px; opacity:0; }
+</style>
+
+<script is:inline>
+  (function () {
+    var root = document.getElementById('leadFinder');
+    if (!root) return;
+    var SU = root.getAttribute('data-su'), SK = root.getAttribute('data-sk');
+    var data = { zip_or_city: '', care_type: '', name: '', contact: '', wants_contact: false };
+
+    function show(step) {
+      root.querySelectorAll('.lf-step').forEach(function (el) {
+        el.hidden = el.getAttribute('data-step') !== step;
+      });
+    }
+    function submit() {
+      // Honeypot: a bot filled the hidden field — drop silently, no network call.
+      if (root.querySelector('#lfCompany').value) return;
+      if (!SU || !SK) return; // no backend configured (e.g. local preview)
+      data.source_page = location.pathname;
+      data.user_agent = navigator.userAgent;
+      fetch(SU.replace(/\/$/, '') + '/rest/v1/leads', {
+        method: 'POST',
+        headers: { apikey: SK, Authorization: 'Bearer ' + SK,
+          'Content-Type': 'application/json', Prefer: 'return=minimal' },
+        body: JSON.stringify(data),
+      }).catch(function () {}); // fire-and-forget; never block the UX
+    }
+
+    root.querySelector('.lf-next').addEventListener('click', function () {
+      var v = root.querySelector('#lfLoc').value.trim();
+      if (!v) { root.querySelector('#lfLoc').focus(); return; }
+      data.zip_or_city = v; show('2');
+    });
+    root.querySelectorAll('.lf-opt').forEach(function (b) {
+      b.addEventListener('click', function () { data.care_type = b.getAttribute('data-care'); show('3'); });
+    });
+    root.querySelector('.lf-connect').addEventListener('click', function () {
+      data.name = root.querySelector('#lfName').value.trim();
+      data.contact = root.querySelector('#lfContact').value.trim();
+      data.wants_contact = true;
+      submit();
+      root.querySelector('#lfDone').textContent =
+        "Thanks! A top-rated clinic near you may reach out. Meanwhile, browse clinics below.";
+      show('done');
+    });
+    root.querySelector('.lf-skip').addEventListener('click', function () {
+      data.wants_contact = false; submit(); show('done');
+    });
+  })();
+</script>
