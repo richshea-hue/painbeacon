@@ -2,6 +2,7 @@
 import Base from '../../layouts/Base.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import ClinicMap from '../../components/ClinicMap.astro';
+import ClaimProfile from '../../components/ClaimProfile.astro';
 import { getClinics, titleCase, stateName } from '../../lib/data.js';
 import { scoreClinic } from '../../lib/ranking.js';
 import { breadcrumbLd, clinicLd } from '../../lib/schema.js';
@@ -99,6 +100,8 @@ const mapMarkers = (c.latitude != null && c.longitude != null)
       with verified location and review data. See <a href="/how-we-rank/">how we rank</a>.
       {c.nppes_last_updated && <> Provider record last updated {c.nppes_last_updated}.</>}
     </div>
+
+    <ClaimProfile npi={c.npi} slug={c.slug} clinicName={name} />
 
     <p class="muted">
       Informational only and not medical advice. Confirm credentials, services, and
