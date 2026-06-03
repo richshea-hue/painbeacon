@@ -35,7 +35,7 @@ export function clinicLd(c) {
     },
   };
   if (c.phone) ld.telephone = c.phone;
-  if (c.website) ld.sameAs = [c.website];
+  if (c.website && SITE.linkClinicWebsites) ld.sameAs = [c.website];
   if (c.latitude && c.longitude) {
     ld.geo = { '@type': 'GeoCoordinates', latitude: c.latitude, longitude: c.longitude };
   }

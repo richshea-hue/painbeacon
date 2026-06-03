@@ -35,6 +35,12 @@ const blocks = Array.isArray(jsonld) ? jsonld : [jsonld];
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="theme-color" content="#0f2e3a" />
+    {SITE.googleSiteVerification && (
+      <meta name="google-site-verification" content={SITE.googleSiteVerification} />
+    )}
+    {SITE.bingSiteVerification && (
+      <meta name="msvalidate.01" content={SITE.bingSiteVerification} />
+    )}
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
