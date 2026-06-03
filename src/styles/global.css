@@ -83,8 +83,9 @@ p { margin: 0 0 1rem; }
   display: flex; align-items: center; justify-content: space-between;
   height: 64px; gap: 1.5rem;
 }
-.brand { display: flex; align-items: baseline; gap: 0.5rem; font-family: var(--serif);
-  font-size: 1.4rem; font-weight: 600; color: var(--ink); letter-spacing: -0.02em; }
+.brand { display: flex; align-items: center; gap: 0.5rem; font-family: 'Montserrat', var(--sans, sans-serif);
+  font-size: 1.4rem; font-weight: 700; color: var(--ink); letter-spacing: -0.02em; }
+.brand-mark { flex-shrink: 0; }
 .brand:hover { text-decoration: none; }
 .brand .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--teal);
   display: inline-block; transform: translateY(-2px); }
@@ -192,3 +193,19 @@ p { margin: 0 0 1rem; }
 .prose p, .prose li { color: var(--ink-soft); }
 .muted { color: var(--ink-faint); font-size: 0.85rem; }
 hr.rule { border: 0; border-top: 1px solid var(--line); margin: 2.5rem 0; }
+
+/* ---- branded map pin (Leaflet divIcon) ---- */
+.pb-pin { background: transparent !important; border: 0 !important; }
+.pb-pin svg { display: block; filter: drop-shadow(0 1px 1px rgba(15,46,58,0.35)); }
+
+/* ---- site-wide trust bar ---- */
+.trust-bar { background: var(--paper-2); border-bottom: 1px solid var(--line);
+  font-size: 0.8rem; color: var(--ink-soft); }
+.trust-bar .wrap { display: flex; flex-wrap: wrap; justify-content: center;
+  align-items: center; gap: 0.55rem; padding-top: 0.5rem; padding-bottom: 0.5rem; }
+.trust-bar a { color: var(--teal-deep); }
+.trust-bar .sep { color: var(--ink-faint); }
+@media (max-width: 560px) {
+  .trust-bar .sep { display: none; }
+  .trust-bar .wrap { gap: 0.1rem 1rem; }
+}
