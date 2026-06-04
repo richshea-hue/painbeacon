@@ -23,6 +23,13 @@ const c0 = clinics[0];
 const name = stateName(c0.state);
 const ranked = rankClinics(clinics);
 
+// Featured = paid placement, capped at one per city (exclusivity). Shown in a
+// labeled, clearly-sponsored slot ABOVE the ranked list and excluded from it,
+// so paid placement never mixes with the objective ranking.
+const featured = ranked.filter((c) => c.listing_tier === 'featured').slice(0, 1);
+const featuredNpis = new Set(featured.map((c) => c.npi));
+const listed = ranked.filter((c) => !featuredNpis.has(c.npi));
+
 // Map pins for every clinic in this city that has coordinates (matched ones).
 const mapMarkers = ranked
   .filter((c) => c.latitude != null && c.longitude != null)
@@ -60,8 +67,20 @@ const relatedTopics = clinics.length >= MIN_CLINICS_FOR_TOPIC_PAGE
 
     <ClinicMap markers={mapMarkers} />
 
+    {featured.length > 0 && (
+      <section class="featured-slot">
+        <div class="featured-head">
+          <span class="featured-pill">Featured</span>
+          <span class="featured-note">Sponsored placement · <a href="/how-we-rank/">independent of our ranking</a></span>
+        </div>
+        <ul class="clinic-list">
+          {featured.map((c) => <ClinicCard clinic={c} />)}
+        </ul>
+      </section>
+    )}
+
     <ul class="clinic-list">
-      {ranked.map((c, i) => <ClinicCard clinic={c} rank={i + 1} />)}
+      {listed.map((c, i) => <ClinicCard clinic={c} rank={i + 1} />)}
     </ul>
 
     {relatedTopics.length > 0 && (

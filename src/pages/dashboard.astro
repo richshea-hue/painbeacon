@@ -1,0 +1,252 @@
+---
+// PainBeacon internal dashboard. Standalone (no public nav/footer/chat).
+// Reads aggregate counts via the admin_stats() RPC + the backlinks table,
+// using the PUBLIC anon key. Contains NO PII. MUST be locked behind
+// Cloudflare Access (Zero Trust) so only you can open it — see deploy notes.
+const SUPABASE_URL = process.env.SUPABASE_URL || '';
+const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || '';
+// GSC Links report shortcut (domain property). Adjust if you use a URL-prefix property.
+const GSC_LINKS_URL = 'https://search.google.com/search-console/links?resource_id=sc-domain:painbeacon.com';
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>PainBeacon — Internal Dashboard</title>
+  <style>
+    :root { --navy:#0f2e3a; --teal:#0e6e62; --teal-deep:#0a4f46; --teal-bright:#23b3a3;
+      --paper:#f6f4ee; --card:#fff; --line:#e4ddcd; --ink:#16302f; --ink-soft:#4c5b59; --ink-faint:#7c8a87;
+      --amber:#c9892f; --red:#b4452f; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+      background:var(--paper); color:var(--ink); line-height:1.5; }
+    .top { background:var(--navy); color:#fff; padding:1rem 1.25rem; }
+    .top h1 { margin:0; font-size:1.15rem; letter-spacing:.01em; }
+    .top p { margin:.15rem 0 0; font-size:.8rem; color:#bcd3cf; }
+    .wrap { max-width:1080px; margin:0 auto; padding:1.25rem; }
+    .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:.75rem; margin-bottom:1.5rem; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:.9rem 1rem; }
+    .card .n { font-size:1.7rem; font-weight:700; color:var(--navy); line-height:1.1; }
+    .card .l { font-size:.78rem; color:var(--ink-faint); margin-top:.2rem; }
+    .card .sub { font-size:.72rem; color:var(--teal-deep); font-weight:600; margin-top:.15rem; }
+    .panel { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:1rem 1.1rem; margin-bottom:1.1rem; }
+    .panel h2 { font-size:.82rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-faint); margin:0 0 .8rem; }
+    .row { display:flex; align-items:center; gap:.6rem; margin:.4rem 0; font-size:.88rem; }
+    .row .rl { flex:0 0 150px; color:var(--ink-soft); }
+    .row .rt { flex:1; background:var(--paper); border-radius:999px; height:14px; overflow:hidden; border:1px solid var(--line); }
+    .row .rf { height:100%; background:var(--teal); border-radius:999px; min-width:2px; transition:width .4s; }
+    .row .rv { flex:0 0 64px; text-align:right; font-variant-numeric:tabular-nums; font-weight:600; color:var(--navy); }
+    .row.alt .rf { background:var(--teal-bright); }
+    .row.warn .rf { background:var(--amber); }
+    .row.dim .rf { background:var(--ink-faint); }
+    .split { display:grid; grid-template-columns:1fr 1fr; gap:1.1rem; }
+    @media (max-width:640px){ .split { grid-template-columns:1fr; } }
+    .dvl { display:flex; gap:1.2rem; }
+    .dvl .b { flex:1; }
+    .dvl .bn { font-size:1.5rem; font-weight:700; color:var(--navy); }
+    .dvl .bl { font-size:.74rem; color:var(--ink-faint); }
+    table.bl { width:100%; border-collapse:collapse; font-size:.86rem; }
+    table.bl th { text-align:left; color:var(--ink-faint); font-weight:600; font-size:.74rem; text-transform:uppercase;
+      letter-spacing:.04em; padding:.3rem .4rem; border-bottom:1px solid var(--line); }
+    table.bl td { padding:.4rem .4rem; border-bottom:1px solid var(--line); }
+    table.bl td a { color:var(--teal-deep); }
+    .btn { display:inline-block; background:var(--teal); color:#fff; text-decoration:none; font-size:.82rem;
+      font-weight:600; padding:.45rem .8rem; border-radius:8px; }
+    .muted { color:var(--ink-faint); font-size:.8rem; }
+    .empty { color:var(--ink-faint); font-size:.86rem; font-style:italic; padding:.4rem 0; }
+    #err { background:#fbe9e7; border:1px solid var(--red); color:var(--red); padding:.8rem 1rem; border-radius:10px;
+      font-size:.86rem; margin-bottom:1rem; display:none; }
+    .refresh { float:right; font-size:.78rem; color:#bcd3cf; cursor:pointer; background:none; border:1px solid #2c4d57;
+      color:#cfe3df; padding:.2rem .6rem; border-radius:6px; }
+  </style>
+</head>
+<body data-su={SUPABASE_URL} data-sk={SUPABASE_KEY} data-gsc={GSC_LINKS_URL}>
+  <div class="top">
+    <button class="refresh" id="refreshBtn">↻ Refresh</button>
+    <h1>PainBeacon — Internal Dashboard</h1>
+    <p>Private · aggregate metrics only · gated by Cloudflare Access</p>
+  </div>
+  <div class="wrap">
+    <div id="err"></div>
+    <div id="loading" class="muted">Loading metrics…</div>
+    <div id="content" hidden>
+
+      <div class="cards" id="cards"></div>
+
+      <div class="split">
+        <div class="panel">
+          <h2>Listing tiers</h2>
+          <div id="tiers"></div>
+        </div>
+        <div class="panel">
+          <h2>Claims pipeline</h2>
+          <div id="pipeline"></div>
+        </div>
+      </div>
+
+      <div class="split">
+        <div class="panel">
+          <h2>Enhanced — demand vs live</h2>
+          <div class="dvl" id="enh"></div>
+        </div>
+        <div class="panel">
+          <h2>Featured — demand vs live</h2>
+          <div class="dvl" id="feat"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Funnel</h2>
+        <div id="funnel"></div>
+      </div>
+
+      <div class="split">
+        <div class="panel">
+          <h2>Recent activity</h2>
+          <div id="recent"></div>
+        </div>
+        <div class="panel">
+          <h2>Top states (by clinics)</h2>
+          <div id="states"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Top linking sites</h2>
+        <div id="backlinks"></div>
+        <p class="muted" style="margin:.7rem 0 .5rem;">Maintained from Search Console (no API for this data). Paste your top linkers into the <code>backlinks</code> table in Supabase.</p>
+        <a class="btn" id="gscBtn" href="#" target="_blank" rel="noopener">Open Search Console Links report</a>
+      </div>
+
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    (function () {
+      var B = document.body;
+      var SU = B.getAttribute('data-su'), SK = B.getAttribute('data-sk');
+      var GSC = B.getAttribute('data-gsc');
+      document.getElementById('gscBtn').href = GSC;
+      var elErr = document.getElementById('err');
+      var elLoad = document.getElementById('loading');
+      var elContent = document.getElementById('content');
+
+      function fail(msg) { elErr.textContent = msg; elErr.style.display = 'block'; elLoad.hidden = true; }
+      function pct(a, b) { return b > 0 ? Math.round((a / b) * 100) : 0; }
+      function num(x) { return (x == null ? 0 : x).toLocaleString(); }
+
+      // label, value, max, modifier class
+      function bar(label, value, max, mod) {
+        var w = max > 0 ? Math.round((value / max) * 100) : 0;
+        return '<div class="row ' + (mod || '') + '"><div class="rl">' + label + '</div>' +
+          '<div class="rt"><div class="rf" style="width:' + w + '%"></div></div>' +
+          '<div class="rv">' + num(value) + '</div></div>';
+      }
+      function card(n, l, sub) {
+        return '<div class="card"><div class="n">' + n + '</div><div class="l">' + l + '</div>' +
+          (sub ? '<div class="sub">' + sub + '</div>' : '') + '</div>';
+      }
+
+      if (!SU || !SK) { fail('Supabase config missing — set SUPABASE_URL and SUPABASE_ANON_KEY in the Cloudflare Pages env vars and rebuild.'); return; }
+      var headers = { apikey: SK, Authorization: 'Bearer ' + SK };
+
+      function load() {
+        elErr.style.display = 'none';
+        Promise.all([
+          fetch(SU + '/rest/v1/rpc/admin_stats', {
+            method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, headers), body: '{}'
+          }).then(function (r) { if (!r.ok) throw new Error('stats ' + r.status); return r.json(); }),
+          fetch(SU + '/rest/v1/backlinks?select=domain,url,links_count&order=links_count.desc&limit=10', {
+            headers: headers
+          }).then(function (r) { return r.ok ? r.json() : []; }).catch(function () { return []; })
+        ]).then(function (res) {
+          render(res[0], res[1] || []);
+          elLoad.hidden = true; elContent.hidden = false;
+        }).catch(function (e) {
+          fail('Could not load stats: ' + e.message + '. Check that dashboard_setup.sql has been run in Supabase.');
+        });
+      }
+
+      function render(s, bl) {
+        // Top cards
+        var live = (s.tier_enhanced || 0) + (s.tier_featured || 0);
+        document.getElementById('cards').innerHTML =
+          card(num(s.clinics_total), 'Clinics in directory') +
+          card(num(s.clinics_claimed), 'Claimed', pct(s.clinics_claimed, s.clinics_total) + '% of total') +
+          card(num(s.leads_total), 'Leads (all time)', num(s.leads_30d) + ' in 30d') +
+          card(num(s.leads_wants_contact), 'Leads opted in', pct(s.leads_wants_contact, s.leads_total) + '% want contact') +
+          card(num(s.claims_total), 'Claim requests', num(s.claims_30d) + ' in 30d') +
+          card(num(live), 'Paying listings', num(s.tier_enhanced) + ' enh · ' + num(s.tier_featured) + ' feat');
+
+        // Listing tiers
+        var unclaimed = (s.clinics_total || 0) - (s.clinics_claimed || 0);
+        var tmax = s.clinics_total || 1;
+        document.getElementById('tiers').innerHTML =
+          bar('Unclaimed (free)', unclaimed, tmax, 'dim') +
+          bar('Verified', s.tier_verified, tmax) +
+          bar('Enhanced', s.tier_enhanced, tmax, 'alt') +
+          bar('Featured', s.tier_featured, tmax, 'warn');
+
+        // Claims pipeline
+        var pmax = Math.max(s.claims_new, s.claims_verifying, s.claims_verified, s.claims_customer, s.claims_declined, 1);
+        document.getElementById('pipeline').innerHTML =
+          bar('New', s.claims_new, pmax) +
+          bar('Verifying', s.claims_verifying, pmax) +
+          bar('Verified', s.claims_verified, pmax) +
+          bar('Customer', s.claims_customer, pmax, 'alt') +
+          bar('Declined', s.claims_declined, pmax, 'dim');
+
+        // Enhanced / Featured demand vs live
+        document.getElementById('enh').innerHTML =
+          '<div class="b"><div class="bn">' + num(s.enhanced_requested) + '</div><div class="bl">Requested</div></div>' +
+          '<div class="b"><div class="bn">' + num(s.tier_enhanced) + '</div><div class="bl">Live</div></div>';
+        document.getElementById('feat').innerHTML =
+          '<div class="b"><div class="bn">' + num(s.featured_requested) + '</div><div class="bl">Requested</div></div>' +
+          '<div class="b"><div class="bn">' + num(s.tier_featured) + '</div><div class="bl">Live</div></div>';
+
+        // Funnel
+        var fmax = Math.max(s.leads_total, s.claims_total, live, 1);
+        document.getElementById('funnel').innerHTML =
+          bar('Leads', s.leads_total, fmax) +
+          bar('Claim requests', s.claims_total, fmax, 'alt') +
+          bar('Paying listings', live, fmax, 'warn');
+
+        // Recent
+        document.getElementById('recent').innerHTML =
+          bar('Leads · 7d', s.leads_7d, Math.max(s.leads_30d, 1)) +
+          bar('Leads · 30d', s.leads_30d, Math.max(s.leads_30d, 1)) +
+          bar('Claims · 7d', s.claims_7d, Math.max(s.claims_30d, 1), 'alt') +
+          bar('Claims · 30d', s.claims_30d, Math.max(s.claims_30d, 1), 'alt');
+
+        // Top states
+        var st = s.top_states || [];
+        if (st.length) {
+          var smax = st[0].clinics || 1;
+          document.getElementById('states').innerHTML = st.map(function (r) {
+            return bar(r.state, r.clinics, smax);
+          }).join('');
+        } else { document.getElementById('states').innerHTML = '<div class="empty">No data.</div>'; }
+
+        // Backlinks
+        if (bl && bl.length) {
+          var rows = bl.map(function (r) {
+            var d = r.domain || '';
+            var a = r.url ? '<a href="' + r.url + '" target="_blank" rel="noopener">' + d + '</a>' : d;
+            return '<tr><td>' + a + '</td><td style="text-align:right">' + num(r.links_count) + '</td></tr>';
+          }).join('');
+          document.getElementById('backlinks').innerHTML =
+            '<table class="bl"><thead><tr><th>Domain</th><th style="text-align:right">Links</th></tr></thead><tbody>' + rows + '</tbody></table>';
+        } else {
+          document.getElementById('backlinks').innerHTML =
+            '<div class="empty">No linking sites added yet. Pull them from Search Console → Links → Top linking sites.</div>';
+        }
+      }
+
+      document.getElementById('refreshBtn').addEventListener('click', load);
+      load();
+    })();
+  </script>
+</body>
+</html>

@@ -17,6 +17,7 @@ const stars = c.aggregate_rating ? '★'.repeat(Math.round(Number(c.aggregate_ra
       {c.phone && <> · {c.phone}</>}
     </p>
     <div class="tags">
+      {['verified', 'enhanced', 'featured'].includes(c.listing_tier) && <span class="tag verified">✓ Verified</span>}
       {interventional && <span class="tag intervention">Interventional pain</span>}
       {c.primary_taxonomy_desc && !interventional && <span class="tag">{c.primary_taxonomy_desc.split(' - ').pop()}</span>}
       {c.website && <span class="tag">Website</span>}

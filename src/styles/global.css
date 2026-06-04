@@ -194,6 +194,19 @@ p { margin: 0 0 1rem; }
 .muted { color: var(--ink-faint); font-size: 0.85rem; }
 hr.rule { border: 0; border-top: 1px solid var(--line); margin: 2.5rem 0; }
 
+/* ---- featured (paid) placement slot on city pages ---- */
+.featured-slot { margin: 0 0 1.5rem; padding: 0.9rem 1rem 0.5rem; border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--teal, #0e6e62) 35%, var(--line, #e3ddcf));
+  background: color-mix(in srgb, var(--teal, #0e6e62) 5%, var(--card, #fff)); }
+.featured-head { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.4rem; flex-wrap: wrap; }
+.featured-pill { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+  color: #fff; background: var(--teal-deep, #0a4f46); padding: 0.18rem 0.55rem; border-radius: 999px; }
+.featured-note { font-size: 0.78rem; color: var(--ink-faint, #7c8a87); }
+.featured-slot .clinic-list { margin: 0; }
+.tag.verified { color: var(--teal-deep, #0a4f46);
+  background: color-mix(in srgb, var(--teal, #0e6e62) 16%, transparent);
+  border-color: color-mix(in srgb, var(--teal, #0e6e62) 38%, transparent); }
+
 /* ---- verified badge + enhanced (paid) listing block ---- */
 .badges { display: flex; gap: 0.4rem; margin: 0.1rem 0 0.5rem; }
 .badge-verified { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.78rem;
