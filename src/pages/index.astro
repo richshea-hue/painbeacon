@@ -1,7 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
 import { SITE } from '../lib/site.js';
-import LeadFinder from '../components/LeadFinder.astro';
 import { getClinics, groupBy, stateName } from '../lib/data.js';
 import { websiteLd } from '../lib/schema.js';
 
@@ -41,7 +40,8 @@ const total = clinics.length;
   </section>
 
   <section class="wrap narrow" style="padding:0 0 0.5rem;">
-    <LeadFinder />
+    <p class="lede" style="margin:0 0 .7rem;">Not sure where to start? Answer two quick questions and we’ll point you to top-rated clinics near you.</p>
+    <button class="btn" type="button" data-open-leadchat>Find a pain clinic for me</button>
   </section>
 
   <section class="wrap" style="padding:2.5rem 0;">

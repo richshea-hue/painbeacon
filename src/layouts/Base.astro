@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import { SITE } from '../lib/site.js';
+import LeadChat from '../components/LeadChat.astro';
 
 const {
   title,
@@ -35,6 +36,12 @@ const blocks = Array.isArray(jsonld) ? jsonld : [jsonld];
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="theme-color" content="#0f2e3a" />
+    {SITE.googleSiteVerification && (
+      <meta name="google-site-verification" content={SITE.googleSiteVerification} />
+    )}
+    {SITE.bingSiteVerification && (
+      <meta name="msvalidate.01" content={SITE.bingSiteVerification} />
+    )}
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -73,6 +80,7 @@ const blocks = Array.isArray(jsonld) ? jsonld : [jsonld];
         <nav class="nav">
           <a href="/pain-clinics/">Browse by state</a>
           <a href="/how-we-rank/">How we rank</a>
+          <a href="/for-practices/">For practices</a>
           <a href="/ownership-disclosure/">Disclosure</a>
         </nav>
       </div>
@@ -123,6 +131,7 @@ const blocks = Array.isArray(jsonld) ? jsonld : [jsonld];
           <p><strong>Directory</strong></p>
           <p><a href="/pain-clinics/">All states</a></p>
           <p><a href="/how-we-rank/">Ranking methodology</a></p>
+          <p><a href="/for-practices/">For practices</a></p>
         </div>
         <div>
           <p><strong>About</strong></p>
@@ -136,6 +145,8 @@ const blocks = Array.isArray(jsonld) ? jsonld : [jsonld];
         </div>
       </div>
     </footer>
+
+    <LeadChat />
 
     <script is:inline>
       // Lazy-load Leaflet (free OpenStreetMap maps) ONLY on pages that have a
