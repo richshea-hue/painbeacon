@@ -194,6 +194,31 @@ p { margin: 0 0 1rem; }
 .muted { color: var(--ink-faint); font-size: 0.85rem; }
 hr.rule { border: 0; border-top: 1px solid var(--line); margin: 2.5rem 0; }
 
+/* ---- verified badge + enhanced (paid) listing block ---- */
+.badges { display: flex; gap: 0.4rem; margin: 0.1rem 0 0.5rem; }
+.badge-verified { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.78rem;
+  font-weight: 600; color: var(--teal-deep, #0a4f46); padding: 0.15rem 0.55rem; border-radius: 999px;
+  background: color-mix(in srgb, var(--teal, #0e6e62) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--teal, #0e6e62) 38%, transparent); }
+.badge-featured { font-size: 0.78rem; font-weight: 600; color: #fff;
+  background: var(--teal-deep, #0a4f46); padding: 0.15rem 0.55rem; border-radius: 999px; }
+.enhanced { border: 1px solid var(--line, #e3ddcf); border-left: 3px solid var(--teal, #0e6e62);
+  border-radius: 12px; background: var(--card, #fff); padding: 1.1rem 1.2rem; margin: 1.25rem 0; }
+.enhanced-label { font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--teal-deep, #0a4f46); font-weight: 600; margin: 0 0 0.6rem; }
+.enhanced-desc { margin: 0 0 0.9rem; }
+.gallery { display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 0.3rem 0 1rem; }
+.gallery img { width: 150px; height: 110px; object-fit: cover; border-radius: 8px;
+  border: 1px solid var(--line, #e3ddcf); }
+.enh-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 0.5rem 0; }
+.enh-grid h3 { font-size: 0.95rem; margin: 0 0 0.4rem; }
+.chips { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.chips li { font-size: 0.82rem; background: var(--paper, #f7f4ed); border: 1px solid var(--line, #e3ddcf);
+  border-radius: 999px; padding: 0.2rem 0.55rem; }
+.providers { margin-top: 1rem; }
+.provider { margin: 0.5rem 0; }
+.provider p { margin: 0.2rem 0 0; font-size: 0.92rem; color: var(--ink-soft, #4c5b59); }
+
 /* ---- branded map pin (Leaflet divIcon) ---- */
 .pb-pin { background: transparent !important; border: 0 !important; }
 .pb-pin svg { display: block; filter: drop-shadow(0 1px 1px rgba(15,46,58,0.35)); }

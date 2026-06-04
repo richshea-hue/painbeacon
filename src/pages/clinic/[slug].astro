@@ -49,6 +49,21 @@ if (c.website) {
       .hostname.replace(/^www\./, '');
   } catch (e) { websiteHost = ''; }
 }
+
+// Listing tier: free | verified | enhanced | featured. Enhanced/Featured unlock
+// the rich profile block; verified+ get the trust badge.
+const tier = c.listing_tier || 'free';
+const isVerified = ['verified', 'enhanced', 'featured'].includes(tier);
+const isEnhanced = ['enhanced', 'featured'].includes(tier);
+const toList = (s) => Array.isArray(s)
+  ? s.filter(Boolean)
+  : (s ? String(s).split(/[;,]/).map((x) => x.trim()).filter(Boolean) : []);
+const svc = toList(c.services);
+const cond = toList(c.conditions_treated);
+const proc = toList(c.procedures_offered);
+const ins = toList(c.accepted_insurance);
+const photos = Array.isArray(c.enhanced_photos) ? c.enhanced_photos.filter(Boolean) : [];
+const providers = Array.isArray(c.enhanced_providers) ? c.enhanced_providers : [];
 ---
 <Base title={`${name} — ${c.cityLabel}, ${c.state}`}
       description={`${name} is a pain medicine clinic in ${c.cityLabel}, ${c.state}. Location, contact, credentials, and verified reviews.`}
@@ -68,6 +83,12 @@ if (c.website) {
       <div>
         <p class="eyebrow">{c.primary_taxonomy_desc || 'Pain Medicine'}</p>
         <h1 style="margin-bottom:0.25rem;">{name}</h1>
+        {isVerified && (
+          <p class="badges">
+            <span class="badge-verified">✓ Verified</span>
+            {tier === 'featured' && <span class="badge-featured">Featured</span>}
+          </p>
+        )}
         <p class="nap">
           <strong>{addr || 'Address on file'}</strong><br />
           {c.cityLabel}, {c.state} {(c.postal_code || '').slice(0, 5)}<br />
@@ -86,6 +107,9 @@ if (c.website) {
     </div>
 
     <div style="display:flex;gap:0.6rem;margin:1.5rem 0;flex-wrap:wrap;">
+      {isEnhanced && c.booking_url && (
+        <a class="btn" href={c.booking_url} rel="noopener" target="_blank">Book / Contact</a>
+      )}
       {c.website && SITE.linkClinicWebsites && (
         <a class="btn" href={c.website} rel="nofollow noopener ugc" target="_blank">Visit website</a>
       )}
@@ -93,6 +117,37 @@ if (c.website) {
       {c.phone && <a class="btn ghost" href={`tel:${c.phone.replace(/[^0-9+]/g, '')}`}>Call</a>}
       <a class="btn ghost" href={googleSearchHref} rel="nofollow noopener" target="_blank">Find on Google</a>
     </div>
+
+    {isEnhanced && (
+      <section class="enhanced">
+        <p class="enhanced-label">Verified practice profile</p>
+        {c.enhanced_description && <p class="enhanced-desc">{c.enhanced_description}</p>}
+        {photos.length > 0 && (
+          <div class="gallery">
+            {photos.map((src) => <img src={src} alt={`${name} photo`} loading="lazy" />)}
+          </div>
+        )}
+        {(svc.length || cond.length || proc.length || ins.length) > 0 && (
+          <div class="enh-grid">
+            {svc.length > 0 && <div><h3>Services</h3><ul class="chips">{svc.map((x) => <li>{x}</li>)}</ul></div>}
+            {cond.length > 0 && <div><h3>Conditions treated</h3><ul class="chips">{cond.map((x) => <li>{x}</li>)}</ul></div>}
+            {proc.length > 0 && <div><h3>Procedures</h3><ul class="chips">{proc.map((x) => <li>{x}</li>)}</ul></div>}
+            {ins.length > 0 && <div><h3>Accepted insurance</h3><ul class="chips">{ins.map((x) => <li>{x}</li>)}</ul></div>}
+          </div>
+        )}
+        {providers.length > 0 && (
+          <div class="providers">
+            <h3>Providers</h3>
+            {providers.map((p) => (
+              <div class="provider">
+                <strong>{p.name}</strong>{p.title && <span class="muted"> · {p.title}</span>}
+                {p.bio && <p>{p.bio}</p>}
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+    )}
 
     <ClinicMap markers={mapMarkers} height="320px" zoom={15} />
 

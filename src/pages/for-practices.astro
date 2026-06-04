@@ -40,7 +40,7 @@ const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || '';
         provider bios, and a booking link so patients choose you with confidence.</li>
     </ol>
 
-    <h2>What you get</h2>
+    <h2 id="upgrade">What you get</h2>
     <div class="tiers">
       <div class="tier">
         <h3>Listed</h3>
@@ -66,29 +66,37 @@ const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || '';
 
       <div class="tier featured">
         <h3>Enhanced</h3>
-        <p class="tier-price">Flat monthly subscription</p>
+        <p class="tier-price">{SITE.pricing.enhanced.price}<span class="tier-per">{SITE.pricing.enhanced.period}</span></p>
+        {SITE.pricing.enhanced.note && <p class="tier-trial">{SITE.pricing.enhanced.note}</p>}
         <ul>
           <li>Photos and a custom practice description</li>
           <li>Full services, conditions treated, and accepted insurance</li>
           <li>Provider bios and a direct booking / contact link</li>
         </ul>
+        <a class="btn tier-btn" href={SITE.pricing.enhanced.url || '#talk'}
+           {...(SITE.pricing.enhanced.url ? { target: '_blank', rel: 'noopener' } : {})}>
+          {SITE.pricing.enhanced.url ? 'Get Enhanced' : 'Talk to us'}
+        </a>
         <p class="tier-note">Make your profile the most complete one in your area.</p>
       </div>
 
       <div class="tier">
         <h3>Featured</h3>
-        <p class="tier-price">Flat monthly subscription</p>
+        <p class="tier-price">{SITE.pricing.featured.price}<span class="tier-per">{SITE.pricing.featured.period}</span></p>
         <ul>
           <li>Clearly labeled featured placement on your local city pages</li>
-          <li>Priority position on relevant condition searches</li>
+          <li>One Featured practice per area — priority position on relevant searches</li>
           <li>Everything in Enhanced</li>
         </ul>
+        <a class="btn tier-btn" href={SITE.pricing.featured.url || '#talk'}
+           {...(SITE.pricing.featured.url ? { target: '_blank', rel: 'noopener' } : {})}>
+          {SITE.pricing.featured.url ? 'Get Featured' : 'Talk to us'}
+        </a>
         <p class="tier-note">Labeled as advertising — kept separate from ranking.</p>
       </div>
     </div>
-    <!-- To publish fixed prices later, replace "Flat monthly subscription" above
-         with your figures (e.g. "$49 / month"). Get a healthcare attorney to
-         review the model before charging. -->
+    <p class="tier-foot">Secure checkout via Stripe. We verify you represent the practice before an
+      upgraded listing goes live — if we can’t verify it, you’re fully refunded.</p>
 
     <h2>How we keep it fair</h2>
     <p>
@@ -170,8 +178,14 @@ const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || '';
     .tier.featured { border-color:color-mix(in srgb, var(--teal,#0e6e62) 45%, var(--line,#e3ddcf));
       box-shadow:0 1px 3px rgba(10,79,70,.08); }
     .tier h3 { margin:0 0 .15rem; }
-    .tier-price { font-family:var(--mono,monospace); font-size:.82rem; color:var(--teal-deep,#0a4f46);
-      margin:0 0 .7rem; }
+    .tier-price { font-family:var(--mono,monospace); font-size:1.35rem; font-weight:600;
+      color:var(--teal-deep,#0a4f46); margin:0 0 .7rem; }
+    .tier-per { font-size:.8rem; font-weight:400; color:var(--ink-faint,#7c8a87); }
+    .tier-trial { display:inline-block; font-size:.74rem; font-weight:600; color:var(--teal-deep,#0a4f46);
+      background:color-mix(in srgb, var(--teal,#0e6e62) 14%, transparent); border-radius:999px;
+      padding:.1rem .5rem; margin:-.3rem 0 .6rem; }
+    .tier-btn { display:inline-block; margin:.2rem 0 .7rem; }
+    .tier-foot { font-size:.8rem; color:var(--ink-faint,#7c8a87); margin:.4rem 0 0; line-height:1.5; }
     .tier ul { margin:0 0 .7rem; padding-left:1.1rem; }
     .tier li { margin:.3rem 0; font-size:.93rem; }
     .tier-note { font-size:.8rem; color:var(--ink-faint,#7c8a87); margin:0; }

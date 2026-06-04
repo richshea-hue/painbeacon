@@ -46,6 +46,16 @@ export const SITE = {
   // the Google Safe Browsing API at build time.
   linkClinicWebsites: false,
 
+  // Paid listing tiers. Create the two subscription Payment Links in Stripe,
+  // then paste each checkout URL into `url` below — the buttons go live
+  // automatically. Until a url is set, the button falls back to the inquiry
+  // form (#talk). Prices are display-only here; the real amount is whatever you
+  // set on the Stripe Payment Link, so keep the two in sync.
+  pricing: {
+    enhanced: { price: '$29', period: '/mo', note: '30-day free trial', url: 'https://buy.stripe.com/5kQ4gBgGl97WfpTaHReAg00' },
+    featured: { price: '$299', period: '/mo', note: '', url: 'https://buy.stripe.com/3cI5kF1Lresgb9D03deAg02' },
+  },
+
   // ---- OWNERSHIP-DISCLOSURE TRIPWIRE -------------------------------------
   // Today: false (Candor owns zero clinics; rankings are genuinely neutral).
   // Flip to true the day the first acquisition closes. When true, the global
