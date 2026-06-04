@@ -2,7 +2,6 @@
 import Base from '../../layouts/Base.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import ClinicMap from '../../components/ClinicMap.astro';
-import ClaimProfile from '../../components/ClaimProfile.astro';
 import { getClinics, titleCase, stateName } from '../../lib/data.js';
 import { scoreClinic } from '../../lib/ranking.js';
 import { breadcrumbLd, clinicLd } from '../../lib/schema.js';
@@ -36,19 +35,6 @@ const mapMarkers = (c.latitude != null && c.longitude != null)
   ? [{ lat: c.latitude, lng: c.longitude, name,
        address: [addr, `${c.cityLabel}, ${c.state}`].filter(Boolean).join(', ') }]
   : [];
-
-// Outbound clinic-website links are disabled (Safe Browsing: some practice
-// domains are expired/hijacked). Show the domain as text and route users
-// through a Google search instead, which Google itself screens for malware.
-const googleSearchHref =
-  `https://www.google.com/search?q=${encodeURIComponent(`${name} ${c.cityLabel} ${c.state} pain clinic`)}`;
-let websiteHost = '';
-if (c.website) {
-  try {
-    websiteHost = new URL(/^https?:\/\//.test(c.website) ? c.website : `https://${c.website}`)
-      .hostname.replace(/^www\./, '');
-  } catch (e) { websiteHost = ''; }
-}
 ---
 <Base title={`${name} — ${c.cityLabel}, ${c.state}`}
       description={`${name} is a pain medicine clinic in ${c.cityLabel}, ${c.state}. Location, contact, credentials, and verified reviews.`}
@@ -71,8 +57,7 @@ if (c.website) {
         <p class="nap">
           <strong>{addr || 'Address on file'}</strong><br />
           {c.cityLabel}, {c.state} {(c.postal_code || '').slice(0, 5)}<br />
-          {c.phone && <>{c.phone}<br /></>}
-          {websiteHost && <span class="muted" style="font-size:0.9rem;">{websiteHost}</span>}
+          {c.phone && <>{c.phone}</>}
         </p>
       </div>
       <div class="rating">
@@ -86,12 +71,9 @@ if (c.website) {
     </div>
 
     <div style="display:flex;gap:0.6rem;margin:1.5rem 0;flex-wrap:wrap;">
-      {c.website && SITE.linkClinicWebsites && (
-        <a class="btn" href={c.website} rel="nofollow noopener ugc" target="_blank">Visit website</a>
-      )}
+      {c.website && <a class="btn" href={c.website} rel="nofollow noopener" target="_blank">Visit website</a>}
       <a class="btn ghost" href={mapHref} rel="nofollow noopener" target="_blank">Get directions</a>
       {c.phone && <a class="btn ghost" href={`tel:${c.phone.replace(/[^0-9+]/g, '')}`}>Call</a>}
-      <a class="btn ghost" href={googleSearchHref} rel="nofollow noopener" target="_blank">Find on Google</a>
     </div>
 
     <ClinicMap markers={mapMarkers} height="320px" zoom={15} />
@@ -117,8 +99,6 @@ if (c.website) {
       with verified location and review data. See <a href="/how-we-rank/">how we rank</a>.
       {c.nppes_last_updated && <> Provider record last updated {c.nppes_last_updated}.</>}
     </div>
-
-    <ClaimProfile npi={c.npi} slug={c.slug} clinicName={name} />
 
     <p class="muted">
       Informational only and not medical advice. Confirm credentials, services, and

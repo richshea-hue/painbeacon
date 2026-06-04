@@ -34,9 +34,7 @@ const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || '';
   <div class="lf-step" data-step="3" hidden>
     <p class="lf-bot">Want a top-rated clinic near you to reach out and help you book? <span class="lf-muted">(optional)</span></p>
     <input class="lf-input" id="lfName" type="text" placeholder="Your name" autocomplete="name" />
-    <input class="lf-input" id="lfPhone" type="tel" placeholder="Phone or text number" autocomplete="tel" />
-    <input class="lf-input" id="lfEmail" type="email" placeholder="Email" autocomplete="email" />
-    <p class="lf-muted lf-tiny">Give whichever you prefer — a phone/text number, an email, or both.</p>
+    <input class="lf-input" id="lfContact" type="text" placeholder="Phone or email" autocomplete="tel" />
     <button class="btn lf-connect">Yes, connect me</button>
     <button class="btn ghost lf-skip">No thanks — just show clinics</button>
     <p class="lf-fine">By choosing “connect me,” you agree we may share your contact with a clinic to help you book.
@@ -56,7 +54,6 @@ const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || '';
   .lf-dot { width:.6rem; height:.6rem; border-radius:50%; background:#16a34a; box-shadow:0 0 0 3px rgba(22,163,74,.18); }
   .lf-bot { margin:.2rem 0 .7rem; }
   .lf-muted { color:var(--muted,#6b7280); font-weight:400; }
-  .lf-tiny { font-size:.78rem; margin:.1rem 0 .2rem; }
   .lf-input { width:100%; padding:.6rem .7rem; margin:.3rem 0; border:1px solid var(--border,#e5e7eb);
     border-radius:9px; font-size:1rem; box-sizing:border-box; }
   .lf-options { display:flex; flex-direction:column; gap:.45rem; }
@@ -74,7 +71,7 @@ const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || '';
     var root = document.getElementById('leadFinder');
     if (!root) return;
     var SU = root.getAttribute('data-su'), SK = root.getAttribute('data-sk');
-    var data = { zip_or_city: '', care_type: '', name: '', phone: '', email: '', contact: '', wants_contact: false };
+    var data = { zip_or_city: '', care_type: '', name: '', contact: '', wants_contact: false };
 
     function show(step) {
       root.querySelectorAll('.lf-step').forEach(function (el) {
@@ -104,13 +101,8 @@ const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || '';
       b.addEventListener('click', function () { data.care_type = b.getAttribute('data-care'); show('3'); });
     });
     root.querySelector('.lf-connect').addEventListener('click', function () {
-      var phone = root.querySelector('#lfPhone').value.trim();
-      var email = root.querySelector('#lfEmail').value.trim();
-      if (!phone && !email) { root.querySelector('#lfPhone').focus(); return; }
       data.name = root.querySelector('#lfName').value.trim();
-      data.phone = phone;
-      data.email = email;
-      data.contact = [phone, email].filter(Boolean).join(' / '); // combined, for the legacy column
+      data.contact = root.querySelector('#lfContact').value.trim();
       data.wants_contact = true;
       submit();
       root.querySelector('#lfDone').textContent =

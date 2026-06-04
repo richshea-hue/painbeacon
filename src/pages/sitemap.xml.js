@@ -4,7 +4,7 @@ import { ALL_TOPICS, MIN_CLINICS_FOR_TOPIC_PAGE } from '../lib/topics.js';
 
 export async function GET() {
   const clinics = await getClinics();
-  const urls = new Set(['/', '/pain-clinics/', '/how-we-rank/', '/for-practices/', '/ownership-disclosure/', '/privacy/']);
+  const urls = new Set(['/', '/pain-clinics/', '/how-we-rank/', '/ownership-disclosure/']);
 
   const byState = groupBy(clinics, (c) => c.stateSlug);
   for (const state of byState.keys()) urls.add(`/pain-clinics/${state}/`);
