@@ -90,6 +90,11 @@ const { npi = '', slug = '', clinicName = 'this practice' } = Astro.props;
   .claim-fine { font-size:.72rem; color:var(--ink-faint,#7c8a87); margin:.2rem 0 0; line-height:1.45; }
   .claim-done strong { font-size:1.02rem; }
   .claim-hp { position:absolute; left:-9999px; width:1px; height:1px; opacity:0; }
+  .claim-flash { animation: claimFlash 2.4s ease-out 1; }
+  @keyframes claimFlash {
+    0%, 100% { box-shadow:0 0 0 0 transparent; }
+    15% { box-shadow:0 0 0 4px color-mix(in srgb, var(--teal,#0e6e62) 22%, transparent); border-color:var(--teal,#0e6e62); }
+  }
 </style>
 
 <script is:inline>
@@ -102,12 +107,27 @@ const { npi = '', slug = '', clinicName = 'this practice' } = Astro.props;
     var done = root.querySelector('.claim-done');
     var cta = root.querySelector('.claim-cta');
 
-    openBtn.addEventListener('click', function () {
+    openBtn.addEventListener('click', function () { openForm(true); });
+
+    function openForm(focus) {
       form.hidden = false;
       openBtn.disabled = true;
       openBtn.textContent = 'Fill out the form below';
-      var n = root.querySelector('[data-f="contact_name"]'); if (n) n.focus();
-    });
+      if (focus) { var n = root.querySelector('[data-f="contact_name"]'); if (n) n.focus(); }
+    }
+
+    // Deep link for outreach: ?claim=1 (or #claim) auto-opens the form, scrolls
+    // to it, and briefly highlights it — so a link from an email/DM lands the
+    // clinic right on their claim. Any ?src=... is preserved for attribution.
+    try {
+      var qp = new URLSearchParams(location.search);
+      if (qp.get('claim') === '1' || location.hash === '#claim') {
+        openForm(false);
+        root.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        root.classList.add('claim-flash');
+        setTimeout(function () { root.classList.remove('claim-flash'); }, 2400);
+      }
+    } catch (e) {}
 
     function get(f) { var el = root.querySelector('[data-f="' + f + '"]'); return el ? el.value.trim() : ''; }
 
@@ -127,7 +147,7 @@ const { npi = '', slug = '', clinicName = 'this practice' } = Astro.props;
         phone: get('phone'),
         interest: get('interest'),
         message: get('message'),
-        source_page: location.pathname,
+        source_page: location.pathname + location.search,
         user_agent: navigator.userAgent,
       };
 
