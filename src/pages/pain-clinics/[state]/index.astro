@@ -24,7 +24,7 @@ const name = stateName(abbr);
 const byZone = groupBy(clinics.filter((c) => c.zoneSlug), (c) => c.zoneSlug);
 const zones = [...byZone.entries()]
   .map(([, list]) => ({ urlSlug: list[0].zoneUrlSlug, label: list[0].zoneLabel, count: list.length }))
-  .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+  .sort((a, b) => a.label.localeCompare(b.label));
 
 const crumbs = [
   { name: 'Home', href: '/' },

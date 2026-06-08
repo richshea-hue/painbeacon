@@ -1,0 +1,42 @@
+---
+import Base from '../../layouts/Base.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import { getClinics, groupBy, stateName } from '../../lib/data.js';
+import { breadcrumbLd } from '../../lib/schema.js';
+
+const clinics = await getClinics();
+// Count primary (deduped) practices only, so state totals are real.
+const primaries = clinics.filter((c) => c.isPrimary);
+const byState = groupBy(primaries, (c) => c.stateSlug);
+
+const states = [...byState.entries()]
+  .map(([slug, list]) => ({
+    slug,
+    name: stateName(list[0].state),
+    count: list.length,
+  }))
+  .sort((a, b) => a.name.localeCompare(b.name));
+
+const totalClinics = primaries.length;
+
+const crumbs = [
+  { name: 'Home', href: '/' },
+  { name: 'States', href: '/pain-clinics/' },
+];
+---
+<Base title="Pain clinics by state"
+      description={`Browse ${totalClinics.toLocaleString()} pain medicine clinics across ${states.length} states. Find board-certified, interventional pain specialists near you.`}
+      jsonld={[breadcrumbLd(crumbs)]}>
+  <div class="wrap">
+    <Breadcrumbs items={crumbs} />
+    <h1>Pain clinics by state</h1>
+    <p class="lede">{totalClinics.toLocaleString()} clinics across {states.length} states. Choose a state.</p>
+    <ul class="tile-grid">
+      {states.map((s) => (
+        <li><a class="tile" href={`/pain-clinics/${s.slug}/`}>
+          <span class="label">{s.name}</span><span class="n">{s.count}</span>
+        </a></li>
+      ))}
+    </ul>
+  </div>
+</Base>
