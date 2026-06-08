@@ -6,7 +6,9 @@ import { breadcrumbLd, itemListLd } from '../../../lib/schema.js';
 
 export async function getStaticPaths() {
   const clinics = await getClinics();
-  const byState = groupBy(clinics, (c) => c.stateSlug);
+  // Count primary (deduped) practices only, so state + area totals are real.
+  const primaries = clinics.filter((c) => c.isPrimary);
+  const byState = groupBy(primaries, (c) => c.stateSlug);
   return [...byState.keys()].map((state) => ({
     params: { state },
     props: { clinics: byState.get(state) },
@@ -18,9 +20,10 @@ const { clinics } = Astro.props;
 const abbr = clinics[0].state;
 const name = stateName(abbr);
 
-const byCity = groupBy(clinics, (c) => c.citySlug);
-const cities = [...byCity.entries()]
-  .map(([slug, list]) => ({ slug, label: list[0].cityLabel, count: list.length }))
+// Group by ZONE (was city). Each tile links to a zone page.
+const byZone = groupBy(clinics.filter((c) => c.zoneSlug), (c) => c.zoneSlug);
+const zones = [...byZone.entries()]
+  .map(([, list]) => ({ urlSlug: list[0].zoneUrlSlug, label: list[0].zoneLabel, count: list.length }))
   .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
 
 const crumbs = [
@@ -30,16 +33,16 @@ const crumbs = [
 ];
 ---
 <Base title={`Pain clinics in ${name}`}
-      description={`${clinics.length} pain medicine clinics across ${cities.length} cities in ${name}. Ranked on objective, published criteria.`}
+      description={`${clinics.length} pain medicine clinics across ${zones.length} areas in ${name}. Ranked on objective, published criteria.`}
       jsonld={[breadcrumbLd(crumbs), itemListLd(clinics, `Pain clinics in ${name}`)]}>
   <div class="wrap">
     <Breadcrumbs items={crumbs} />
     <h1>Pain clinics in {name}</h1>
-    <p class="lede">{clinics.length} clinics across {cities.length} cities. Choose a city.</p>
+    <p class="lede">{clinics.length} clinics across {zones.length} areas. Choose an area.</p>
     <ul class="tile-grid">
-      {cities.map((c) => (
-        <li><a class="tile" href={`/pain-clinics/${state}/${c.slug}/`}>
-          <span class="label">{c.label}</span><span class="n">{c.count}</span>
+      {zones.map((z) => (
+        <li><a class="tile" href={`/pain-clinics/${state}/${z.urlSlug}/`}>
+          <span class="label">{z.label}</span><span class="n">{z.count}</span>
         </a></li>
       ))}
     </ul>

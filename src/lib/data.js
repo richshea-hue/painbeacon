@@ -21,6 +21,10 @@ export function slugify(...parts) {
 export const stateSlug = (s) => (s || '').toLowerCase();
 export const citySlug = (c) => slugify(c);
 
+// Strip a trailing ", NV" state suffix from a zone name to get a display label.
+const zoneLabelOf = (zoneName, fallbackCity) =>
+  zoneName ? zoneName.replace(/,\s*[A-Z]{2}\s*$/, '') : titleCase(fallbackCity);
+
 async function fetchFromSupabase(url, key) {
   const out = [];
   const pageSize = 1000;
@@ -62,14 +66,42 @@ export async function getClinics() {
 
   // Normalize + derive routing keys. Only LOCATION records with a city/state
   // are routable; drop the rest from the site (they stay in the DB).
-  _cache = rows
-    .filter((c) => c.city && c.state && c.name)
-    .map((c) => ({
-      ...c,
-      stateSlug: stateSlug(c.state),
-      citySlug: citySlug(c.city),
-      cityLabel: titleCase(c.city),
-    }));
+  const located = rows.filter((c) => c.city && c.state && c.name);
+
+  // Build a clean, state-scoped URL segment for each zone, guaranteed unique
+  // within its state, so URLs read /pain-clinics/nv/las-vegas/ (not the raw
+  // zone_slug, which repeats the state: las-vegas-nv). Deterministic ordering
+  // (sorted by zone_slug) keeps builds stable.
+  const zoneUrlBySlug = new Map();
+  const usedByState = new Map();
+  const uniqueZones = [
+    ...new Map(located.filter((c) => c.zone_slug).map((c) => [c.zone_slug, c])).values(),
+  ].sort((a, b) => a.zone_slug.localeCompare(b.zone_slug));
+  for (const c of uniqueZones) {
+    const st = stateSlug(c.state);
+    const base = slugify(zoneLabelOf(c.zone_name, c.city)) || 'area';
+    const used = usedByState.get(st) || new Set();
+    let seg = base;
+    let n = 2;
+    while (used.has(seg)) seg = `${base}-${n++}`;
+    used.add(seg);
+    usedByState.set(st, used);
+    zoneUrlBySlug.set(c.zone_slug, seg);
+  }
+
+  _cache = located.map((c) => ({
+    ...c,
+    stateSlug: stateSlug(c.state),
+    citySlug: citySlug(c.city),
+    cityLabel: titleCase(c.city),
+    // Zone fields (sourced from the clinics_public view).
+    zoneSlug: c.zone_slug || null,
+    zoneName: c.zone_name || null,
+    zoneLabel: zoneLabelOf(c.zone_name, c.city),
+    zoneUrlSlug: c.zone_slug ? zoneUrlBySlug.get(c.zone_slug) : null,
+    // A row is a primary (deduped) practice if it isn't folded into another NPI.
+    isPrimary: c.primary_npi == null || c.primary_npi === c.npi,
+  }));
   return _cache;
 }
 
