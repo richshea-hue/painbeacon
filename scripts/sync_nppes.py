@@ -175,7 +175,58 @@ def norm_addr(a):
 # ---------------------------------------------------------------------------
 # NPPES download.
 # ---------------------------------------------------------------------------
-SYNC_VERSION = 3  # bump on every change; logged at start so runs are unambiguous
+SYNC_VERSION = 4  # bump on every change; logged at start so runs are unambiguous
+
+
+# ---------------------------------------------------------------------------
+# v4: normalized field comparison. The DB stores display-friendly values
+# (title-cased names, formatted phones); the NPPES file is raw ALL-CAPS and
+# bare digits. Only a *normalized* difference counts as a real change — and
+# when text really changed, we write it title-cased to match DB conventions.
+# ---------------------------------------------------------------------------
+ACRONYMS = {"PC", "PLLC", "LLC", "LLP", "LTD", "INC", "PA", "PS", "SC", "MD",
+            "DO", "DPM", "II", "III", "IV", "USA", "LP", "PLC", "CRNA", "OB",
+            "GYN", "ENT", "DDS", "DMD", "APC", "P.C.", "L.L.C."}
+
+
+def smart_title(s):
+    out = []
+    for w in (s or "").split():
+        out.append(w.upper() if w.upper().strip(".,") in ACRONYMS else w.capitalize())
+    return " ".join(out)
+
+
+def n_text(s):
+    return re.sub(r"\s+", " ", (s or "").strip()).casefold()
+
+
+def n_digits(s):
+    return re.sub(r"\D", "", s or "")
+
+
+def n_date(s):
+    s = (s or "").strip()
+    m = re.match(r"^(\d{2})/(\d{2})/(\d{4})$", s)      # MM/DD/YYYY (NPPES)
+    if m:
+        return f"{m.group(3)}-{m.group(1)}-{m.group(2)}"
+    return s[:10]                                       # ISO from Postgres
+
+
+# field -> (normalizer for comparison, writer for the new value)
+FIELD_RULES = {
+    "phone": (n_digits, lambda v: v),
+    "fax": (n_digits, lambda v: v),
+    "authorized_official_phone": (n_digits, lambda v: v),
+    "postal_code": (lambda v: n_digits(v)[:5], lambda v: v),   # ZIP+4 churn isn't a change
+    "name": (n_text, smart_title),
+    "address_1": (n_text, smart_title),
+    "address_2": (n_text, smart_title),
+    "parent_organization": (n_text, smart_title),
+    "authorized_official_name": (n_text, smart_title),
+    "authorized_official_title": (n_text, smart_title),
+}
+# nppes_last_updated never *triggers* an update on its own; it rides along.
+DIFF_FIELDS = [f for f in UPDATABLE if f != "nppes_last_updated"]
 
 
 def find_monthly_zip_url():
@@ -357,6 +408,11 @@ def main():
     seen_in_file, seen_as_pain = set(), set()
     updates, inserts, moved = 0, 0, 0
     new_rows, scanned = [], 0
+    planned_updates = []                 # (npi, patch) — applied after the scan
+    changed_fields = Counter()           # which fields actually change (diagnostics)
+    diff_samples = []                    # a few example diffs for the summary
+    new_by_code = Counter()              # new clinics by primary taxonomy code
+    new_folded = 0                       # new NPIs that dedup into existing practices
     stamp = now_iso()
 
     for row in iter_nppes_rows(zip_path):
@@ -373,9 +429,21 @@ def main():
         if known:
             seen_as_pain.add(npi)
             cur = by_npi[npi]
-            patch = {k: rec[k] for k in UPDATABLE
-                     if (rec.get(k) or "") != (str(cur.get(k)) if cur.get(k) is not None else "")}
+            patch, diffs = {}, []
+            for k in DIFF_FIELDS:
+                norm, writer = FIELD_RULES.get(k, (n_text, lambda v: v))
+                if k == "nppes_last_updated":
+                    continue
+                newv, curv = rec.get(k) or "", "" if cur.get(k) is None else str(cur.get(k))
+                cmp_new = n_date(newv) if k == "nppes_last_updated" else norm(newv)
+                cmp_cur = n_date(curv) if k == "nppes_last_updated" else norm(curv)
+                if cmp_new != cmp_cur:
+                    patch[k] = writer(newv)
+                    diffs.append((k, curv[:40], newv[:40]))
             if patch:
+                changed_fields.update(k for k in patch)
+                if len(diff_samples) < 5:
+                    diff_samples.append((npi, cur.get("name", ""), diffs[:4]))
                 # Clinic moved? Recompute zone; flag if we can't place it.
                 if any(k in patch for k in ("city", "state", "postal_code")):
                     z = assign_zone(rec["state"], rec["postal_code"], rec["city"])
@@ -387,9 +455,10 @@ def main():
                         patch["zone_name"] = None
                         patch["sync_note"] = "moved — no zone match, assign manually"
                     moved += 1
+                patch["nppes_last_updated"] = rec.get("nppes_last_updated") or None
                 patch["nppes_active"] = True
                 patch["last_synced_at"] = stamp
-                patch_clinic(npi, patch)
+                planned_updates.append((npi, patch))
                 updates += 1
         else:
             # New pain clinic. Only insert the enumeration types the DB already uses.
@@ -404,7 +473,25 @@ def main():
                 slug = f"{slug}-{npi[-4:]}"
             taken_slugs.add(slug)
             z = assign_zone(rec["state"], rec["postal_code"], rec["city"])
+            new_by_code[rec["primary_taxonomy_code"]] += 1
+            if prim:
+                new_folded += 1
+            else:
+                # Register this new primary so later new NPIs at the same
+                # phone/address fold into IT instead of duplicating.
+                pz = (norm_phone(rec["phone"]), zip5(rec["postal_code"]))
+                if all(pz):
+                    phone_zip.setdefault(pz, int(npi))
+                az = (norm_addr(rec["address_1"]), zip5(rec["postal_code"]),
+                      rec["city"].strip().upper())
+                if all(az):
+                    addr_zip.setdefault(az, int(npi))
             new_rows.append({**rec,
+                             "name": smart_title(rec["name"]),
+                             "address_1": smart_title(rec["address_1"]),
+                             "address_2": smart_title(rec["address_2"]),
+                             "authorized_official_name": smart_title(rec["authorized_official_name"]),
+                             "parent_organization": smart_title(rec["parent_organization"]),
                              "npi": int(npi),
                              "slug": slug,
                              "primary_npi": int(prim) if prim else int(npi),
@@ -419,24 +506,49 @@ def main():
                              "last_synced_at": stamp})
             inserts += 1
 
-    insert_clinics(new_rows)
+    # ---- Safety brake, then apply -----------------------------------------
+    # If the plan wants to rewrite a large share of the DB, that's almost
+    # certainly a formatting/parsing bug, not real-world change. Abort a live
+    # run before writing anything (a dry run still reports everything).
+    update_cap = max(150, len(existing) // 50)   # ~2% of rows
+    brake = ""
+    if updates > update_cap and not DRY_RUN:
+        brake = (f"SAFETY BRAKE: {updates} planned updates exceeds the cap of {update_cap} "
+                 f"(~2% of {len(existing)} rows). Nothing was written. Run a dry run, inspect "
+                 f"the field breakdown below, and fix before going live.")
+    else:
+        for npi, patch in planned_updates:
+            patch_clinic(npi, patch)
+        insert_clinics(new_rows)
 
     # ---- Flags: vanished + taxonomy-changed -------------------------------
     deactivated, tax_changed = 0, 0
     for npi, cur in by_npi.items():
         if npi not in seen_in_file and cur.get("nppes_active") is not False:
-            patch_clinic(npi, {"nppes_active": False, "last_synced_at": stamp,
-                               "sync_note": "NPI absent from NPPES monthly file — likely deactivated; review"})
+            if not brake:
+                patch_clinic(npi, {"nppes_active": False, "last_synced_at": stamp,
+                                   "sync_note": "NPI absent from NPPES monthly file — likely deactivated; review"})
             deactivated += 1
         elif npi in seen_in_file and npi not in seen_as_pain:
-            patch_clinic(npi, {"last_synced_at": stamp,
-                               "sync_note": "still in NPPES but no pain taxonomy this month — review"})
+            if not brake:
+                patch_clinic(npi, {"last_synced_at": stamp,
+                                   "sync_note": "still in NPPES but no pain taxonomy this month — review"})
             tax_changed += 1
 
     # ---- Summary + rebuild --------------------------------------------------
-    summary = (f"NPPES sync {'(DRY RUN) ' if DRY_RUN else ''}complete — scanned {scanned:,} rows.\n"
-               f"  updated: {updates} (of which moved: {moved})\n"
-               f"  new clinics inserted: {inserts}\n"
+    fields_txt = ", ".join(f"{k}×{v}" for k, v in changed_fields.most_common(10)) or "—"
+    codes_txt = ", ".join(f"{k}×{v}" for k, v in new_by_code.most_common()) or "—"
+    samples_txt = "\n".join(
+        f"    {npi} {name[:38]}: " + "; ".join(f"{k}: '{o}' -> '{n}'" for k, o, n in d)
+        for npi, name, d in diff_samples) or "    —"
+    summary = (f"NPPES sync v{SYNC_VERSION} {'(DRY RUN) ' if DRY_RUN else ''}complete — scanned {scanned:,} rows.\n"
+               + (brake + "\n" if brake else "")
+               + f"  updated: {updates} (of which moved: {moved})  [live cap: {update_cap}]\n"
+               f"    fields changing: {fields_txt}\n"
+               f"    sample diffs:\n{samples_txt}\n"
+               f"  new clinics: {inserts} ({new_folded} fold into existing practices as duplicates;"
+               f" {inserts - new_folded} brand-new pages)\n"
+               f"    by taxonomy code: {codes_txt}\n"
                f"  flagged deactivated: {deactivated}\n"
                f"  flagged taxonomy-changed: {tax_changed}\n"
                f"Review notes in Supabase: select * from clinics where sync_note is not null;")
@@ -445,6 +557,8 @@ def main():
     if gh:
         with open(gh, "a") as f:
             f.write("```\n" + summary + "\n```\n")
+    if brake:
+        sys.exit(1)
 
     changed = updates + inserts + deactivated
     if changed and DEPLOY_HOOK and not DRY_RUN:
