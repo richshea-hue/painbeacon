@@ -175,24 +175,54 @@ def norm_addr(a):
 # ---------------------------------------------------------------------------
 # NPPES download.
 # ---------------------------------------------------------------------------
+SYNC_VERSION = 3  # bump on every change; logged at start so runs are unambiguous
+
+
 def find_monthly_zip_url():
     log(f"Fetching NPPES files page: {NPPES_FILES_PAGE}")
-    html = S.get(NPPES_FILES_PAGE, timeout=60).text
     # Full monthly replacement file. NPPES retired the V1 format on 2026-03-03,
     # so the monthly file is now e.g. NPPES_Data_Dissemination_April_2026_V2.zip.
-    # Keep any "NPPES_Data_Dissemination" zip that is not a weekly incremental
-    # or a deactivation report.
-    links = re.findall(r'href="([^"]*NPPES_Data_Dissemination[^"]*\.zip)"', html, re.I)
+    links = []
+    try:
+        r = S.get(NPPES_FILES_PAGE, timeout=60)
+        log(f"  page HTTP {r.status_code}, {len(r.text)} bytes")
+        links = re.findall(r'href="([^"]*NPPES_Data_Dissemination[^"]*\.zip)"', r.text, re.I)
+        log(f"  found {len(links)} NPPES_Data_Dissemination links: {links[:6]}")
+    except Exception as e:
+        log(f"  page fetch failed: {e}")
     candidates = [u for u in links
                   if "weekly" not in u.lower() and "deactivat" not in u.lower()]
-    if not candidates:
-        sys.exit("Could not find the NPPES monthly zip link — the files page layout may have changed.")
-    url = candidates[0]
-    if url.startswith("./"):
-        url = "https://download.cms.gov/nppes/" + url[2:]
-    elif not url.startswith("http"):
-        url = "https://download.cms.gov/nppes/" + url.lstrip("/")
-    return url
+    if candidates:
+        url = candidates[0]
+        if url.startswith("./"):
+            url = "https://download.cms.gov/nppes/" + url[2:]
+        elif not url.startswith("http"):
+            url = "https://download.cms.gov/nppes/" + url.lstrip("/")
+        return url
+
+    # Fallback: the monthly file name is predictable — probe this month and the
+    # few before it until one exists.
+    log("  page scrape found no monthly link — probing predictable URLs instead")
+    months = ["January", "February", "March", "April", "May", "June",
+              "July", "August", "September", "October", "November", "December"]
+    now = datetime.now(timezone.utc)
+    y, m = now.year, now.month - 1  # 0-based index into months
+    for _ in range(4):  # this month, then up to 3 back
+        guess = f"https://download.cms.gov/nppes/NPPES_Data_Dissemination_{months[m]}_{y}_V2.zip"
+        try:
+            pr = S.get(guess, stream=True, timeout=60)
+            ok = pr.status_code < 300
+            pr.close()
+            log(f"  probe {guess} -> HTTP {pr.status_code}")
+            if ok:
+                return guess
+        except Exception as e:
+            log(f"  probe {guess} -> {e}")
+        m -= 1
+        if m < 0:
+            m, y = 11, y - 1
+    sys.exit("Could not locate the NPPES monthly V2 zip by scrape or by probing — check "
+             "https://download.cms.gov/nppes/NPI_Files.html manually.")
 
 
 def download(url):
@@ -277,6 +307,7 @@ def insert_clinics(rows):
 # Main sync.
 # ---------------------------------------------------------------------------
 def main():
+    log(f"sync_nppes.py version {SYNC_VERSION}")
     if not SUPABASE_URL or not SERVICE_KEY:
         sys.exit("SUPABASE_URL and SUPABASE_SERVICE_KEY must be set.")
     if DRY_RUN:
