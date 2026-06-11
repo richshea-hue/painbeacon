@@ -157,6 +157,7 @@ def parse_row(row):
         "parent_organization": (row.get("Parent Organization LBN", "") or "").strip(),
         "organizational_subpart": (row.get("Is Organization Subpart", "") or "").strip(),
         "nppes_last_updated": (row.get("Last Update Date", "") or "").strip(),
+        "enumeration_date": (row.get("Provider Enumeration Date", "") or "").strip() or None,
     }
 
 
@@ -180,7 +181,7 @@ def norm_addr(a):
 # ---------------------------------------------------------------------------
 # NPPES download.
 # ---------------------------------------------------------------------------
-SYNC_VERSION = 5  # bump on every change; logged at start so runs are unambiguous
+SYNC_VERSION = 6  # bump on every change; logged at start so runs are unambiguous
 
 
 # ---------------------------------------------------------------------------
@@ -476,6 +477,9 @@ def main():
                         patch["zone_name"] = None
                         patch["sync_note"] = "moved — no zone match, assign manually"
                     moved += 1
+                if "authorized_official_name" in patch:
+                    note = "authorized official changed — possible ownership change"
+                    patch["sync_note"] = (patch["sync_note"] + "; " + note) if patch.get("sync_note") else note
                 patch["nppes_last_updated"] = rec.get("nppes_last_updated") or None
                 patch["nppes_active"] = True
                 patch["last_synced_at"] = stamp
