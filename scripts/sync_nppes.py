@@ -130,6 +130,11 @@ def parse_row(row):
     city = (row.get("Provider Business Practice Location Address City Name", "") or "").strip()
     state = (row.get("Provider Business Practice Location Address State Name", "") or "").strip()
     primary_code = next((c for c, p in codes if p), codes[0][0])
+    all_codes = []
+    for i in range(1, 16):
+        c = (row.get(f"Healthcare Provider Taxonomy Code_{i}", "") or "").strip()
+        if c and c not in all_codes:
+            all_codes.append(c)
     return {
         "npi": (row.get("NPI", "") or "").strip(),
         "enumeration_type": "NPI-2" if is_org else "NPI-1",
@@ -144,7 +149,7 @@ def parse_row(row):
         "fax": (row.get("Provider Business Practice Location Address Fax Number", "") or "").strip(),
         "primary_taxonomy_code": primary_code,
         "primary_taxonomy_desc": CODE_DESC.get(primary_code, ""),
-        "all_taxonomy_codes": "|".join(c for c, _ in codes),
+        "all_taxonomy_codes": "|".join(all_codes),
         "provider_credentials": credentials,
         "authorized_official_name": ao,
         "authorized_official_title": ao_title,
@@ -175,7 +180,7 @@ def norm_addr(a):
 # ---------------------------------------------------------------------------
 # NPPES download.
 # ---------------------------------------------------------------------------
-SYNC_VERSION = 4  # bump on every change; logged at start so runs are unambiguous
+SYNC_VERSION = 5  # bump on every change; logged at start so runs are unambiguous
 
 
 # ---------------------------------------------------------------------------
@@ -212,12 +217,24 @@ def n_date(s):
     return s[:10]                                       # ISO from Postgres
 
 
+def n_subpart(s):
+    # DB stores YES/NO (from the API); the bulk file uses Y/N. Same fact.
+    return (s or "").strip().upper()[:1]
+
+
+def n_codeset(s):
+    # all_taxonomy_codes: compare as an order-insensitive set of codes.
+    return frozenset(c for c in (s or "").split("|") if c.strip())
+
+
 # field -> (normalizer for comparison, writer for the new value)
 FIELD_RULES = {
     "phone": (n_digits, lambda v: v),
     "fax": (n_digits, lambda v: v),
     "authorized_official_phone": (n_digits, lambda v: v),
     "postal_code": (lambda v: n_digits(v)[:5], lambda v: v),   # ZIP+4 churn isn't a change
+    "organizational_subpart": (n_subpart, lambda v: v),
+    "all_taxonomy_codes": (n_codeset, lambda v: v),
     "name": (n_text, smart_title),
     "address_1": (n_text, smart_title),
     "address_2": (n_text, smart_title),
@@ -226,7 +243,11 @@ FIELD_RULES = {
     "authorized_official_title": (n_text, smart_title),
 }
 # nppes_last_updated never *triggers* an update on its own; it rides along.
-DIFF_FIELDS = [f for f in UPDATABLE if f != "nppes_last_updated"]
+# primary_taxonomy_code/desc are NEVER synced on existing rows: the DB stores
+# the clinic's true primary specialty (with descriptions the bulk file doesn't
+# carry); the sync only sets them when inserting brand-new clinics.
+DIFF_FIELDS = [f for f in UPDATABLE
+               if f not in ("nppes_last_updated", "primary_taxonomy_code", "primary_taxonomy_desc")]
 
 
 def find_monthly_zip_url():
