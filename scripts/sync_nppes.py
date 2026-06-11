@@ -178,11 +178,13 @@ def norm_addr(a):
 def find_monthly_zip_url():
     log(f"Fetching NPPES files page: {NPPES_FILES_PAGE}")
     html = S.get(NPPES_FILES_PAGE, timeout=60).text
-    # Full monthly replacement file, e.g. NPPES_Data_Dissemination_June_2026.zip
-    # Exclude weekly incrementals, deactivation files, and the V.2 variant.
+    # Full monthly replacement file. NPPES retired the V1 format on 2026-03-03,
+    # so the monthly file is now e.g. NPPES_Data_Dissemination_April_2026_V2.zip.
+    # Keep any "NPPES_Data_Dissemination" zip that is not a weekly incremental
+    # or a deactivation report.
     links = re.findall(r'href="([^"]*NPPES_Data_Dissemination[^"]*\.zip)"', html, re.I)
     candidates = [u for u in links
-                  if "weekly" not in u.lower() and "deactivat" not in u.lower() and "v.2" not in u.lower() and "v2" not in u.lower()]
+                  if "weekly" not in u.lower() and "deactivat" not in u.lower()]
     if not candidates:
         sys.exit("Could not find the NPPES monthly zip link — the files page layout may have changed.")
     url = candidates[0]
@@ -213,8 +215,11 @@ def download(url):
 def iter_nppes_rows(zip_path):
     """Stream the main npidata CSV out of the zip without extracting."""
     zf = zipfile.ZipFile(zip_path)
+    # Main data file is npidata_pfile_YYYYMMDD-YYYYMMDD.csv (V2 may add a
+    # suffix) — match any npidata CSV that isn't the header-row file, and
+    # skip the three reference files (othername/pl_pfile/endpoint).
     member = next((n for n in zf.namelist()
-                   if n.lower().startswith("npidata_pfile") and n.lower().endswith(".csv")
+                   if "npidata" in n.lower() and n.lower().endswith(".csv")
                    and "fileheader" not in n.lower()), None)
     if not member:
         sys.exit(f"npidata_pfile CSV not found in zip. Contents: {zf.namelist()[:10]}")
