@@ -1,0 +1,36 @@
+name: NPPES monthly sync
+
+on:
+  schedule:
+    # 13:17 UTC on the 10th of every month — NPPES publishes the new monthly
+    # file early in the month, so the 10th is safely after it lands.
+    - cron: "17 13 10 * *"
+  workflow_dispatch:
+    # Adds a "Run workflow" button in the Actions tab so you can run it on
+    # demand (use this for the first test).
+    inputs:
+      dry_run:
+        description: "Dry run (plan only, write nothing)"
+        type: boolean
+        default: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install requests
+
+      - name: Run NPPES sync
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          CLOUDFLARE_DEPLOY_HOOK: ${{ secrets.CLOUDFLARE_DEPLOY_HOOK }}
+          DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
+        run: python scripts/sync_nppes.py
