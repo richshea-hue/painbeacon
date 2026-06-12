@@ -5,20 +5,39 @@ import { getClinics, groupBy, stateName } from '../lib/data.js';
 import { websiteLd } from '../lib/schema.js';
 
 const clinics = await getClinics();
-const byState = groupBy(clinics, (c) => c.state);
+// Count and group PRIMARY practices only, so duplicates folded by dedup never
+// inflate the homepage numbers or the search counts.
+const primaries = clinics.filter((c) => c.isPrimary);
+const byState = groupBy(primaries, (c) => c.state);
 const states = [...byState.keys()].sort().map((s) => ({
   abbr: s, name: stateName(s), count: byState.get(s).length,
 }));
 
-// Compact city index for client-side search (city pages are the local workhorse).
-const cityIndex = [...groupBy(clinics, (c) => `${c.state}/${c.citySlug}`).entries()]
-  .map(([k, list]) => {
-    const c = list[0];
-    return { label: `${c.cityLabel}, ${c.state}`, href: `/pain-clinics/${c.stateSlug}/${c.citySlug}/`, n: list.length };
-  })
-  .sort((a, b) => b.n - a.n);
+// Search index: every CITY stays searchable (that's what people type), but
+// each entry links to the ZONE page that contains it — city pages no longer
+// exist after the zone migration. Cities split across zones link to the zone
+// holding most of their clinics. Zone labels are indexed too, so searching
+// either "Providence" or "Logan Area" works.
+const routable = primaries.filter((c) => c.zoneUrlSlug);
+const entries = new Map();
+for (const [, list] of groupBy(routable, (c) => `${c.state}/${c.citySlug}`)) {
+  const zoneCount = new Map();
+  for (const c of list) zoneCount.set(c.zoneUrlSlug, (zoneCount.get(c.zoneUrlSlug) || 0) + 1);
+  const topZone = [...zoneCount.entries()].sort((a, b) => b[1] - a[1])[0][0];
+  const c = list[0];
+  const label = `${c.cityLabel}, ${c.state}`;
+  entries.set(label, { label, href: `/pain-clinics/${c.stateSlug}/${topZone}/`, n: list.length });
+}
+for (const [, list] of groupBy(routable, (c) => c.zoneSlug)) {
+  const c = list[0];
+  const label = `${c.zoneLabel}, ${c.state}`;
+  if (!entries.has(label)) {
+    entries.set(label, { label, href: `/pain-clinics/${c.stateSlug}/${c.zoneUrlSlug}/`, n: list.length });
+  }
+}
+const cityIndex = [...entries.values()].sort((a, b) => b.n - a.n);
 
-const total = clinics.length;
+const total = primaries.length;
 ---
 <Base description={SITE.description} jsonld={websiteLd()}>
   <section class="hero-dark">
@@ -107,7 +126,7 @@ const total = clinics.length;
     q.addEventListener('input', () => {
       const v = q.value.trim().toLowerCase();
       if (!v) { out.innerHTML = ''; return; }
-      render(idx.filter((c) => c.label.toLowerCase().includes(v)));
+      render(idx.filter((c) => (c.label || '').toLowerCase().includes(v)));
     });
   </script>
 </Base>
