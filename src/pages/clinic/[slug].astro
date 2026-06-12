@@ -25,7 +25,7 @@ const crumbs = [
   { name: 'Home', href: '/' },
   { name: 'States', href: '/pain-clinics/' },
   { name: stateName(c.state), href: `/pain-clinics/${c.stateSlug}/` },
-  { name: c.cityLabel, href: `/pain-clinics/${c.stateSlug}/${c.citySlug}/` },
+  ...(c.zoneUrlSlug ? [{ name: c.zoneLabel, href: `/pain-clinics/${c.stateSlug}/${c.zoneUrlSlug}/` }] : []),
   { name },
 ];
 const mapHref = c.google_maps_uri ||
