@@ -21,25 +21,42 @@ const cityIndex = [...groupBy(clinics, (c) => `${c.state}/${c.citySlug}`).entrie
 const total = clinics.length;
 ---
 <Base description={SITE.description} jsonld={websiteLd()}>
-  <section class="hero">
-    <div class="wrap narrow">
-      <p class="eyebrow">Independent pain medicine directory</p>
-      <h1>Find the right pain clinic near you.</h1>
-      <p class="lede">
-        {total.toLocaleString()} pain medicine clinics, ranked on objective,
-        published criteria — board certification, interventional capability,
-        verified patient reviews, and years in practice.
-      </p>
+  <section class="hero-dark">
+    <img
+      class="hero-art"
+      src="/brand/hero-spine-1x.jpg"
+      srcset="/brand/hero-spine-1x.jpg 1x, /brand/hero-spine-2x.jpg 2x"
+      alt=""
+      aria-hidden="true"
+      fetchpriority="high"
+      decoding="async"
+    />
+    <div class="wrap">
+      <div class="inner">
+        <p class="eyebrow">{total.toLocaleString()} pain clinics · {states.length} states</p>
+        <h1>Find the right <span class="hl">pain clinic</span> near you.</h1>
+        <p class="lede">
+          Board-certified pain specialists, ranked on objective, published
+          criteria — board certification, interventional capability, and
+          verified patient reviews. <strong>Not on who pays.</strong>
+        </p>
 
-      <div class="search">
-        <input id="q" type="text" placeholder="Search a city — e.g. Providence, Austin…"
-               autocomplete="off" aria-label="Search by city" />
+        <div class="search">
+          <input id="q" type="text" placeholder="Search a city — e.g. Providence, Austin…"
+                 autocomplete="off" aria-label="Search by city" />
+        </div>
+        <ul id="results" class="tile-grid" style="margin-top:0.75rem"></ul>
       </div>
-      <ul id="results" class="tile-grid" style="margin-top:0.75rem"></ul>
+
+      <div class="hero-trust">
+        <span><b>No pay-to-rank</b> — independently ranked</span>
+        <span>Built on the <b>federal NPI registry</b></span>
+        <span><b>Verified</b> reviews &amp; credentials</span>
+      </div>
     </div>
   </section>
 
-  <section class="wrap narrow" style="padding:0 0 0.5rem;">
+  <section class="wrap narrow" style="padding:2rem 0 0.5rem;">
     <p class="lede" style="margin:0 0 .7rem;">Not sure where to start? Answer two quick questions and we’ll point you to top-rated clinics near you.</p>
     <button class="btn" type="button" data-open-leadchat>Find a pain clinic for me</button>
   </section>
@@ -65,6 +82,16 @@ const total = clinics.length;
       in full, and our <a href="/ownership-disclosure/">ownership disclosure</a>
       explains exactly who is behind this directory.
     </p>
+  </section>
+
+  <section class="cta-band">
+    <div class="wrap">
+      <div class="grow">
+        <h2>Run a pain practice? <span class="hl">You're already listed.</span></h2>
+        <p>Claim your free profile to verify your details, add services, and get patient leads.</p>
+      </div>
+      <a class="btn" href="/for-practices/">Claim your listing — free</a>
+    </div>
   </section>
 
   <script type="application/json" id="city-index" set:html={JSON.stringify(cityIndex)}></script>

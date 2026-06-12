@@ -44,8 +44,8 @@ body {
 .narrow { max-width: 44rem; }
 
 h1, h2, h3, h4 {
-  font-family: var(--serif);
-  font-weight: 500;
+  font-family: 'Montserrat', var(--sans);
+  font-weight: 700;
   line-height: 1.12;
   letter-spacing: -0.01em;
   color: var(--ink);
@@ -74,11 +74,12 @@ p { margin: 0 0 1rem; }
 
 /* ---- header / nav ---- */
 .site-head {
-  border-bottom: 1px solid var(--line);
-  background: color-mix(in srgb, var(--paper) 85%, transparent);
+  border-bottom: 1px solid rgba(95, 216, 200, 0.14);
+  background: color-mix(in srgb, #0f2e3a 92%, transparent);
   backdrop-filter: saturate(1.2) blur(6px);
   position: sticky; top: 0; z-index: 20;
 }
+.site-head .logo-img { height: 38px; width: auto; display: block; }
 .site-head .bar {
   display: flex; align-items: center; justify-content: space-between;
   height: 64px; gap: 1.5rem;
@@ -90,14 +91,17 @@ p { margin: 0 0 1rem; }
 .brand .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--teal);
   display: inline-block; transform: translateY(-2px); }
 .nav { display: flex; gap: 1.4rem; font-size: 0.92rem; }
-.nav a { color: var(--ink-soft); }
-.nav a:hover { color: var(--teal-deep); }
+.nav a { color: #cfe0de; font-weight: 500; }
+.nav a:hover { color: #ffffff; text-decoration: none; }
 
 /* ---- footer ---- */
-.site-foot { border-top: 1px solid var(--line); margin-top: 4rem; padding: 2.5rem 0 3rem;
-  color: var(--ink-faint); font-size: 0.88rem; background: var(--paper-2); }
+.site-foot { border-top: 1px solid rgba(95, 216, 200, 0.12); margin-top: 4rem; padding: 2.5rem 0 3rem;
+  color: #9fb4b8; font-size: 0.88rem; background: #0a222c; }
 .site-foot .cols { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 2rem; }
-.site-foot a { color: var(--ink-soft); }
+.site-foot a { color: #cfe0de; }
+.site-foot strong { color: #f0f4f3; }
+.site-foot .logo-img { height: 30px; width: auto; display: block; margin-bottom: 0.6rem; opacity: 0.95; }
+.site-foot .muted { color: #7c939a; }
 @media (max-width: 640px) { .site-foot .cols { grid-template-columns: 1fr; gap: 1.25rem; } }
 
 /* ---- hero ---- */
@@ -161,9 +165,9 @@ p { margin: 0 0 1rem; }
 .facts li { background: var(--card); padding: 0.9rem 1.1rem; }
 .facts .k { font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); }
 .facts .v { font-size: 1rem; color: var(--ink); margin-top: 0.15rem; }
-.btn { display: inline-block; background: var(--teal-deep); color: #fff; padding: 0.6rem 1.1rem;
-  border-radius: var(--radius); font-size: 0.92rem; font-weight: 500; }
-.btn:hover { background: var(--teal); color: #fff; text-decoration: none; }
+.btn { display: inline-block; background: #23b3a3; color: #07222e; padding: 0.65rem 1.2rem;
+  border-radius: 10px; font-size: 0.92rem; font-weight: 700; }
+.btn:hover { background: #2fd4bf; color: #07222e; text-decoration: none; }
 .btn.ghost { background: transparent; color: var(--teal-deep); border: 1px solid color-mix(in srgb, var(--teal) 35%, var(--line)); }
 
 /* ---- disclosure / notices ---- */
@@ -237,13 +241,66 @@ hr.rule { border: 0; border-top: 1px solid var(--line); margin: 2.5rem 0; }
 .pb-pin svg { display: block; filter: drop-shadow(0 1px 1px rgba(15,46,58,0.35)); }
 
 /* ---- site-wide trust bar ---- */
-.trust-bar { background: var(--paper-2); border-bottom: 1px solid var(--line);
-  font-size: 0.8rem; color: var(--ink-soft); }
+.trust-bar { background: #0a2530; border-bottom: 1px solid rgba(95, 216, 200, 0.12);
+  font-size: 0.8rem; color: #9fb4b8; }
 .trust-bar .wrap { display: flex; flex-wrap: wrap; justify-content: center;
   align-items: center; gap: 0.55rem; padding-top: 0.5rem; padding-bottom: 0.5rem; }
-.trust-bar a { color: var(--teal-deep); }
-.trust-bar .sep { color: var(--ink-faint); }
+.trust-bar a { color: #5fd8c8; }
+.trust-bar .sep { color: #3d5560; }
 @media (max-width: 560px) {
   .trust-bar .sep { display: none; }
   .trust-bar .wrap { gap: 0.1rem 1rem; }
 }
+
+
+/* ============================================================
+   Dark marketing shell — flyer-matched hero (homepage) + CTA band.
+   Interior data pages keep the light editorial system above.
+   ============================================================ */
+.hero-dark {
+  position: relative; overflow: hidden; color: var(--paper);
+  background: radial-gradient(120% 140% at 85% 10%, #15414e 0%, #0f2e3a 52%, #07222e 100%);
+}
+.hero-dark .hero-art {
+  position: absolute; top: 0; right: 0; height: 100%; width: auto;
+  opacity: 0.92; pointer-events: none; user-select: none;
+  -webkit-mask-image: linear-gradient(to left, #000 58%, transparent 97%);
+          mask-image: linear-gradient(to left, #000 58%, transparent 97%);
+}
+.hero-dark .inner { position: relative; z-index: 2; padding: 3.75rem 0 2.75rem; max-width: 42rem; }
+.hero-dark .eyebrow { color: #5fd8c8; }
+.hero-dark h1 { color: #ffffff; font-weight: 800; letter-spacing: -0.015em; }
+.hero-dark h1 .hl { color: #2fd4bf; }
+.hero-dark .lede { color: #cfe0de; }
+.hero-dark .lede strong { color: #ffffff; }
+.hero-dark .search input {
+  border-color: transparent; box-shadow: 0 6px 24px -10px rgba(0, 0, 0, 0.55);
+}
+.hero-dark .search input:focus { outline: 2px solid #2fd4bf; }
+/* live search results on the dark surface */
+.hero-dark .tile { background: rgba(247, 244, 237, 0.06); border-color: rgba(247, 244, 237, 0.18); }
+.hero-dark .tile:hover { border-color: #2fd4bf; }
+.hero-dark .tile .label { color: var(--paper); }
+.hero-dark .tile .n { color: #9fb4b8; }
+/* trust row inside the hero bottom */
+.hero-dark .hero-trust {
+  position: relative; z-index: 2; display: flex; flex-wrap: wrap; gap: 0.5rem 1.75rem;
+  padding: 0.9rem 0 1.4rem; border-top: 1px solid rgba(247, 244, 237, 0.14);
+  font-size: 0.84rem; color: #cfe0de;
+}
+.hero-dark .hero-trust b { color: #ffffff; font-weight: 600; }
+@media (max-width: 980px) { .hero-dark .hero-art { opacity: 0.55; right: -90px; } }
+@media (max-width: 640px) {
+  .hero-dark .hero-art {
+    opacity: 0.42; right: -130px; height: 108%;
+    -webkit-mask-image: linear-gradient(to left, #000 40%, transparent 92%);
+            mask-image: linear-gradient(to left, #000 40%, transparent 92%);
+  }
+}
+
+.cta-band { background: #0f2e3a; color: var(--paper); margin-top: 3rem; }
+.cta-band .wrap { display: flex; align-items: center; flex-wrap: wrap; gap: 1.25rem; padding-top: 2rem; padding-bottom: 2rem; }
+.cta-band .grow { flex: 1 1 20rem; }
+.cta-band h2 { color: #ffffff; margin: 0; font-size: clamp(1.3rem, 2.6vw, 1.7rem); }
+.cta-band h2 .hl { color: #2fd4bf; }
+.cta-band p { color: #cfe0de; margin: 0.3rem 0 0; font-size: 0.95rem; }
