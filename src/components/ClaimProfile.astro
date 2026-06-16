@@ -45,6 +45,14 @@ const { npi = '', slug = '', clinicName = 'this practice' } = Astro.props;
         <input class="claim-in" data-f="phone" type="tel" autocomplete="tel" />
       </label>
     </div>
+    <label class="claim-web">
+      <span class="claim-web-head">Your website
+        <span class="claim-tip" tabindex="0" aria-label="How this helps you">ⓘ
+          <span class="claim-tip-pop">Add your website and your verified profile shows a direct, search-engine-followed link to your site — a quality backlink that helps your own SEO. <strong>Free for verified clinics for a limited time.</strong></span>
+        </span>
+      </span>
+      <input class="claim-in" data-f="website" type="url" inputmode="url" autocomplete="url" placeholder="https://yourclinic.com" />
+    </label>
     <label>What are you interested in?
       <select class="claim-in" data-f="interest">
         <option value="Claim &amp; verify (free)">Claim &amp; verify my listing (free)</option>
@@ -89,6 +97,19 @@ const { npi = '', slug = '', clinicName = 'this practice' } = Astro.props;
   .claim-submit { align-self:flex-start; }
   .claim-fine { font-size:.72rem; color:var(--ink-faint,#7c8a87); margin:.2rem 0 0; line-height:1.45; }
   .claim-done strong { font-size:1.02rem; }
+  .claim-web { flex:1 1 100%; border:1.5px solid var(--teal,#0e6e62); border-radius:11px;
+    padding:.6rem .7rem; background:color-mix(in srgb, var(--teal,#0e6e62) 6%, var(--card,#fff)); }
+  .claim-web-head { display:flex; align-items:center; gap:.35rem; font-weight:600; color:var(--teal-deep,#0a4f46); }
+  .claim-web .claim-in { margin-top:.35rem; background:var(--card,#fff); }
+  .claim-tip { position:relative; display:inline-flex; align-items:center; justify-content:center;
+    width:16px; height:16px; border-radius:50%; font-size:.72rem; cursor:help;
+    background:var(--teal,#0e6e62); color:#fff; font-style:normal; }
+  .claim-tip-pop { position:absolute; left:50%; bottom:135%; transform:translateX(-50%);
+    width:240px; padding:.55rem .65rem; border-radius:9px; background:var(--ink,#1c2b2a); color:#fff;
+    font-size:.76rem; font-weight:400; line-height:1.45; box-shadow:0 6px 20px rgba(0,0,0,.22);
+    opacity:0; visibility:hidden; transition:opacity .14s; z-index:5; }
+  .claim-tip-pop strong { color:var(--teal-bright,#5fd0c2); }
+  .claim-tip:hover .claim-tip-pop, .claim-tip:focus .claim-tip-pop { opacity:1; visibility:visible; }
   .claim-hp { position:absolute; left:-9999px; width:1px; height:1px; opacity:0; }
   .claim-flash { animation: claimFlash 2.4s ease-out 1; }
   @keyframes claimFlash {
@@ -130,6 +151,7 @@ const { npi = '', slug = '', clinicName = 'this practice' } = Astro.props;
     } catch (e) {}
 
     function get(f) { var el = root.querySelector('[data-f="' + f + '"]'); return el ? el.value.trim() : ''; }
+    function normWebsite(v) { if (!v) return ''; v = v.trim(); if (!/^https?:\/\//i.test(v)) v = 'https://' + v; return /\.[a-z]{2,}/i.test(v) ? v : ''; }
 
     root.querySelector('.claim-submit').addEventListener('click', function () {
       if (root.querySelector('.claim-hp').value) return; // honeypot: bot — drop silently
@@ -146,6 +168,7 @@ const { npi = '', slug = '', clinicName = 'this practice' } = Astro.props;
         work_email: email,
         phone: get('phone'),
         interest: get('interest'),
+        website: normWebsite(get('website')),
         message: get('message'),
         source_page: location.pathname + location.search,
         user_agent: navigator.userAgent,

@@ -93,7 +93,9 @@ const providers = Array.isArray(c.enhanced_providers) ? c.enhanced_providers : [
           <strong>{addr || 'Address on file'}</strong><br />
           {c.cityLabel}, {c.state} {(c.postal_code || '').slice(0, 5)}<br />
           {c.phone && <>{c.phone}<br /></>}
-          {websiteHost && <span class="muted" style="font-size:0.9rem;">{websiteHost}</span>}
+          {websiteHost && (isVerified
+            ? <a class="verified-site" href={c.website} rel="noopener" target="_blank">{websiteHost} ↗</a>
+            : <span class="muted" style="font-size:0.9rem;">{websiteHost}</span>)}
         </p>
       </div>
       <div class="rating">
@@ -110,13 +112,16 @@ const providers = Array.isArray(c.enhanced_providers) ? c.enhanced_providers : [
       {isEnhanced && c.booking_url && (
         <a class="btn" href={c.booking_url} rel="noopener" target="_blank">Book / Contact</a>
       )}
-      {c.website && SITE.linkClinicWebsites && (
-        <a class="btn" href={c.website} rel="nofollow noopener ugc" target="_blank">Visit website</a>
+      {c.website && isVerified && (
+        <a class="btn" href={c.website} rel="noopener" target="_blank">Visit website</a>
       )}
       <a class="btn ghost" href={mapHref} rel="nofollow noopener" target="_blank">Get directions</a>
       {c.phone && <a class="btn ghost" href={`tel:${c.phone.replace(/[^0-9+]/g, '')}`}>Call</a>}
       <a class="btn ghost" href={googleSearchHref} rel="nofollow noopener" target="_blank">Find on Google</a>
     </div>
+    {isVerified && c.website && (
+      <p class="site-perk">✓ Verified website link · <span>free for verified clinics, limited time</span></p>
+    )}
 
     {isEnhanced && (
       <section class="enhanced">
@@ -181,3 +186,10 @@ const providers = Array.isArray(c.enhanced_providers) ? c.enhanced_providers : [
     </p>
   </div>
 </Base>
+
+<style>
+  .verified-site { color:var(--teal-deep,#0a4f46); font-size:0.9rem; font-weight:600; text-decoration:none; }
+  .verified-site:hover { text-decoration:underline; }
+  .site-perk { margin:-0.6rem 0 1rem; font-size:0.8rem; font-weight:600; color:var(--teal-deep,#0a4f46); }
+  .site-perk span { font-weight:400; color:var(--ink-faint,#7c8a87); }
+</style>
