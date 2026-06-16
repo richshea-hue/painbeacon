@@ -111,6 +111,12 @@ const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
     .item .meta { color: var(--muted); font-size: 13px; margin-top: 3px; word-break: break-word; }
     .item .meta a { color: var(--teal); }
     .tag { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; background: var(--panel-2); color: var(--muted); margin-right: 6px; text-transform: uppercase; letter-spacing: .4px; }
+    .claim-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .btn-approve { background:var(--teal,#0e6e62); color:#fff; border:0; border-radius:7px; padding:7px 12px; font-size:13px; font-weight:600; cursor:pointer; }
+    .btn-approve:hover { filter:brightness(1.08); }  .btn-approve:disabled { opacity:.6; cursor:default; }
+    .btn-reject { background:transparent; color:#c2603f; border:1px solid #c2603f55; border-radius:7px; padding:7px 12px; font-size:13px; font-weight:600; cursor:pointer; }
+    .btn-reject:hover { background:#c2603f12; }
+    .decided { font-size:12px; font-weight:600; color:var(--teal,#0e6e62); }
     .tag.featured { background: rgba(245,185,74,.18); color: var(--amber); }
     .tag.enhanced { background: rgba(45,212,191,.16); color: var(--teal); }
     .tag.verified { background: rgba(78,201,138,.16); color: var(--green); }
@@ -305,21 +311,32 @@ const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
       $('claims').innerHTML = rows.map(r => {
         const opts = STATUSES.map(st =>
           `<option value="${st}"${(r.status || 'new') === st ? ' selected' : ''}>${st}</option>`).join('');
+        const tierSel = TIERS.map(t =>
+          `<option value="${t}"${t === 'verified' ? ' selected' : ''}>${t}</option>`).join('');
         const profile = r.clinic_slug
           ? `<a href="https://painbeacon.com/clinic/${esc(r.clinic_slug)}/" target="_blank" rel="noopener">view profile ↗</a>` : '';
         const contact = [r.contact_name, r.role].filter(Boolean).map(esc).join(' · ');
         const reach = [r.work_email, r.phone].filter(Boolean).map(esc).join(' · ');
+        const web = r.website
+          ? `<a href="${esc(r.website)}" target="_blank" rel="noopener nofollow">${esc(r.website)} ↗</a>`
+          : '<span style="color:var(--muted)">no website submitted</span>';
+        const decided = (r.status === 'verified' || r.status === 'customer' || r.status === 'declined');
         return `<div class="item ${ (r.status||'new')==='new' ? 'new' : '' }">
           <div class="main">
             <div class="name">${esc(r.clinic_name || 'Unknown clinic')}
               <span class="who" style="font-weight:500">${esc(r.state || '')}</span></div>
             <div class="meta">${esc(fmtDate(r.created_at))} · ${contact || 'no name'}${ r.interest ? ' · wants: ' + esc(r.interest) : '' }</div>
             <div class="meta">${reach || 'no contact info'} ${profile}</div>
+            <div class="meta">website: ${web}</div>
             ${ r.message ? `<div class="meta">“${esc(r.message)}”</div>` : '' }
           </div>
-          <div style="display:flex;align-items:center;gap:8px">
-            <select class="ctl" data-claim="${esc(r.id)}">${opts}</select>
+          <div class="claim-actions">
+            <select class="ctl" data-tier="${esc(r.id)}" title="Tier to set on approve">${tierSel}</select>
+            <button class="btn-approve" data-approve="${esc(r.id)}" data-npi="${esc(r.npi || '')}">✓ Approve</button>
+            <button class="btn-reject" data-reject="${esc(r.id)}">✕ Reject</button>
+            <select class="ctl" data-claim="${esc(r.id)}" title="Or set status manually">${opts}</select>
             <span class="saved" id="cs-${esc(r.id)}">saved</span>
+            <span class="decided" id="cd-${esc(r.id)}" ${decided ? '' : 'hidden'}>${esc(r.status||'')}</span>
           </div>
         </div>`;
       }).join('');
@@ -332,6 +349,40 @@ const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
           sel.disabled = false;
           if (error) { alert('Could not save: ' + error.message); return; }
           flash('cs-' + id);
+          renderClaimsPill();
+        });
+      });
+
+      $('claims').querySelectorAll('button[data-approve]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.getAttribute('data-approve');
+          const npi = btn.getAttribute('data-npi');
+          const row = (rows.find(x => String(x.id) === String(id)) || {});
+          const tier = (document.querySelector(`select[data-tier="${id}"]`) || {}).value || 'verified';
+          if (!npi) { alert('This claim has no NPI, so it cannot be linked to a clinic record. Use the status dropdown instead.'); return; }
+          const clinicPatch = { listing_tier: tier };
+          if (row.website) clinicPatch.website = row.website;
+          if (row.work_email) clinicPatch.contact_email = row.work_email;
+          if (!confirm('Approve "' + (row.clinic_name || npi) + '"?\n\n• tier -> ' + tier + '\n• website -> ' + (row.website || '(none)') + '\n• contact email -> ' + (row.work_email || '(none)') + '\n\nThen click "Rebuild site" to push it live.')) return;
+          btn.disabled = true; btn.textContent = '…';
+          const r1 = await sb.from('clinics').update(clinicPatch).eq('npi', npi);
+          if (r1.error) { btn.disabled = false; btn.textContent = '✓ Approve'; alert('Clinic update failed: ' + r1.error.message); return; }
+          const r2 = await sb.from('claims').update({ status: 'verified' }).eq('id', id);
+          if (r2.error) { alert('Clinic updated, but marking the claim failed: ' + r2.error.message); }
+          const d = $('cd-' + id); if (d) { d.hidden = false; d.textContent = 'verified ✓ — rebuild to publish'; }
+          btn.textContent = '✓ Approved'; renderClaimsPill();
+        });
+      });
+
+      $('claims').querySelectorAll('button[data-reject]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.getAttribute('data-reject');
+          if (!confirm('Reject this claim? Nothing will be published. You can still change it later.')) return;
+          btn.disabled = true;
+          const { error } = await sb.from('claims').update({ status: 'declined' }).eq('id', id);
+          btn.disabled = false;
+          if (error) { alert('Could not save: ' + error.message); return; }
+          const d = $('cd-' + id); if (d) { d.hidden = false; d.textContent = 'declined'; }
           renderClaimsPill();
         });
       });
@@ -354,7 +405,7 @@ const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
         const loc = [r.city, r.state].filter(Boolean).map(esc).join(', ');
         return `<div class="item">
           <div class="main">
-            <div class="name"><span class="tag ${esc(tier)}">${esc(tier)}</span>${esc(r.name || '')}</div>
+            <div class="name"><span class="tag ${esc(tier)}">${esc(tier)}</span> ${esc(r.name || '')}</div>
             <div class="meta">${loc} · <a href="https://painbeacon.com/clinic/${esc(r.slug)}/" target="_blank" rel="noopener">view profile ↗</a></div>
           </div>
           <div style="display:flex;align-items:center;gap:8px">
