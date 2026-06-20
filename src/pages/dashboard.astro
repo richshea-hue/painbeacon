@@ -211,7 +211,7 @@ const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
     // Only set this if Cloudflare Access stays on /dashboard — the URL lives in
     // this page's HTML. Create one at: CF Pages → your project → Settings →
     // Builds & deployments → Deploy hooks.
-    const DEPLOY_HOOK = '';
+    const DEPLOY_HOOK = 'https://api.cloudflare.com/client/v4/pages/webhooks/deploy_hooks/ae49d78c-2b45-463f-9b8c-2a8bac146200';
 
     const SU = document.body.dataset.su;
     const SK = document.body.dataset.sk;
