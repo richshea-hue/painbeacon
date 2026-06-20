@@ -226,6 +226,8 @@ const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
 
     const sb = createClient(SU, SK, { auth: { persistSession: true, autoRefreshToken: true } });
 
+const TIERS = ['free', 'verified', 'enhanced', 'featured']; // shared tier list — used by renderClaims() and renderPaid()
+
     // ---- helpers ----------------------------------------------------------
     const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, c =>
       ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -398,7 +400,7 @@ const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
     function renderPaid(rows) {
       $('paidPill').textContent = rows.length;
       if (!rows.length) { $('paid').innerHTML = '<div class="empty">No paid or featured listings yet.</div>'; return; }
-      const TIERS = ['free', 'verified', 'enhanced', 'featured'];
+
       $('paid').innerHTML = rows.map(r => {
         const tier = r.listing_tier || 'free';
         const opts = TIERS.map(t => `<option value="${t}"${tier === t ? ' selected' : ''}>${t}</option>`).join('');
