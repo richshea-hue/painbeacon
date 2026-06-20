@@ -106,6 +106,8 @@ const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
       padding: 14px 16px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
     }
     .item.new { border-color: rgba(245,185,74,.4); }
+    .item.resolved { opacity: .5; }
+    .item.resolved.new { border-color: var(--border); }
     .item .main { flex: 1 1 240px; min-width: 0; }
     .item .name { font-weight: 700; }
     .item .meta { color: var(--muted); font-size: 13px; margin-top: 3px; word-break: break-word; }
@@ -323,7 +325,7 @@ const TIERS = ['free', 'verified', 'enhanced', 'featured']; // shared tier list 
           ? `<a href="${esc(r.website)}" target="_blank" rel="noopener nofollow">${esc(r.website)} ↗</a>`
           : '<span style="color:var(--muted)">no website submitted</span>';
         const decided = (r.status === 'verified' || r.status === 'customer' || r.status === 'declined');
-        return `<div class="item ${ (r.status||'new')==='new' ? 'new' : '' }">
+        return `<div class="item ${ (r.status||'new')==='new' ? 'new' : '' } ${ decided ? 'resolved' : '' }" id="claim-${esc(r.id)}">
           <div class="main">
             <div class="name">${esc(r.clinic_name || 'Unknown clinic')}
               <span class="who" style="font-weight:500">${esc(r.state || '')}</span></div>
@@ -371,7 +373,9 @@ const TIERS = ['free', 'verified', 'enhanced', 'featured']; // shared tier list 
           if (r1.error) { btn.disabled = false; btn.textContent = '✓ Approve'; alert('Clinic update failed: ' + r1.error.message); return; }
           const r2 = await sb.from('claims').update({ status: 'verified' }).eq('id', id);
           if (r2.error) { alert('Clinic updated, but marking the claim failed: ' + r2.error.message); }
-          const d = $('cd-' + id); if (d) { d.hidden = false; d.textContent = 'verified ✓ — rebuild to publish'; }
+          const d = $('cd-' + id); if (d) { d.hidden = false; d.textContent = 'approved ✓ — rebuild to publish'; }
+          const rowEl = $('claim-' + id); if (rowEl) { rowEl.classList.remove('new'); rowEl.classList.add('resolved'); }
+          const stSel = document.querySelector(`select[data-claim="${id}"]`); if (stSel) stSel.value = 'verified';
           btn.textContent = '✓ Approved'; renderClaimsPill();
         });
       });
@@ -385,6 +389,8 @@ const TIERS = ['free', 'verified', 'enhanced', 'featured']; // shared tier list 
           btn.disabled = false;
           if (error) { alert('Could not save: ' + error.message); return; }
           const d = $('cd-' + id); if (d) { d.hidden = false; d.textContent = 'declined'; }
+          const rowEl = $('claim-' + id); if (rowEl) { rowEl.classList.remove('new'); rowEl.classList.add('resolved'); }
+          const stSel = document.querySelector(`select[data-claim="${id}"]`); if (stSel) stSel.value = 'declined';
           renderClaimsPill();
         });
       });
