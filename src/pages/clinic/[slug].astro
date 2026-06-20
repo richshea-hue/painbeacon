@@ -178,20 +178,13 @@ const providers = Array.isArray(c.enhanced_providers) ? c.enhanced_providers : [
       {c.nppes_last_updated && <> Provider record last updated {c.nppes_last_updated}.</>}
     </div>
 
-  {isVerified ? (
-      <p class="claimed-line">
-        ✓ This profile is claimed and managed by the clinic.{' '}
-        <a href={`/claim/?npi=${c.npi}&slug=${c.slug}&update=1`}>Update this listing ↗</a>
-      </p>
-    ) : (
-      {isVerified ? (
+    {isVerified ? (
       <p class="claimed-line">
         ✓ This profile is claimed and managed by the clinic.{' '}
         <a href={`mailto:contactus@painbeacon.com?subject=${encodeURIComponent('Update listing: ' + name)}&body=${encodeURIComponent('Clinic: ' + name + '\nNPI: ' + c.npi + '\n\nPlease describe the changes you would like to make to this listing:\n')}`}>Request an update to this listing ↗</a>
       </p>
     ) : (
       <ClaimProfile npi={c.npi} slug={c.slug} clinicName={name} />
-    )}
     )}
 
     <p class="muted">
@@ -203,8 +196,6 @@ const providers = Array.isArray(c.enhanced_providers) ? c.enhanced_providers : [
 
 <style>
   .verified-site { color:var(--teal-deep,#0a4f46); font-size:0.9rem; font-weight:600; text-decoration:none; }
-  .claimed-line { margin-top:1.25rem; padding:0.75rem 1rem; background:var(--teal-wash,#eaf6f4); border-radius:8px; font-size:0.9rem; color:var(--teal-deep,#0a4f46); }
-  .claimed-line a { color:var(--teal-deep,#0a4f46); font-weight:600; }
   .claimed-line { margin-top:1.25rem; padding:0.75rem 1rem; background:var(--teal-wash,#eaf6f4); border-radius:8px; font-size:0.9rem; color:var(--teal-deep,#0a4f46); }
   .claimed-line a { color:var(--teal-deep,#0a4f46); font-weight:600; }
   .verified-site:hover { text-decoration:underline; }
