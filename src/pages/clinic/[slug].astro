@@ -4,7 +4,7 @@ import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import ClinicMap from '../../components/ClinicMap.astro';
 import ClaimProfile from '../../components/ClaimProfile.astro';
 import { getClinics, titleCase, stateName } from '../../lib/data.js';
-import { scoreClinic } from '../../lib/ranking.js';
+import { scoreClinic, scoreBand } from '../../lib/ranking.js';
 import { breadcrumbLd, clinicLd, faqLd } from '../../lib/schema.js';
 import { SITE } from '../../lib/site.js';
 
@@ -17,6 +17,8 @@ const { clinic: c } = Astro.props;
 const name = titleCase(c.name);
 const interventional = (c.all_taxonomy_codes || '').includes('208VP0014X');
 const { score } = scoreClinic(c);
+const band = scoreBand(score);
+const scoreDetail = band.showNumber ? `${score}/100` : 'limited verified data on file';
 const addr = [c.address_1 && titleCase(c.address_1), c.address_2 && titleCase(c.address_2)].filter(Boolean).join(', ');
 const yearsInPractice = c.enumeration_date
   ? Math.floor((Date.now() - new Date(c.enumeration_date).getTime()) / 3.15576e10) : null;
@@ -220,7 +222,7 @@ if (ins.length > 0) {
         : (c.phone
             ? <a href={`tel:${c.phone.replace(/[^0-9+]/g, '')}`}>Call to confirm</a>
             : <span class="muted">Call to confirm</span>)}</div></li>
-      <li><div class="k">Qualification score</div><div class="v">{score} / 100</div></li>
+      <li><div class="k">Qualification</div><div class="v">{band.label} <span class="score-detail">· {scoreDetail}</span></div></li>
     </ul>
 
     {c.hours && (
@@ -281,4 +283,5 @@ if (ins.length > 0) {
   .faq summary::after { content:'+'; float:right; color:var(--teal,#23b3a3); font-weight:700; }
   .faq[open] summary::after { content:'–'; }
   .faq p { margin:0.6rem 0 0; color:var(--ink,#2a3b39); font-size:0.95rem; line-height:1.55; }
+  .score-detail { font-size:0.82rem; font-weight:400; color:var(--ink-faint,#7c8a87); }
 </style>

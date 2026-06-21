@@ -50,6 +50,21 @@ export function scoreClinic(c) {
 
 const round = (n) => Math.round(n * 10) / 10;
 
+// Qualitative band for a 0..100 score. A low score mostly reflects how much
+// VERIFIED data we hold for a clinic (reviews, website, interventional flag) —
+// not a quality verdict on the practice. So the lowest band reads as a
+// data-completeness state and suppresses the raw number, which otherwise looks
+// like a failing grade on a clinic we simply haven't enriched yet. The
+// number stays visible where it's meaningful. Bands map to the same 100-pt
+// scale published (in weighted form) on /how-we-rank.
+export function scoreBand(score) {
+  const s = Number(score) || 0;
+  if (s >= 70) return { label: 'Strongly qualified', showNumber: true };
+  if (s >= 50) return { label: 'Well qualified', showNumber: true };
+  if (s >= 30) return { label: 'Qualified', showNumber: true };
+  return { label: 'Basic listing', showNumber: false };
+}
+
 // Stable sort: score desc, then review_count desc, then name asc.
 export function rankClinics(list) {
   return [...list]
