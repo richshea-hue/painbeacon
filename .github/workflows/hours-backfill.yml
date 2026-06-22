@@ -1,0 +1,57 @@
+name: Hours backfill (Google Places)
+
+on:
+  schedule:
+    # 14:00 UTC on the 5th of every month. After Google's monthly free-tier
+    # reset (the 1st) and before the NPPES sync (the 10th). Each run fills up to
+    # ~4,900 clinics that are still missing hours — under the 5,000/month free
+    # Pro-tier cap — so it drains the remaining clinics over a couple of months,
+    # then quietly idles once everything that has hours on Google is done.
+    - cron: "0 14 5 * *"
+  workflow_dispatch:
+    # Adds a "Run workflow" button in the Actions tab. Use it to run the first
+    # batch now, on demand.
+    inputs:
+      limit:
+        description: "Max clinics this run (free Pro tier = 5000/month)"
+        type: string
+        default: "4900"
+      dry_run:
+        description: "Dry run (count only — no Google calls, no writes)"
+        type: boolean
+        default: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - run: pip install requests
+
+      # Persist the Places response cache between monthly runs so clinics that
+      # Google has no hours for are remembered and never re-billed. Rolling key:
+      # restore the most recent cache, save a fresh one after each run.
+      - name: Restore Places hours cache
+        uses: actions/cache@v4
+        with:
+          path: scripts/places_hours_cache
+          key: places-hours-cache-${{ github.run_id }}
+          restore-keys: |
+            places-hours-cache-
+
+      - name: Backfill hours
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+          CLOUDFLARE_DEPLOY_HOOK: ${{ secrets.CLOUDFLARE_DEPLOY_HOOK }}
+          # On a scheduled run, inputs.limit is empty, so it falls back to 4900.
+          LIMIT: ${{ inputs.limit || '4900' }}
+          DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
+        run: python scripts/backfill_hours.py
