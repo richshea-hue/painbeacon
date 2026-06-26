@@ -106,8 +106,8 @@ const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
       padding: 14px 16px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
     }
     .item.new { border-color: rgba(245,185,74,.4); }
-    .item.resolved { opacity: .5; }
-    .item.resolved.new { border-color: var(--border); }
+    :global(.item.resolved) { opacity: .5; }
+    :global(.item.resolved.new) { border-color: var(--border); }
     .item .main { flex: 1 1 240px; min-width: 0; }
     .item .name { font-weight: 700; }
     .item .meta { color: var(--muted); font-size: 13px; margin-top: 3px; word-break: break-word; }
