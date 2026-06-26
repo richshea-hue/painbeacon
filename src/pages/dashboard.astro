@@ -470,10 +470,10 @@ const TIERS = ['free', 'verified', 'enhanced', 'featured']; // shared tier list 
       b.addEventListener('click', async () => {
         b.disabled = true; b.textContent = 'Triggering…';
         try {
-          await fetch(DEPLOY_HOOK, { method: 'POST' });
-          b.textContent = 'Build started ✓';
+          await fetch(DEPLOY_HOOK, { method: 'POST', mode: 'no-cors' });
+          b.textContent = 'Build requested ✓';
         } catch { b.textContent = 'Failed — retry in CF'; }
-        setTimeout(() => { b.disabled = false; b.textContent = 'Rebuild site'; }, 4000);
+        setTimeout(() => { b.disabled = false; b.textContent = 'Rebuild site'; }, 5000);
       });
     }
   </script>
