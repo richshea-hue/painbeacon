@@ -238,7 +238,7 @@ const TIERS = ['free', 'verified', 'enhanced', 'featured']; // shared tier list 
       { month: 'short', day: 'numeric' }); } catch { return ''; } };
     const card = (n, l) => `<div class="card"><div class="n">${num(n)}</div><div class="l">${esc(l)}</div></div>`;
 
-    function showRebuildBanner() { $('banner').classList.add('show'); }
+    function showRebuildBanner() { const b = $('banner'); b.classList.add('show'); b.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
 
     // ---- auth gate --------------------------------------------------------
     function showLogin() { $('login').classList.remove('hidden'); $('app').classList.add('hidden'); }
@@ -377,6 +377,7 @@ const TIERS = ['free', 'verified', 'enhanced', 'featured']; // shared tier list 
           const rowEl = $('claim-' + id); if (rowEl) { rowEl.classList.remove('new'); rowEl.classList.add('resolved'); }
           const stSel = document.querySelector(`select[data-claim="${id}"]`); if (stSel) stSel.value = 'verified';
           btn.textContent = '✓ Approved'; renderClaimsPill();
+          showRebuildBanner();
         });
       });
 
@@ -392,6 +393,7 @@ const TIERS = ['free', 'verified', 'enhanced', 'featured']; // shared tier list 
           const rowEl = $('claim-' + id); if (rowEl) { rowEl.classList.remove('new'); rowEl.classList.add('resolved'); }
           const stSel = document.querySelector(`select[data-claim="${id}"]`); if (stSel) stSel.value = 'declined';
           renderClaimsPill();
+          showRebuildBanner();
         });
       });
     }
