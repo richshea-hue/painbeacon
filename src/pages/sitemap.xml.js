@@ -6,17 +6,34 @@ export async function GET() {
   const clinics = await getClinics();
   const urls = new Set(['/', '/pain-clinics/', '/how-we-rank/', '/for-practices/', '/ownership-disclosure/', '/privacy/']);
 
+  // State hubs: /pain-clinics/[state]/
   const byState = groupBy(clinics, (c) => c.stateSlug);
   for (const state of byState.keys()) urls.add(`/pain-clinics/${state}/`);
 
+  // Zone pages: /pain-clinics/[state]/[zone]/
+  // Mirror the [state]/[zone].astro route exactly: one page per distinct zone
+  // among deduped (primary) clinics that carry a zoneSlug. This replaces the
+  // old city-based geo URLs, which now 404 after the zone migration.
+  const primaries = clinics.filter((c) => c.isPrimary && c.zoneSlug);
+  const byZone = groupBy(primaries, (c) => c.zoneSlug);
+  for (const list of byZone.values()) {
+    const c0 = list[0];
+    urls.add(`/pain-clinics/${c0.stateSlug}/${c0.zoneUrlSlug}/`);
+  }
+
+  // Topic × city pages: /[topic]/[city]/
+  // Only where the city clears the thin-page threshold, matching the gating in
+  // the [topic]/[city].astro route. (With the current threshold this emits
+  // nothing — topic pages are dormant — but it stays in lockstep with the route.)
   const byCity = groupBy(clinics, (c) => `${c.stateSlug}|${c.citySlug}`);
   for (const [key, list] of byCity.entries()) {
-    const [state, city] = key.split('|');
-    urls.add(`/pain-clinics/${state}/${city}/`);
+    const [, city] = key.split('|');
     if (list.length >= MIN_CLINICS_FOR_TOPIC_PAGE) {
       for (const topic of Object.keys(ALL_TOPICS)) urls.add(`/${topic}/${city}/`);
     }
   }
+
+  // Clinic profiles: /clinic/[slug]/ (built for every clinic)
   for (const c of clinics) urls.add(`/clinic/${c.slug}/`);
 
   const body =
