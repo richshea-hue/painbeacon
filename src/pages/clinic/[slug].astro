@@ -6,7 +6,6 @@ import ClaimProfile from '../../components/ClaimProfile.astro';
 import { getClinics, titleCase, stateName } from '../../lib/data.js';
 import { scoreClinic, scoreBand } from '../../lib/ranking.js';
 import { breadcrumbLd, clinicLd, faqLd } from '../../lib/schema.js';
-import { SITE } from '../../lib/site.js';
 
 export async function getStaticPaths() {
   const clinics = await getClinics();
@@ -57,6 +56,13 @@ if (c.website) {
 const tier = c.listing_tier || 'free';
 const isVerified = ['verified', 'enhanced', 'featured'].includes(tier);
 const isEnhanced = ['enhanced', 'featured'].includes(tier);
+
+// Self-reported (from the clinic's own claim form) always wins over the
+// CMS federal-enrollment match, since the clinic knows its own billing
+// better than an NPI lookup can. null = unknown either way.
+const acceptsMedicare = c.accepts_medicare_self_reported != null
+  ? c.accepts_medicare_self_reported
+  : (c.accepts_medicare_cms === true ? true : null);
 const toList = (s) => Array.isArray(s)
   ? s.filter(Boolean)
   : (s ? String(s).split(/[;,]/).map((x) => x.trim()).filter(Boolean) : []);
@@ -116,6 +122,16 @@ if (c.telehealth != null) {
   });
 }
 
+// Lights up only once we have a Medicare signal (self-reported or CMS match).
+if (acceptsMedicare != null) {
+  faqs.push({
+    q: `Does ${name} accept Medicare?`,
+    a: acceptsMedicare
+      ? `Yes — ${name} is listed as an enrolled Medicare provider${c.accepts_medicare_self_reported === true ? ', confirmed directly by the clinic' : ' in the federal CMS provider enrollment database'}. Confirm your specific plan and coverage details before scheduling.`
+      : `Based on the information on file, ${name} does not currently show as accepting Medicare. Contact the clinic directly to confirm.`,
+  });
+}
+
 if (ins.length > 0) {
   faqs.push({
     q: `What insurance does ${name} accept?`,
@@ -128,14 +144,6 @@ if (ins.length > 0) {
       jsonld={[breadcrumbLd(crumbs), clinicLd(c), ...(faqs.length ? [faqLd(faqs)] : [])]}>
   <div class="wrap narrow">
     <Breadcrumbs items={crumbs} />
-
-    {SITE.disclosureActive && c.candor_owned && (
-      <div class="notice" style="border-left-color:var(--amber)">
-        <strong>Ownership disclosure:</strong> This clinic is owned by an affiliate of
-        this directory. See our <a href="/ownership-disclosure/">disclosure</a> and
-        <a href="/how-we-rank/"> ranking methodology</a> for how this is handled.
-      </div>
-    )}
 
     <div class="profile-head">
       <div>
@@ -223,6 +231,9 @@ if (ins.length > 0) {
             ? <a href={`tel:${c.phone.replace(/[^0-9+]/g, '')}`}>Call to confirm</a>
             : <span class="muted">Call to confirm</span>)}</div></li>
       <li><div class="k">Qualification</div><div class="v">{band.label} <span class="score-detail">· {scoreDetail}</span></div></li>
+      {acceptsMedicare != null && (
+        <li><div class="k">Medicare</div><div class="v">{acceptsMedicare ? '✓ Accepted' : 'Not accepted'}</div></li>
+      )}
     </ul>
 
     {c.hours && (

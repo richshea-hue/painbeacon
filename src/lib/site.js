@@ -1,6 +1,4 @@
-// Central site config. One national brand, one domain (see brief: do NOT
-// fragment into micro-sites). Name is kept separate from "Candor" so the
-// directory reads as neutral pre-acquisition.
+// Central site config. One national brand, one domain — no micro-sites.
 
 export const SITE = {
   name: 'PainBeacon',
@@ -55,11 +53,4 @@ export const SITE = {
     enhanced: { price: '$29', period: '/mo', note: '30-day free trial', url: 'https://buy.stripe.com/5kQ4gBgGl97WfpTaHReAg00' },
     featured: { price: '$299', period: '/mo', note: '', url: 'https://buy.stripe.com/3cI5kF1Lresgb9D03deAg02' },
   },
-
-  // ---- OWNERSHIP-DISCLOSURE TRIPWIRE -------------------------------------
-  // Today: false (Candor owns zero clinics; rankings are genuinely neutral).
-  // Flip to true the day the first acquisition closes. When true, the global
-  // disclosure banner shows site-wide and per-clinic banners appear on any
-  // record where candor_owned is true. The methodology page is already live.
-  disclosureActive: false,
 };

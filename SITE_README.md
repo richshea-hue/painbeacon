@@ -1,4 +1,4 @@
-# PainFinder — Astro site layer
+# PainBeacon — Astro site layer
 
 The patient-facing directory. Static-generated from the `clinics_public` view, so
 it renders thousands of programmatic pages with no server and physically cannot
@@ -56,16 +56,6 @@ output dir `dist`). Set the same env vars in the host's build settings.
 on `/how-we-rank/` are read from that same file, so the published methodology can
 never drift from the actual ordering. Signals not yet in the data (insurance
 breadth, procedure count) are documented as "expanding," not faked.
-
-## The disclosure tripwire
-
-`src/lib/site.js` → `disclosureActive: false`. Today the disclosure page reads
-neutral ("owns no clinics") and no banners show. The day the first acquisition
-closes: set `disclosureActive: true` and set `candor_owned = true` on the acquired
-clinics in Supabase. Then a site-wide banner appears, every affiliated clinic shows
-an "Affiliated clinic" label, the profile shows an ownership notice, and the
-disclosure page switches to its affiliated-clinics wording — all already wired, no
-code change needed.
 
 ## Where to edit
 

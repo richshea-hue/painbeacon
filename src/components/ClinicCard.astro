@@ -1,6 +1,5 @@
 ---
 import { titleCase } from '../lib/data.js';
-import { SITE } from '../lib/site.js';
 const { clinic, rank } = Astro.props;
 const c = clinic;
 const interventional = (c.all_taxonomy_codes || '').includes('208VP0014X');
@@ -10,7 +9,6 @@ const stars = c.aggregate_rating ? '★'.repeat(Math.round(Number(c.aggregate_ra
   {rank ? <div class="rank-badge">{rank}</div> : <div></div>}
   <div>
     <h3><a href={`/clinic/${c.slug}/`}>{titleCase(c.name)}</a>
-      {SITE.disclosureActive && c.candor_owned && <span class="owned-flag">Affiliated clinic</span>}
     </h3>
     <p class="meta">
       {[c.address_1 && titleCase(c.address_1), c.cityLabel, c.state].filter(Boolean).join(', ')}

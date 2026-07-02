@@ -2,8 +2,7 @@
 // "Claim this profile" — a practice owner/manager requests to claim and
 // (optionally) pay to enrich their listing. Writes ONE row to the Supabase
 // `claims` table via the PUBLIC anon key (RLS allows anon INSERT only, never
-// SELECT). Same security model as LeadFinder. A claim doubles as warm Candor
-// deal-flow: a verified, engaged, contactable practice.
+// SELECT). Same security model as LeadFinder.
 //
 // IMPORTANT: only the anon/publishable key is embedded — never the service key.
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
