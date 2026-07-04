@@ -157,7 +157,7 @@ if (ins.length > 0) {
 <Base title={`${name} — ${c.cityLabel}, ${c.state}`}
       description={`${name} is a pain medicine clinic in ${c.cityLabel}, ${c.state}. Location, contact, credentials, and verified reviews.`}
       canonical={canonicalUrl}
-      jsonld={[breadcrumbLd(crumbs), clinicLd(c), ...(faqs.length ? [faqLd(faqs)] : [])]}>
+      jsonld={[breadcrumbLd(crumbs), clinicLd(c, canonicalUrl), ...(faqs.length ? [faqLd(faqs)] : [])]}>
   <div class="wrap narrow">
     <Breadcrumbs items={crumbs} />
 

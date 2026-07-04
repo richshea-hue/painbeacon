@@ -9,21 +9,30 @@ export function breadcrumbLd(items) {
   return {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
-    itemListElement: items.map((it, i) => ({
-      '@type': 'ListItem',
-      position: i + 1,
-      name: it.name,
-      item: new URL(it.href, SITE.url).href,
-    })),
+    itemListElement: items.map((it, i) => {
+      const el = {
+        '@type': 'ListItem',
+        position: i + 1,
+        name: it.name,
+      };
+      // The current page (last crumb) intentionally has no href. Per Google's
+      // breadcrumb spec the `item` property may be omitted for the final
+      // element — omitting beats emitting a bogus "/undefined" URL.
+      if (it.href) el.item = new URL(it.href, SITE.url).href;
+      return el;
+    }),
   };
 }
 
-export function clinicLd(c) {
+export function clinicLd(c, canonicalUrl) {
   const ld = {
     '@context': 'https://schema.org',
     '@type': 'MedicalClinic',
     name: titleCase(c.name),
-    url: new URL(`/clinic/${c.slug}/`, SITE.url).href,
+    // Folded duplicates pass their primary's canonical URL so the structured
+    // data agrees with the <link rel="canonical"> tag; everyone else
+    // self-references as before.
+    url: canonicalUrl || new URL(`/clinic/${c.slug}/`, SITE.url).href,
     medicalSpecialty: 'PainMedicine',
     address: {
       '@type': 'PostalAddress',
