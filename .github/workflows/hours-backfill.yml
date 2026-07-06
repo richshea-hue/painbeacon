@@ -15,7 +15,7 @@ on:
       limit:
         description: "Max clinics this run (free Pro tier = 5000/month)"
         type: string
-        default: "4900"
+        default: "4500"
       dry_run:
         description: "Dry run (count only — no Google calls, no writes)"
         type: boolean
