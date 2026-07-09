@@ -131,6 +131,9 @@ const total = primaries.length;
       ).join('');
     }
     function hint(html) { out.innerHTML = `<li class="search-hint">${html}</li>`; }
+    // Site-wide search logger lives on window.pbTrack (defined by the chat
+    // widget, present on every page); fall back to a no-op if unavailable.
+    const track = (e) => (window.pbTrack || (() => {}))(e);
 
     // ZIP -> zone lookup. Fetches the build-time /zip3-zones.json (cached), maps
     // the 3-digit prefix to a "state/zone" segment and navigates there.
@@ -143,13 +146,16 @@ const total = primaries.length;
         .catch(() => (zoneMap = {}));
     }
     let zipBusy = false;
-    function goToZip(digits) {
+    function goToZip(digits, source) {
       if (zipBusy) return;
       zipBusy = true;
       hint('Finding clinics near that ZIP…');
       loadZoneMap().then((m) => {
         zipBusy = false;
-        const seg = m[digits.slice(0, 3)];
+        const z3 = digits.slice(0, 3);
+        const seg = m[z3];
+        track({ source: source || 'hero', query: digits, kind: 'zip', zip3: z3,
+                matched: !!seg, zone: seg || null });
         if (seg) { window.location.href = `/pain-clinics/${seg}/`; return; }
         hint('We don\'t list clinics for that ZIP yet. <a href="/pain-clinics/">Browse by state</a>.');
       });
@@ -163,18 +169,35 @@ const total = primaries.length;
       if (!v) { out.innerHTML = ''; return; }
       if (isZipLike(v)) {
         const digits = v.replace(/\D/g, '');
-        if (digits.length >= 5) goToZip(digits);
+        if (digits.length >= 5) goToZip(digits, 'hero');
         else hint('Enter all 5 digits of your ZIP…');
         return;
       }
       render(idx.filter((c) => (c.label || '').toLowerCase().includes(v.toLowerCase())));
     });
 
-    // Enter fires the ZIP lookup immediately (e.g. after a paste).
+    // Enter: fire the ZIP lookup immediately (e.g. after a paste); for a city
+    // name, log the search intent (whether or not we have matches for it).
     q.addEventListener('keydown', (e) => {
       if (e.key !== 'Enter') return;
-      const digits = q.value.replace(/\D/g, '');
-      if (isZipLike(q.value.trim()) && digits.length >= 5) { e.preventDefault(); goToZip(digits); }
+      const v = q.value.trim();
+      const digits = v.replace(/\D/g, '');
+      if (isZipLike(v) && digits.length >= 5) { e.preventDefault(); goToZip(digits, 'hero'); return; }
+      if (v) {
+        const matched = idx.some((c) => (c.label || '').toLowerCase().includes(v.toLowerCase()));
+        track({ source: 'hero', query: v, kind: 'city', zip3: null, matched, zone: null });
+      }
     });
+
+    // Deep link: /?zip=02906 (or ?zip=028) sends the visitor straight to the
+    // matching zone — handy for ads and email that should land on a local page.
+    (function () {
+      const p = new URLSearchParams(location.search).get('zip');
+      if (!p) return;
+      const digits = p.replace(/\D/g, '');
+      if (digits.length < 5) return;
+      q.value = digits;
+      goToZip(digits, 'deep_link');
+    })();
   </script>
 </Base>

@@ -184,6 +184,27 @@ const { autoOpenMs = 8000 } = Astro.props;
       }).catch(function () {});
     }
 
+    // Site-wide, fire-and-forget search-event logger. Defined here because this
+    // widget renders on every page and already holds the Supabase anon creds,
+    // so the hero search (and anything else) can log via window.pbTrack without
+    // re-plumbing credentials. No-ops safely if the backend isn't configured or
+    // the search_events table doesn't exist yet. keepalive lets the beacon
+    // survive the immediate navigation on a ZIP redirect.
+    window.pbTrack = function (event) {
+      try {
+        if (!SU || !SK) return;
+        var payload = Object.assign(
+          { path: location.pathname, user_agent: navigator.userAgent }, event || {}
+        );
+        fetch(SU.replace(/\/$/, '') + '/rest/v1/search_events', {
+          method: 'POST', keepalive: true,
+          headers: { apikey: SK, Authorization: 'Bearer ' + SK,
+            'Content-Type': 'application/json', Prefer: 'return=minimal' },
+          body: JSON.stringify(payload),
+        }).catch(function () {});
+      } catch (e) {}
+    };
+
     // Launcher + close + Esc + external triggers
     root.querySelector('#lcLaunch').addEventListener('click', open);
     root.querySelector('#lcClose').addEventListener('click', close);
@@ -199,8 +220,14 @@ const { autoOpenMs = 8000 } = Astro.props;
       data.zip_or_city = v;
       // Kick off the ZIP->zone lookup now so it's ready by the time they finish.
       zonePromise = resolveZone(v);
+      var isZip = v.replace(/\D/g, '').length >= 5 && /^[\d\s-]+$/.test(v);
       zonePromise.then(function (href) {
         if (href) root.querySelector('#lcBrowse').setAttribute('href', href);
+        window.pbTrack({
+          source: 'chatbot', query: v, kind: isZip ? 'zip' : 'city',
+          zip3: isZip ? zip3(v) : null, matched: !!href,
+          zone: href ? href.replace(/^\/pain-clinics\/|\/$/g, '') : null,
+        });
       });
       show('2');
     });
