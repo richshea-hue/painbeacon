@@ -61,8 +61,8 @@ const total = primaries.length;
         </p>
 
         <div class="search">
-          <input id="q" type="text" placeholder="Search a city — e.g. Providence, Austin…"
-                 autocomplete="off" aria-label="Search by city" />
+          <input id="q" type="text" placeholder="Search a city or ZIP — e.g. Providence or 02906"
+                 autocomplete="off" inputmode="text" aria-label="Search by city or ZIP" />
         </div>
         <ul id="results" class="tile-grid" style="margin-top:0.75rem"></ul>
       </div>
@@ -113,20 +113,68 @@ const total = primaries.length;
     </div>
   </section>
 
+  <style is:global>
+    /* Full-width status/hint row inside the hero search results grid. */
+    #results .search-hint { grid-column: 1 / -1; list-style: none;
+      padding: 0.7rem 0.15rem; color: #cfe0de; font-size: 0.92rem; }
+    #results .search-hint a { color: #2fd4bf; }
+  </style>
   <script type="application/json" id="city-index" set:html={JSON.stringify(cityIndex)}></script>
   <script>
     const idx = JSON.parse(document.getElementById('city-index').textContent);
     const q = document.getElementById('q');
     const out = document.getElementById('results');
+
     function render(list) {
       out.innerHTML = list.slice(0, 8).map((c) =>
         `<li><a class="tile" href="${c.href}"><span class="label">${c.label}</span><span class="n">${c.n}</span></a></li>`
       ).join('');
     }
+    function hint(html) { out.innerHTML = `<li class="search-hint">${html}</li>`; }
+
+    // ZIP -> zone lookup. Fetches the build-time /zip3-zones.json (cached), maps
+    // the 3-digit prefix to a "state/zone" segment and navigates there.
+    let zoneMap = null;
+    function loadZoneMap() {
+      if (zoneMap) return Promise.resolve(zoneMap);
+      return fetch('/zip3-zones.json')
+        .then((r) => (r.ok ? r.json() : {}))
+        .then((m) => (zoneMap = m))
+        .catch(() => (zoneMap = {}));
+    }
+    let zipBusy = false;
+    function goToZip(digits) {
+      if (zipBusy) return;
+      zipBusy = true;
+      hint('Finding clinics near that ZIP…');
+      loadZoneMap().then((m) => {
+        zipBusy = false;
+        const seg = m[digits.slice(0, 3)];
+        if (seg) { window.location.href = `/pain-clinics/${seg}/`; return; }
+        hint('We don\'t list clinics for that ZIP yet. <a href="/pain-clinics/">Browse by state</a>.');
+      });
+    }
+
+    // A search value is "ZIP-like" if it's only digits, spaces and dashes.
+    const isZipLike = (v) => v.length > 0 && /^[\d\s-]+$/.test(v);
+
     q.addEventListener('input', () => {
-      const v = q.value.trim().toLowerCase();
+      const v = q.value.trim();
       if (!v) { out.innerHTML = ''; return; }
-      render(idx.filter((c) => (c.label || '').toLowerCase().includes(v)));
+      if (isZipLike(v)) {
+        const digits = v.replace(/\D/g, '');
+        if (digits.length >= 5) goToZip(digits);
+        else hint('Enter all 5 digits of your ZIP…');
+        return;
+      }
+      render(idx.filter((c) => (c.label || '').toLowerCase().includes(v.toLowerCase())));
+    });
+
+    // Enter fires the ZIP lookup immediately (e.g. after a paste).
+    q.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+      const digits = q.value.replace(/\D/g, '');
+      if (isZipLike(q.value.trim()) && digits.length >= 5) { e.preventDefault(); goToZip(digits); }
     });
   </script>
 </Base>

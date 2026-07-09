@@ -61,7 +61,7 @@ const { autoOpenMs = 8000 } = Astro.props;
 
       <div class="lc-step" data-step="done" hidden>
         <p class="lc-bot" id="lcDone">Thanks! Browse top-rated pain clinics near you below.</p>
-        <a class="btn" href="/pain-clinics/">Browse clinics</a>
+        <a class="btn" id="lcBrowse" href="/pain-clinics/">Browse clinics</a>
       </div>
     </div>
   </div>
@@ -129,6 +129,32 @@ const { autoOpenMs = 8000 } = Astro.props;
     var SEEN = 'pb_chat_opened';
     var data = { zip_or_city: '', care_type: '', name: '', phone: '', email: '', contact: '', wants_contact: false };
 
+    // When the visitor enters a ZIP, resolve it to the zone page that covers it
+    // (via the build-time /zip3-zones.json) so "just show clinics" and the final
+    // Browse button land them on clinics near that ZIP — not the whole state.
+    var zonePromise = Promise.resolve(null);   // resolves to a zone URL or null
+    function zip3(raw) {
+      var d = (raw == null ? '' : String(raw)).replace(/\D/g, '');
+      if (d.length === 4 || d.length === 8) d = '0' + d;
+      return d.slice(0, 3);
+    }
+    var _zoneMap = null;
+    function loadZoneMap() {
+      if (_zoneMap) return Promise.resolve(_zoneMap);
+      return fetch('/zip3-zones.json')
+        .then(function (r) { return r.ok ? r.json() : {}; })
+        .then(function (m) { return (_zoneMap = m); })
+        .catch(function () { return (_zoneMap = {}); });
+    }
+    function resolveZone(raw) {
+      var d = (raw || '').replace(/\D/g, '');
+      if (d.length < 5) return Promise.resolve(null);   // not a full ZIP (e.g. a city name)
+      return loadZoneMap().then(function (m) {
+        var seg = m[zip3(raw)];
+        return seg ? '/pain-clinics/' + seg + '/' : null;
+      });
+    }
+
     function open() {
       root.classList.add('lc-open');
       root.querySelector('#lcLaunch').setAttribute('aria-expanded', 'true');
@@ -170,7 +196,13 @@ const { autoOpenMs = 8000 } = Astro.props;
     root.querySelector('.lc-next').addEventListener('click', function () {
       var v = root.querySelector('#lcLoc').value.trim();
       if (!v) { root.querySelector('#lcLoc').focus(); return; }
-      data.zip_or_city = v; show('2');
+      data.zip_or_city = v;
+      // Kick off the ZIP->zone lookup now so it's ready by the time they finish.
+      zonePromise = resolveZone(v);
+      zonePromise.then(function (href) {
+        if (href) root.querySelector('#lcBrowse').setAttribute('href', href);
+      });
+      show('2');
     });
     root.querySelectorAll('.lc-opt').forEach(function (b) {
       b.addEventListener('click', function () { data.care_type = b.getAttribute('data-care'); show('3'); });
@@ -189,7 +221,12 @@ const { autoOpenMs = 8000 } = Astro.props;
       show('done');
     });
     root.querySelector('.lc-skip').addEventListener('click', function () {
-      data.wants_contact = false; submit(); show('done');
+      data.wants_contact = false; submit();
+      // "Just show clinics" — if they gave a ZIP, go straight to that zone;
+      // otherwise fall back to the browse/done screen.
+      zonePromise.then(function (href) {
+        if (href) { window.location.href = href; } else { show('done'); }
+      });
     });
 
     // Gentle auto-open once per session
