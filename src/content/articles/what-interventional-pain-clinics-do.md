@@ -3,6 +3,9 @@ title: 'Injections, Nerve Blocks, and Ablation: What an Interventional Pain Clin
 dek: 'A plain-English tour of the procedures behind the phrase "interventional pain" — what each one is, what it treats, and what a well-run procedural workup looks like.'
 date: 2026-07-16
 category: 'Treatments Explained'
+heroImg: '/images/news/what-interventional-pain-clinics-do/interventional-pain-injection-procedure-hero.jpg'
+heroAlt: 'A gloved pain specialist performs an injection procedure through a sterile drape, guiding the needle by hand.'
+thumb: '/images/news/what-interventional-pain-clinics-do/interventional-pain-injection-procedure-thumb.jpg'
 ---
 
 "Interventional pain management" is the phrase clinics use for treating pain
@@ -47,6 +50,13 @@ nerve pain conditions are the classic cases. It is the one item here that's a
 genuine surgical commitment, and it's always preceded by a temporary trial
 period with external leads, so you know whether it helps before anything is
 implanted.
+
+<figure>
+  <img src="/images/news/what-interventional-pain-clinics-do/doctor-reviewing-spinal-x-ray.jpg"
+       alt="A physician points to vertebrae on a spinal X-ray while evaluating a patient for an interventional pain procedure."
+       width="1200" height="800" loading="lazy" />
+  <figcaption>Interventional pain medicine lives and dies on diagnosis — imaging is aimed before any needle is.</figcaption>
+</figure>
 
 ## What a good procedural workup looks like
 

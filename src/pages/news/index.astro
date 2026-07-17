@@ -41,8 +41,9 @@ const fmt = (d) =>
               <p class="article-dek">{a.data.dek}</p>
               <span class="article-more">Read →</span>
             </div>
-            <img class="article-thumb" src={a.data.image || `/social/${a.slug}.png`}
-              alt={a.data.imageAlt || ''} width="180" height="180" loading="lazy" />
+            <img class="article-thumb" src={a.data.thumb || a.data.image || `/social/${a.slug}.png`}
+              alt={a.data.thumb ? (a.data.heroAlt || '') : (a.data.imageAlt || '')}
+              width="180" height="180" loading="lazy" />
           </a>
         </li>
       ))}

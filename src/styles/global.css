@@ -200,6 +200,11 @@ p { margin: 0 0 1rem; }
 .prose th { background: var(--paper-2); color: var(--ink); font-weight: 600; }
 .prose blockquote { margin: 1.25rem 0; padding: 0.25rem 0 0.25rem 1.1rem;
   border-left: 3px solid var(--teal); color: var(--ink-soft); font-style: italic; }
+.prose figure { margin: 1.75rem 0; }
+.prose figure img { display: block; width: 100%; height: auto; border-radius: var(--radius);
+  border: 1px solid var(--line); }
+.prose figcaption { font-size: 0.85rem; color: var(--ink-faint); margin-top: 0.5rem;
+  line-height: 1.5; }
 
 /* ---- news feed (/news) ---- */
 .article-feed { list-style: none; padding: 0; margin: 2rem 0 2.5rem; display: grid; gap: 1rem;

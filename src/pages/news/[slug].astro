@@ -18,6 +18,8 @@ const iso = d.date.toISOString().slice(0, 10);
 const pageUrl = new URL(`/news/${article.slug}/`, SITE.url).href;
 const image = d.image || `/social/${article.slug}.png`;
 const imageAlt = d.imageAlt || d.title;
+const heroImg = d.heroImg;
+const heroAlt = d.heroAlt || d.title;
 
 const crumbs = [
   { name: 'Home', href: '/' },
@@ -33,7 +35,8 @@ const articleLd = {
   datePublished: iso,
   author: { '@type': 'Organization', name: SITE.name, url: SITE.url },
   publisher: { '@type': 'Organization', name: SITE.name, url: SITE.url },
-  image: new URL(image, SITE.url).href,
+  // Photo first (what the article shows), branded card second (share asset).
+  image: [heroImg, image].filter(Boolean).map((i) => new URL(i, SITE.url).href),
   mainEntityOfPage: pageUrl,
 };
 
@@ -55,7 +58,11 @@ const shares = [
       <p class="lede">{d.dek}</p>
     </header>
 
-    <img class="article-hero-img" src={image} alt={imageAlt} width="1200" height="1200" loading="eager" />
+    {heroImg ? (
+      <img class="article-hero-img" src={heroImg} alt={heroAlt} width="1600" height="900" loading="eager" fetchpriority="high" />
+    ) : (
+      <img class="article-hero-img" src={image} alt={imageAlt} width="1200" height="1200" loading="eager" />
+    )}
 
     <article class="prose article-body">
       <Content />

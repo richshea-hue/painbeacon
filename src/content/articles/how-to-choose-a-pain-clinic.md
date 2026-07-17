@@ -3,6 +3,9 @@ title: 'How to Choose a Pain Clinic: A Practical Guide to Finding the Right Kind
 dek: 'Not all pain clinics do the same thing. Here is how to tell an interventional practice from a medication-management clinic, what credentials actually mean, and the red flags worth walking away from.'
 date: 2026-07-16
 category: 'Choosing a Clinic'
+heroImg: '/images/news/how-to-choose-a-pain-clinic/pain-clinic-doctor-patient-consultation-hero.jpg'
+heroAlt: 'A pain medicine physician talks through treatment options with a patient across a desk at a clinic consultation.'
+thumb: '/images/news/how-to-choose-a-pain-clinic/pain-clinic-doctor-patient-consultation-thumb.jpg'
 ---
 
 If you search "pain clinic near me," the results all look alike: similar names,
@@ -35,6 +38,13 @@ been ruled out or already tried.
 behavioral health, and sometimes complementary treatments under one roof. They
 suit complex, long-standing pain — fibromyalgia, widespread pain, pain tangled
 with sleep or mood — where no single procedure is the answer.
+
+<figure>
+  <img src="/images/news/how-to-choose-a-pain-clinic/physical-therapist-back-examination.jpg"
+       alt="A physical therapist examines a seated patient's lower back during a treatment session at a pain clinic."
+       width="1200" height="800" loading="lazy" />
+  <figcaption>Multidisciplinary pain centers pair physicians with hands-on care like physical therapy — the right model when no single procedure is the answer.</figcaption>
+</figure>
 
 Many clinics blend these models, but every clinic has a center of gravity. The
 fastest way to find it: look at what the practice lists first, and ask directly,

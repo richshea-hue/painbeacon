@@ -10,11 +10,17 @@ const articles = defineCollection({
     dek: z.string(), // standfirst; doubles as meta description and RSS summary
     date: z.coerce.date(),
     category: z.enum(['Choosing a Clinic', 'Treatments Explained', 'Patient Guides', 'Inside the Rankings']),
-    // Share/hero image. Defaults to the generated card /social/<slug>.png —
+    // Share card (og:image). Defaults to the generated card /social/<slug>.png —
     // run `node scripts/generate-social-cards.mjs` after adding an article.
-    // Set explicitly only to use a custom photo (still 1200×1200).
+    // Set explicitly only to use a custom card (still 1200×1200).
     image: z.string().optional(),
     imageAlt: z.string().optional(),
+    // Article photo set — run `node scripts/prepare-article-images.mjs` to make
+    // these from a source photo (hero 1600×900, thumb 600×600). heroAlt should
+    // describe the photo in a full sentence — it's what image search indexes.
+    heroImg: z.string().optional(),
+    heroAlt: z.string().optional(),
+    thumb: z.string().optional(),
   }),
 });
 
