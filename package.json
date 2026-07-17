@@ -13,7 +13,9 @@
     "astro": "^4.16.19"
   },
   "devDependencies": {
-    "@rollup/rollup-win32-x64-msvc": "^4.62.2",
     "sharp": "^0.35.3"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-win32-x64-msvc": "^4.62.2"
   }
 }
