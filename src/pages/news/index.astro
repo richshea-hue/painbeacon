@@ -1,0 +1,59 @@
+---
+import Base from '../../layouts/Base.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import { getCollection } from 'astro:content';
+import { breadcrumbLd } from '../../lib/schema.js';
+
+const articles = (await getCollection('articles')).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
+);
+const crumbs = [{ name: 'Home', href: '/' }, { name: 'News & guides', href: '/news/' }];
+const fmt = (d) =>
+  d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+---
+<Base
+  title="News & guides — choosing the right pain clinic"
+  description="Weekly guides and analysis from the PainBeacon editorial desk: how to choose the right kind of pain clinic, treatments explained in plain English, and how our rankings work."
+  jsonld={breadcrumbLd(crumbs)}
+>
+  <div class="wrap">
+    <Breadcrumbs items={crumbs} />
+    <section class="hero">
+      <p class="eyebrow">News &amp; guides from the editorial desk</p>
+      <h1>The Beacon</h1>
+      <p class="lede" style="max-width:44rem;">
+        Practical, plain-English guidance for people looking for pain care — which
+        kind of clinic fits your situation, what treatments actually involve, and
+        how our rankings work. New articles weekly.
+        <a href="/rss.xml" class="muted">RSS</a>
+      </p>
+    </section>
+
+    <ol class="article-feed">
+      {articles.map((a) => (
+        <li>
+          <a class="article-card" href={`/news/${a.slug}/`}>
+            <div class="article-card-body">
+              <p class="article-kicker">
+                {a.data.category} · <time datetime={a.data.date.toISOString().slice(0, 10)}>{fmt(a.data.date)}</time>
+              </p>
+              <h2>{a.data.title}</h2>
+              <p class="article-dek">{a.data.dek}</p>
+              <span class="article-more">Read →</span>
+            </div>
+            <img class="article-thumb" src={a.data.image || `/social/${a.slug}.png`}
+              alt={a.data.imageAlt || ''} width="180" height="180" loading="lazy" />
+          </a>
+        </li>
+      ))}
+    </ol>
+
+    <div class="notice" style="display:flex; flex-wrap:wrap; align-items:center; gap:1rem;">
+      <span style="flex:1 1 20rem;">
+        <strong>Not sure which kind of clinic you need?</strong> Answer two quick
+        questions and we'll point you to top-rated clinics near you.
+      </span>
+      <button class="btn" type="button" data-open-leadchat>Find your clinic</button>
+    </div>
+  </div>
+</Base>

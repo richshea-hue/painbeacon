@@ -1,10 +1,14 @@
+import { getCollection } from 'astro:content';
 import { getClinics, groupBy } from '../lib/data.js';
 import { SITE } from '../lib/site.js';
 import { ALL_TOPICS, MIN_CLINICS_FOR_TOPIC_PAGE } from '../lib/topics.js';
 
 export async function GET() {
   const clinics = await getClinics();
-  const urls = new Set(['/', '/pain-clinics/', '/how-we-rank/', '/for-practices/', '/ownership-disclosure/', '/privacy/']);
+  const urls = new Set(['/', '/pain-clinics/', '/news/', '/how-we-rank/', '/for-practices/', '/ownership-disclosure/', '/privacy/']);
+
+  // News articles: /news/[slug]/
+  for (const a of await getCollection('articles')) urls.add(`/news/${a.slug}/`);
 
   // State hubs: /pain-clinics/[state]/
   const byState = groupBy(clinics, (c) => c.stateSlug);

@@ -1,0 +1,97 @@
+---
+import Base from '../../layouts/Base.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import { getCollection } from 'astro:content';
+import { breadcrumbLd } from '../../lib/schema.js';
+import { SITE } from '../../lib/site.js';
+
+export async function getStaticPaths() {
+  const articles = await getCollection('articles');
+  return articles.map((a) => ({ params: { slug: a.slug }, props: { article: a } }));
+}
+
+const { article } = Astro.props;
+const { Content } = await article.render();
+const d = article.data;
+const dateStr = d.date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+const iso = d.date.toISOString().slice(0, 10);
+const pageUrl = new URL(`/news/${article.slug}/`, SITE.url).href;
+const image = d.image || `/social/${article.slug}.png`;
+const imageAlt = d.imageAlt || d.title;
+
+const crumbs = [
+  { name: 'Home', href: '/' },
+  { name: 'News & guides', href: '/news/' },
+  { name: d.title },
+];
+
+const articleLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: d.title,
+  description: d.dek,
+  datePublished: iso,
+  author: { '@type': 'Organization', name: SITE.name, url: SITE.url },
+  publisher: { '@type': 'Organization', name: SITE.name, url: SITE.url },
+  image: new URL(image, SITE.url).href,
+  mainEntityOfPage: pageUrl,
+};
+
+const enc = encodeURIComponent;
+const shares = [
+  { label: 'Facebook', href: `https://www.facebook.com/sharer/sharer.php?u=${enc(pageUrl)}` },
+  { label: 'X', href: `https://twitter.com/intent/tweet?url=${enc(pageUrl)}&text=${enc(d.title)}` },
+  { label: 'Reddit', href: `https://www.reddit.com/submit?url=${enc(pageUrl)}&title=${enc(d.title)}` },
+  { label: 'Email', href: `mailto:?subject=${enc(d.title)}&body=${enc(`${d.dek}\n\n${pageUrl}`)}` },
+];
+---
+<Base title={d.title} description={d.dek} jsonld={[breadcrumbLd(crumbs), articleLd]}
+      ogImage={image} ogImageAlt={imageAlt}>
+  <div class="wrap narrow">
+    <Breadcrumbs items={crumbs} />
+    <header class="article-head">
+      <p class="eyebrow">{d.category} · <time datetime={iso}>{dateStr}</time></p>
+      <h1>{d.title}</h1>
+      <p class="lede">{d.dek}</p>
+    </header>
+
+    <img class="article-hero-img" src={image} alt={imageAlt} width="1200" height="1200" loading="eager" />
+
+    <article class="prose article-body">
+      <Content />
+      <p class="byline">— The {SITE.name} editorial desk</p>
+    </article>
+
+    <div class="share-row" data-url={pageUrl}>
+      <span class="share-label">Share this</span>
+      {shares.map((s) => (
+        <a class="btn ghost share-btn" href={s.href} target="_blank" rel="noopener">{s.label}</a>
+      ))}
+      <button class="btn ghost share-btn" id="copy-link" type="button">Copy link</button>
+    </div>
+    <script>
+      const row = document.querySelector('.share-row') as HTMLElement;
+      const copy = document.getElementById('copy-link');
+      copy?.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(row.dataset.url!);
+          copy.textContent = 'Copied ✓';
+          setTimeout(() => (copy.textContent = 'Copy link'), 2000);
+        } catch {
+          copy.textContent = row.dataset.url!;
+        }
+      });
+    </script>
+
+    <div class="notice" style="display:flex; flex-wrap:wrap; align-items:center; gap:1rem;">
+      <span style="flex:1 1 20rem;">
+        <strong>Ready to look?</strong> Browse top-ranked pain clinics near you, or
+        answer two quick questions and we'll narrow it down.
+      </span>
+      <span style="display:flex; gap:.5rem; flex-wrap:wrap;">
+        <a class="btn ghost" href="/pain-clinics/">Browse clinics</a>
+        <button class="btn" type="button" data-open-leadchat>Find your clinic</button>
+      </span>
+    </div>
+  </div>
+</Base>
