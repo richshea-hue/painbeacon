@@ -78,8 +78,18 @@ export function websiteLd() {
     name: SITE.name,
     url: SITE.url,
     description: SITE.description,
-    publisher: { '@type': 'Organization', name: SITE.editorial.publisher },
+    publisher: {
+      '@type': 'Organization',
+      name: SITE.editorial.publisher,
+      ...(sameAsLinks().length ? { sameAs: sameAsLinks() } : {}),
+    },
   };
+}
+
+// Official profiles for Organization sameAs — ties the site to its social
+// accounts for entity/knowledge-graph purposes.
+function sameAsLinks() {
+  return Object.values(SITE.socials || {}).filter(Boolean);
 }
 
 export function itemListLd(clinics, baseName) {

@@ -10,6 +10,13 @@ export const SITE = {
     'board-certified, interventional pain specialists near you, ranked on ' +
     'objective, published criteria.',
 
+  // Official social profiles. Rendered in the footer and emitted as sameAs in
+  // the site's Organization JSON-LD. Leave a value '' to hide that link.
+  socials: {
+    x: 'https://x.com/painbeacon',
+    facebook: '', // paste the PainBeacon Facebook page URL to show the link
+  },
+
   // E-E-A-T: real, named editorial accountability on every page (YMYL).
   // IMPORTANT: keep active=false until a real, named clinician agrees to review.
   // Never display a fabricated reviewer on a health site. When you retain one,

@@ -135,6 +135,14 @@ const blocks = Array.isArray(jsonld) ? jsonld : [jsonld];
           <p><strong>About</strong></p>
           <p><a href="/ownership-disclosure/">Ownership disclosure</a></p>
           <p><a href="/privacy/">Privacy</a></p>
+          {(SITE.socials.x || SITE.socials.facebook) && (
+            <p class="social-links">
+              <strong>Follow</strong><br />
+              {SITE.socials.x && <a href={SITE.socials.x} target="_blank" rel="noopener">X (@painbeacon)</a>}
+              {SITE.socials.x && SITE.socials.facebook && <span> · </span>}
+              {SITE.socials.facebook && <a href={SITE.socials.facebook} target="_blank" rel="noopener">Facebook</a>}
+            </p>
+          )}
           <p class="muted" style="margin-top:1rem;">
             Clinic data sourced from the U.S. federal NPI registry, enriched with
             public location and review information. Informational only — not medical

@@ -1,6 +1,19 @@
 import rss from '@astrojs/rss';
 import { getCollection } from 'astro:content';
+import { statSync } from 'node:fs';
 import { SITE } from '../lib/site.js';
+
+// Image enclosure per item so RSS-to-social automation (dlvr.it etc.) attaches
+// the branded 1:1 share card to each post instead of a bare link. RSS enclosures
+// require a byte length, so stat the file at build time; skip if missing.
+function cardEnclosure(webPath) {
+  try {
+    const size = statSync(new URL(`../../public${webPath}`, import.meta.url)).size;
+    return { enclosure: { url: new URL(webPath, SITE.url).href, length: size, type: 'image/png' } };
+  } catch {
+    return {};
+  }
+}
 
 export async function GET(context) {
   const articles = (await getCollection('articles')).sort(
@@ -18,6 +31,7 @@ export async function GET(context) {
       description: a.data.dek,
       pubDate: a.data.date,
       link: `/news/${a.slug}/`,
+      ...cardEnclosure(a.data.image || `/social/${a.slug}.png`),
     })),
   });
 }
