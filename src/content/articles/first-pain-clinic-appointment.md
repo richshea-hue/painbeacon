@@ -6,6 +6,7 @@ category: 'Patient Guides'
 heroImg: '/images/news/first-pain-clinic-appointment/patient-doctor-first-appointment-discussion-hero.jpg'
 heroAlt: 'A patient describes their symptoms while a clinician with an intake clipboard listens at a first pain clinic appointment.'
 thumb: '/images/news/first-pain-clinic-appointment/patient-doctor-first-appointment-discussion-thumb.jpg'
+shareImg: '/images/news/first-pain-clinic-appointment/patient-doctor-first-appointment-discussion-share.jpg'
 ---
 
 A first pain clinic appointment is mostly information exchange: the clinic

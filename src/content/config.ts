@@ -21,6 +21,10 @@ const articles = defineCollection({
     heroImg: z.string().optional(),
     heroAlt: z.string().optional(),
     thumb: z.string().optional(),
+    // 1200×1200 photo crop used as og:image and RSS enclosure — square so no
+    // platform crops it, but real photography (user preference over the branded
+    // card, which remains the site-wide default for non-article pages).
+    shareImg: z.string().optional(),
   }),
 });
 

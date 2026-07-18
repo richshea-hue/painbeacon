@@ -16,8 +16,8 @@ const d = article.data;
 const dateStr = d.date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 const iso = d.date.toISOString().slice(0, 10);
 const pageUrl = new URL(`/news/${article.slug}/`, SITE.url).href;
-const image = d.image || `/social/${article.slug}.png`;
-const imageAlt = d.imageAlt || d.title;
+const image = d.shareImg || d.image || `/social/${article.slug}.png`;
+const imageAlt = d.shareImg ? (d.heroAlt || d.title) : (d.imageAlt || d.title);
 const heroImg = d.heroImg;
 const heroAlt = d.heroAlt || d.title;
 

@@ -4,12 +4,14 @@ import { statSync } from 'node:fs';
 import { SITE } from '../lib/site.js';
 
 // Image enclosure per item so RSS-to-social automation (dlvr.it etc.) attaches
-// the branded 1:1 share card to each post instead of a bare link. RSS enclosures
-// require a byte length, so stat the file at build time; skip if missing.
+// the article's 1:1 share photo to each post instead of a bare link. RSS
+// enclosures require a byte length, so stat the file at build time; skip if
+// missing.
 function cardEnclosure(webPath) {
   try {
     const size = statSync(new URL(`../../public${webPath}`, import.meta.url)).size;
-    return { enclosure: { url: new URL(webPath, SITE.url).href, length: size, type: 'image/png' } };
+    const type = webPath.endsWith('.png') ? 'image/png' : 'image/jpeg';
+    return { enclosure: { url: new URL(webPath, SITE.url).href, length: size, type } };
   } catch {
     return {};
   }
@@ -31,7 +33,7 @@ export async function GET(context) {
       description: a.data.dek,
       pubDate: a.data.date,
       link: `/news/${a.slug}/`,
-      ...cardEnclosure(a.data.image || `/social/${a.slug}.png`),
+      ...cardEnclosure(a.data.shareImg || a.data.image || `/social/${a.slug}.png`),
     })),
   });
 }

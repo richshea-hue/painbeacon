@@ -6,6 +6,7 @@ category: 'Treatments Explained'
 heroImg: '/images/news/what-interventional-pain-clinics-do/interventional-pain-injection-procedure-hero.jpg'
 heroAlt: 'A gloved pain specialist performs an injection procedure through a sterile drape, guiding the needle by hand.'
 thumb: '/images/news/what-interventional-pain-clinics-do/interventional-pain-injection-procedure-thumb.jpg'
+shareImg: '/images/news/what-interventional-pain-clinics-do/interventional-pain-injection-procedure-share.jpg'
 ---
 
 "Interventional pain management" is the phrase clinics use for treating pain

@@ -14,7 +14,7 @@ export const SITE = {
   // the site's Organization JSON-LD. Leave a value '' to hide that link.
   socials: {
     x: 'https://x.com/painbeacon',
-    facebook: '', // paste the PainBeacon Facebook page URL to show the link
+    facebook: 'https://www.facebook.com/profile.php?id=61592202442574',
   },
 
   // E-E-A-T: real, named editorial accountability on every page (YMYL).

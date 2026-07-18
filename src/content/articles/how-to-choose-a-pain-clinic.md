@@ -6,6 +6,7 @@ category: 'Choosing a Clinic'
 heroImg: '/images/news/how-to-choose-a-pain-clinic/pain-clinic-doctor-patient-consultation-hero.jpg'
 heroAlt: 'A pain medicine physician talks through treatment options with a patient across a desk at a clinic consultation.'
 thumb: '/images/news/how-to-choose-a-pain-clinic/pain-clinic-doctor-patient-consultation-thumb.jpg'
+shareImg: '/images/news/how-to-choose-a-pain-clinic/pain-clinic-doctor-patient-consultation-share.jpg'
 ---
 
 If you search "pain clinic near me," the results all look alike: similar names,

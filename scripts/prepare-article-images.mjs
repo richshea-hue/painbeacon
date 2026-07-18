@@ -50,4 +50,5 @@ const save = async (src, w, h, file) => {
 
 await save(hero, 1600, 900, `${heroName}-hero.jpg`);
 await save(hero, 600, 600, `${heroName}-thumb.jpg`);
+await save(hero, 1200, 1200, `${heroName}-share.jpg`); // og:image + RSS enclosure (1:1 photo)
 if (inline) await save(inline, 1200, 800, `${inlineName}.jpg`);
