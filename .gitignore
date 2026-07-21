@@ -7,3 +7,4 @@ dist/
 stannp_*.csv
 Thumbs.db
 /scripts/places_hours_cache
+scripts/outreach/out/
