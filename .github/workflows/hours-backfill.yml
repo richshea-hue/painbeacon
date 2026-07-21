@@ -8,7 +8,7 @@ on:
     # BILLING (confirmed in the July 2026 billing report — the $47.68 charge):
     # regularOpeningHours bills as Place Details ENTERPRISE, not Pro. The
     # Enterprise free tier is only ~1,000 calls/month, SHARED with the website
-    # backfill that runs on the 6th. Defaults are 450 here + 450 there so the
+    # backfill that runs on the 6th. Defaults are 200 here + 700 in the website run so the
     # two runs together stay free. Raise deliberately: ~$20/1,000 beyond free.
     - cron: "0 14 5 * *"
   workflow_dispatch:
@@ -18,7 +18,7 @@ on:
       limit:
         description: "Max Google calls this run (Enterprise SKU — ~1,000 free/month SHARED with website backfill, then $20/1,000)"
         type: string
-        default: "450"
+        default: "200"
       dry_run:
         description: "Dry run (count only — no Google calls, no writes)"
         type: boolean
@@ -56,6 +56,6 @@ jobs:
           CLOUDFLARE_DEPLOY_HOOK: ${{ secrets.CLOUDFLARE_DEPLOY_HOOK }}
           # On a scheduled run, inputs.limit is empty, so it falls back to 450
           # (Enterprise free tier is ~1,000/mo shared with the website backfill).
-          LIMIT: ${{ inputs.limit || '450' }}
+          LIMIT: ${{ inputs.limit || '200' }}
           DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
         run: python scripts/backfill_hours.py

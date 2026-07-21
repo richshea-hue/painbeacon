@@ -6,7 +6,7 @@ Fetches regularOpeningHours from Google Places API (New) for clinics that
 have a place_id but no hours yet, and writes results back to Supabase.
 
 Guardrails vs. the previous version:
-- Default limit 450/run. NOTE: regularOpeningHours itself bills as the
+- Default limit 200/run. NOTE: regularOpeningHours itself bills as the
   ENTERPRISE SKU ($20/1,000, ~1,000 free/month shared with the website
   backfill) — the old assumption that a tight mask stays on the Pro tier was
   wrong, confirmed by the July 2026 bill ($47.68 Places API (New) on the 5th).
@@ -51,10 +51,10 @@ import requests
 # Actions "limit" input silently did nothing and "dry run" still made billed
 # Google calls and wrote to the DB.
 # Default 450: regularOpeningHours bills as Place Details ENTERPRISE
-# (~1,000 free/month SHARED with backfill_websites.py, then $20/1,000) —
+# (~1,000 free/month SHARED with backfill_websites.py, then $20/1,000; split 200/700) —
 # confirmed by the $47.68 Places API (New) charge on the July 2026 bill.
 # The old 4,500 default assumed hours were Pro-tier (5,000 free); they aren't.
-MAX_CALLS = int(os.environ.get("LIMIT") or os.environ.get("MAX_CALLS") or "450")
+MAX_CALLS = int(os.environ.get("LIMIT") or os.environ.get("MAX_CALLS") or "200")
 DRY_RUN = os.environ.get("DRY_RUN", "") == "1"
 BATCH_SIZE = 500                # Supabase page size
 SLEEP_BETWEEN_CALLS = 0.10      # ~10 QPS, well under Google's per-second limit

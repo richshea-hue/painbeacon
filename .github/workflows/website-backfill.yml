@@ -6,7 +6,7 @@ on:
     # (the 1st) and the hours backfill (the 5th), before the NPPES sync (the
     # 10th). websiteUri bills as Place Details ENTERPRISE (~1,000 free/month,
     # then $20/1,000) and that free pool is SHARED with the hours backfill —
-    # hence 450 here + 450 there, pacing the directory through the free tier
+    # hence 700 here + 200 in the hours run (websites feed outreach, so they get the bigger share; ~2,350 hours candidates remained vs ~6,900 websites as of 2026-07), pacing the directory through the free tier
     # over several months rather than paying to do it in one shot.
     - cron: "0 15 6 * *"
   workflow_dispatch:
@@ -14,7 +14,7 @@ on:
       limit:
         description: "Max Google calls this run (Enterprise SKU — ~1,000 free/month SHARED with hours backfill, then $20/1,000)"
         type: string
-        default: "450"
+        default: "700"
       dry_run:
         description: "Dry run (count candidates only — no Google calls, no writes)"
         type: boolean
@@ -42,6 +42,6 @@ jobs:
           # pass runs over them and clean URLs go live.
           CLOUDFLARE_DEPLOY_HOOK: ${{ secrets.CLOUDFLARE_DEPLOY_HOOK }}
           # On a scheduled run, inputs.limit is empty, so fall back to 450.
-          LIMIT: ${{ inputs.limit || '450' }}
+          LIMIT: ${{ inputs.limit || '700' }}
           DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
         run: python scripts/backfill_websites.py
