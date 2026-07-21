@@ -6,11 +6,13 @@ Fetches regularOpeningHours from Google Places API (New) for clinics that
 have a place_id but no hours yet, and writes results back to Supabase.
 
 Guardrails vs. the previous version:
-- MAX_CALLS defaults to 4,500 (Pro SKU free tier is 5,000/mo — 500 headroom)
-- MAX_CALLS is override-able via env var so you can dry-test with MAX_CALLS=10
+- Default limit 450/run. NOTE: regularOpeningHours itself bills as the
+  ENTERPRISE SKU ($20/1,000, ~1,000 free/month shared with the website
+  backfill) — the old assumption that a tight mask stays on the Pro tier was
+  wrong, confirmed by the July 2026 bill ($47.68 Places API (New) on the 5th).
+- Limit is override-able via LIMIT/MAX_CALLS env for deliberate paid catch-ups
 - Strict field mask: `id,regularOpeningHours` ONLY — no reviews/photos/rating
-  (adding any of those silently upgrades every call to the Enterprise SKU at
-  $20/1,000 with just 1,000 free/month)
+  (extra fields can't make the call cheaper, only the payload fatter)
 - Skips folded duplicates (primary_npi IS NOT NULL)
 - Bare requests.get for Google calls — NOT a shared requests.Session — so the
   Supabase `Authorization: Bearer` header can't bleed into Google requests
@@ -48,7 +50,11 @@ import requests
 # fallback for manual shell runs. Previously only MAX_CALLS was read, so the
 # Actions "limit" input silently did nothing and "dry run" still made billed
 # Google calls and wrote to the DB.
-MAX_CALLS = int(os.environ.get("LIMIT") or os.environ.get("MAX_CALLS") or "4500")
+# Default 450: regularOpeningHours bills as Place Details ENTERPRISE
+# (~1,000 free/month SHARED with backfill_websites.py, then $20/1,000) —
+# confirmed by the $47.68 Places API (New) charge on the July 2026 bill.
+# The old 4,500 default assumed hours were Pro-tier (5,000 free); they aren't.
+MAX_CALLS = int(os.environ.get("LIMIT") or os.environ.get("MAX_CALLS") or "450")
 DRY_RUN = os.environ.get("DRY_RUN", "") == "1"
 BATCH_SIZE = 500                # Supabase page size
 SLEEP_BETWEEN_CALLS = 0.10      # ~10 QPS, well under Google's per-second limit

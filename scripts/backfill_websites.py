@@ -14,11 +14,12 @@ a bad domain can reach the database but never a patient.
 
 BILLING — READ BEFORE RAISING LIMIT:
   websiteUri bills as Place Details **Enterprise**: $20/1,000 calls with only
-  ~1,000 free per month (unlike the Pro tier's 5,000). The default LIMIT=900
-  stays inside the Enterprise free tier with headroom. Raising it costs real
-  money: e.g. LIMIT=10000 ≈ $180 after the free 1,000. Do a small run first
-  (LIMIT=25) and check which SKU line it lands on in the Cloud Console billing
-  report before any big run.
+  ~1,000 free per month — and that free pool is SHARED with the hours backfill
+  (its regularOpeningHours field is the same SKU; confirmed by the $47.68
+  Places charge on the July 2026 bill). Defaults are 450 here + 450 in the
+  hours run so the two together stay free. Raising it costs real money:
+  e.g. LIMIT=7000 ≈ $120+ after the free tier. Check Billing → Reports after
+  any change.
 
 Guardrails (same family as backfill_hours.py):
 - Strict field mask: `id,websiteUri,businessStatus` only
@@ -38,7 +39,8 @@ Env vars (set as GitHub Actions secrets / workflow inputs):
   SUPABASE_URL            e.g. https://<project>.supabase.co
   SUPABASE_SERVICE_KEY    service role key (NOT the anon key)
   GOOGLE_MAPS_API_KEY     same key the hours backfill uses
-  LIMIT                   max Google calls this run (default 900 — free tier)
+  LIMIT                   max Google calls this run (default 450 — half the
+                          shared Enterprise free tier)
   DRY_RUN                 "1" = count candidates only
   CLOUDFLARE_DEPLOY_HOOK  OPTIONAL — POSTed after a run that wrote new
                           websites, so the site rebuild picks them up
@@ -56,7 +58,9 @@ import requests
 # ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
-LIMIT = int(os.environ.get("LIMIT") or os.environ.get("MAX_CALLS") or "900")
+# Default 450: the ~1,000/month Enterprise free tier is SHARED with the hours
+# backfill that runs the day before (450 + 450 = 900, inside the free pool).
+LIMIT = int(os.environ.get("LIMIT") or os.environ.get("MAX_CALLS") or "450")
 DRY_RUN = os.environ.get("DRY_RUN", "") == "1"
 BATCH_SIZE = 500                # Supabase page size
 SLEEP_BETWEEN_CALLS = 0.10      # ~10 QPS, well under Google's per-second limit

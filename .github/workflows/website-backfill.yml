@@ -4,17 +4,17 @@ on:
   schedule:
     # 15:00 UTC on the 6th of every month — after Google's free-tier reset
     # (the 1st) and the hours backfill (the 5th), before the NPPES sync (the
-    # 10th). Each run fills up to 900 clinics: websiteUri bills as Place
-    # Details ENTERPRISE (only ~1,000 free/month, then $20/1,000), so the
-    # default paces the whole directory through the free tier over several
-    # months rather than paying to do it in one shot.
+    # 10th). websiteUri bills as Place Details ENTERPRISE (~1,000 free/month,
+    # then $20/1,000) and that free pool is SHARED with the hours backfill —
+    # hence 450 here + 450 there, pacing the directory through the free tier
+    # over several months rather than paying to do it in one shot.
     - cron: "0 15 6 * *"
   workflow_dispatch:
     inputs:
       limit:
-        description: "Max Google calls this run (Enterprise free tier ≈ 1,000/month; beyond that $20/1,000)"
+        description: "Max Google calls this run (Enterprise SKU — ~1,000 free/month SHARED with hours backfill, then $20/1,000)"
         type: string
-        default: "900"
+        default: "450"
       dry_run:
         description: "Dry run (count candidates only — no Google calls, no writes)"
         type: boolean
@@ -41,7 +41,7 @@ jobs:
           # Rebuild the site after new websites land, so the Safe Browsing
           # pass runs over them and clean URLs go live.
           CLOUDFLARE_DEPLOY_HOOK: ${{ secrets.CLOUDFLARE_DEPLOY_HOOK }}
-          # On a scheduled run, inputs.limit is empty, so fall back to 900.
-          LIMIT: ${{ inputs.limit || '900' }}
+          # On a scheduled run, inputs.limit is empty, so fall back to 450.
+          LIMIT: ${{ inputs.limit || '450' }}
           DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
         run: python scripts/backfill_websites.py
