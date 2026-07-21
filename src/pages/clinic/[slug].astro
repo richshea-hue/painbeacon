@@ -53,16 +53,16 @@ const mapMarkers = (c.latitude != null && c.longitude != null)
        address: [addr, `${c.cityLabel}, ${c.state}`].filter(Boolean).join(', ') }]
   : [];
 
-// Outbound clinic-website links are disabled (Safe Browsing: some practice
-// domains are expired/hijacked). Show the domain as text and route users
-// through a Google search instead, which Google itself screens for malware.
+// Outbound clinic-website links require BOTH the site-wide switch and a clean
+// build-time Safe Browsing check (some practice domains are expired/hijacked).
+// Unlinked profiles show the domain as text and route users through a Google
+// search instead, which Google itself screens for malware.
 const googleSearchHref =
   `https://www.google.com/search?q=${encodeURIComponent(`${name} ${c.cityLabel} ${c.state} pain clinic`)}`;
 let websiteHost = '';
-if (c.website) {
+if (c.websiteHref) {
   try {
-    websiteHost = new URL(/^https?:\/\//.test(c.website) ? c.website : `https://${c.website}`)
-      .hostname.replace(/^www\./, '');
+    websiteHost = new URL(c.websiteHref).hostname.replace(/^www\./, '');
   } catch (e) { websiteHost = ''; }
 }
 
@@ -71,6 +71,14 @@ if (c.website) {
 const tier = c.listing_tier || 'free';
 const isVerified = ['verified', 'enhanced', 'featured'].includes(tier);
 const isEnhanced = ['enhanced', 'featured'].includes(tier);
+
+// The followed website link — the claim perk. Verified tier + clean Safe
+// Browsing result, or nothing.
+const linkableWebsite =
+  (SITE.linkClinicWebsites && isVerified && c.websiteSafe === true && c.websiteHref) || '';
+
+// Embed-badge page link, pre-filled so the clinic lands on their own snippet.
+const badgeHref = `/verified-badge/?slug=${encodeURIComponent(c.slug)}&name=${encodeURIComponent(name)}`;
 
 // Self-reported (from the clinic's own claim form) always wins over the
 // CMS federal-enrollment match, since the clinic knows its own billing
@@ -175,8 +183,8 @@ if (ins.length > 0) {
           <strong>{addr || 'Address on file'}</strong><br />
           {c.cityLabel}, {c.state} {(c.postal_code || '').slice(0, 5)}<br />
           {c.phone && <>{c.phone}<br /></>}
-          {websiteHost && (isVerified
-            ? <a class="verified-site" href={c.website} rel="noopener" target="_blank">{websiteHost} ↗</a>
+          {websiteHost && (linkableWebsite
+            ? <a class="verified-site" href={linkableWebsite} rel="noopener" target="_blank">{websiteHost} ↗</a>
             : <span class="muted" style="font-size:0.9rem;">{websiteHost}</span>)}
         </p>
       </div>
@@ -194,14 +202,14 @@ if (ins.length > 0) {
       {isEnhanced && c.booking_url && (
         <a class="btn" href={c.booking_url} rel="noopener" target="_blank">Book / Contact</a>
       )}
-      {c.website && isVerified && (
-        <a class="btn" href={c.website} rel="noopener" target="_blank">Visit website</a>
+      {linkableWebsite && (
+        <a class="btn" href={linkableWebsite} rel="noopener" target="_blank">Visit website</a>
       )}
       <a class="btn ghost" href={mapHref} rel="nofollow noopener" target="_blank">Get directions</a>
       {c.phone && <a class="btn ghost" href={`tel:${c.phone.replace(/[^0-9+]/g, '')}`}>Call</a>}
       <a class="btn ghost" href={googleSearchHref} rel="nofollow noopener" target="_blank">Find on Google</a>
     </div>
-    {isVerified && c.website && (
+    {linkableWebsite && (
       <p class="site-perk">✓ Verified website link · <span>free for verified clinics, limited time</span></p>
     )}
 
@@ -282,6 +290,7 @@ if (ins.length > 0) {
     {isVerified ? (
       <p class="claimed-line">
         ✓ This profile is claimed and managed by the clinic.{' '}
+        <a href={badgeHref}>Get your “Verified by PainBeacon” badge for your website →</a>{' · '}
         <a href={`mailto:contactus@painbeacon.com?subject=${encodeURIComponent('Update listing: ' + name)}&body=${encodeURIComponent('Clinic: ' + name + '\nNPI: ' + c.npi + '\n\nPlease describe the changes you would like to make to this listing:\n')}`}>Request an update to this listing ↗</a>
       </p>
     ) : (

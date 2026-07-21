@@ -6,6 +6,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sampleData from '../data/sample.json';
+import { normalizeWebsite, checkWebsites } from './safebrowsing.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -89,8 +90,21 @@ export async function getClinics() {
     zoneUrlBySlug.set(c.zone_slug, seg);
   }
 
+  // Safe Browsing pass: every clinic website is checked once per build, and
+  // only URLs that come back clean are ever linked (see safebrowsing.js for
+  // the why). websiteSafe: true = checked & clean, false = flagged,
+  // null = not validated (no API key / API error) — treated as unlinkable.
+  const websiteHrefOf = new Map(
+    located.map((c) => [c.npi, normalizeWebsite(c.website)])
+  );
+  const safety = await checkWebsites([...websiteHrefOf.values()]);
+
   _cache = located.map((c) => ({
     ...c,
+    websiteHref: websiteHrefOf.get(c.npi) || null,
+    websiteSafe: safety.has(websiteHrefOf.get(c.npi))
+      ? safety.get(websiteHrefOf.get(c.npi))
+      : null,
     stateSlug: stateSlug(c.state),
     citySlug: citySlug(c.city),
     cityLabel: titleCase(c.city),

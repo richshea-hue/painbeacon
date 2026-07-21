@@ -24,6 +24,23 @@ npm run build
 Deploy `dist/` to Cloudflare Pages or Vercel (build command `npm run build`,
 output dir `dist`). Set the same env vars in the host's build settings.
 
+### Clinic website links (Safe Browsing)
+
+Outbound links to clinics' own websites (verified profiles + `sameAs` in the
+JSON-LD) only appear for URLs that pass a Google Safe Browsing check at build
+time — see `src/lib/safebrowsing.js`. Set this in the build env to enable:
+
+```bash
+export GOOGLE_SAFE_BROWSING_API_KEY=<key>   # Cloud Console → enable "Safe Browsing API" → API key
+```
+
+Without the key the build still succeeds; no clinic URL is validated, so no
+clinic URL is linked (domains from the federal data are sometimes expired and
+re-registered as malware — that once got the site flagged, hence fail-safe).
+For local dev with the fictional sample you can set
+`SAFE_BROWSING_ASSUME_SAFE=1` to preview the verified-link UI — never in
+production.
+
 ## Page structure (matches the brief)
 
 | Route | Page |

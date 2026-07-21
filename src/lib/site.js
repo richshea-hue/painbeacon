@@ -43,13 +43,15 @@ export const SITE = {
   // method, paste ONLY the content="..." value from Bing here and redeploy.
   bingSiteVerification: '',
 
-  // Outbound links to each clinic's OWN website are disabled. Practice domains
-  // in the federal data sometimes expire and get re-registered as spam/malware,
-  // and linking to them got the site flagged by Google Safe Browsing. While off,
-  // profiles show the domain as plain text and offer a safe "Find on Google"
-  // button instead. Only set true again once website URLs are validated against
-  // the Google Safe Browsing API at build time.
-  linkClinicWebsites: false,
+  // Outbound links to each clinic's OWN website. Practice domains in the
+  // federal data sometimes expire and get re-registered as spam/malware, and
+  // linking to them once got the site flagged by Google Safe Browsing. Links
+  // are therefore double-gated: this master switch AND a per-URL Safe Browsing
+  // check at build time (src/lib/safebrowsing.js — needs
+  // GOOGLE_SAFE_BROWSING_API_KEY in the build env). A URL that wasn't checked
+  // or didn't come back clean is shown as plain text, never linked, even with
+  // this switch on. Set false to kill all clinic links regardless of checks.
+  linkClinicWebsites: true,
 
   // Paid listing tiers. Create the two subscription Payment Links in Stripe,
   // then paste each checkout URL into `url` below — the buttons go live

@@ -5,7 +5,7 @@ import { ALL_TOPICS, MIN_CLINICS_FOR_TOPIC_PAGE } from '../lib/topics.js';
 
 export async function GET() {
   const clinics = await getClinics();
-  const urls = new Set(['/', '/pain-clinics/', '/news/', '/how-we-rank/', '/for-practices/', '/ownership-disclosure/', '/privacy/']);
+  const urls = new Set(['/', '/pain-clinics/', '/news/', '/how-we-rank/', '/for-practices/', '/verified-badge/', '/ownership-disclosure/', '/privacy/']);
 
   // News articles: /news/[slug]/
   for (const a of await getCollection('articles')) urls.add(`/news/${a.slug}/`);

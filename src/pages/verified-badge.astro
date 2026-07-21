@@ -1,0 +1,170 @@
+---
+import Base from '../layouts/Base.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { breadcrumbLd } from '../lib/schema.js';
+import { SITE } from '../lib/site.js';
+
+// The embeddable "Verified by PainBeacon" badge for clinics' own websites.
+// Verified profiles deep-link here with ?slug=&name= so the snippet below is
+// pre-filled for that clinic; anyone else can paste their profile URL. The
+// badge links back to the clinic's profile (followed) — the same growth loop
+// Psychology Today runs with its "Verified by" seal.
+const crumbs = [
+  { name: 'Home', href: '/' },
+  { name: 'For practices', href: '/for-practices/' },
+  { name: 'Verified badge' },
+];
+const badgeSrc = new URL('/brand/verified-badge.svg', SITE.url).href;
+---
+<Base title="Add the “Verified by PainBeacon” badge to your website"
+      description="Verified pain clinics can embed the Verified by PainBeacon badge on their own website. Copy the snippet, paste it into your site, and show patients your listing is verified."
+      jsonld={breadcrumbLd(crumbs)}>
+  <div class="wrap narrow prose">
+    <Breadcrumbs items={crumbs} />
+
+    <p class="eyebrow">For verified practices</p>
+    <h1>Show patients you’re verified — on your own website</h1>
+    <p class="lede">
+      Clinics with a claimed and verified PainBeacon listing can display this badge
+      on their own site. It links to your PainBeacon profile, so patients can see
+      your verified details, credentials, and reviews in one click.
+    </p>
+
+    <div class="badge-preview">
+      <img src="/brand/verified-badge.svg" alt="Verified pain clinic on PainBeacon"
+           width="230" height="60" />
+    </div>
+
+    <h2>Get your embed code</h2>
+    <div class="vb" data-badge-src={badgeSrc} data-site={SITE.url}>
+      <div class="vb-lookup">
+        <label for="vb-url">Your PainBeacon profile URL
+          <input id="vb-url" class="vb-in" type="url" inputmode="url"
+                 placeholder="https://painbeacon.com/clinic/your-clinic/" />
+        </label>
+        <p class="vb-hint">Tip: open <a href="/pain-clinics/">your clinic’s profile</a> and copy the
+          address bar — or use the “Get your badge” link shown on verified profiles,
+          which fills this in for you.</p>
+      </div>
+
+      <div class="vb-out" hidden>
+        <p class="vb-for">Embed code for <strong class="vb-name">your clinic</strong>:</p>
+        <textarea class="vb-code" rows="6" readonly spellcheck="false"></textarea>
+        <button class="btn vb-copy" type="button">Copy code</button>
+        <span class="vb-copied" hidden>✓ Copied</span>
+        <p class="vb-hint">Paste it into your website wherever you’d like the badge to
+          appear — footers, “About us,” and contact pages work well. It’s a plain
+          image and link: no scripts, no tracking, and it never slows your site down.</p>
+      </div>
+    </div>
+
+    <h2>Who can use the badge</h2>
+    <p>
+      The badge is for practices whose PainBeacon listing is <strong>claimed and
+      verified</strong> — we’ve confirmed the person managing the listing represents
+      the practice. If your listing isn’t verified yet,
+      <a href="/for-practices/">claiming it is free</a> and takes a couple of minutes.
+      We may ask sites displaying the badge without a verified listing to remove it.
+    </p>
+
+    <h2>Why display it</h2>
+    <ul>
+      <li><strong>Patient trust:</strong> the badge shows your details are confirmed by an
+        independent directory, not self-reported.</li>
+      <li><strong>One click to your full profile:</strong> credentials, verified location,
+        hours, and reviews — everything a patient checks before calling.</li>
+      <li><strong>It helps your own visibility:</strong> your verified profile links back to
+        your website with a search-engine-followed link, free for verified clinics.</li>
+    </ul>
+  </div>
+
+  <style>
+    .badge-preview { margin:1.25rem 0; padding:1.5rem; border:1px dashed var(--line,#e3ddcf);
+      border-radius:14px; background:var(--paper-2,#efeadd); display:flex; justify-content:center; }
+    .vb { border:1px solid var(--line,#e3ddcf); border-radius:14px; background:var(--card,#fffefb);
+      padding:1.1rem 1.2rem; margin:1rem 0; }
+    .vb label { display:flex; flex-direction:column; gap:.3rem; font-size:.85rem;
+      color:var(--ink-soft,#4c5b59); font-weight:600; }
+    .vb-in { padding:.55rem .65rem; border:1px solid var(--line,#e3ddcf); border-radius:9px;
+      font-size:1rem; font-family:inherit; font-weight:400; box-sizing:border-box;
+      background:var(--paper,#f7f4ed); color:var(--ink,#1c2b2a); }
+    .vb-in:focus { outline:none; border-color:var(--teal,#0e6e62);
+      box-shadow:0 0 0 3px color-mix(in srgb, var(--teal,#0e6e62) 16%, transparent); }
+    .vb-hint { font-size:.8rem; color:var(--ink-faint,#7c8a87); line-height:1.5; margin:.5rem 0 0; }
+    .vb-out { margin-top:1rem; }
+    .vb-for { margin:0 0 .4rem; font-size:.9rem; color:var(--ink-soft,#4c5b59); }
+    .vb-code { width:100%; box-sizing:border-box; font-family:var(--mono,monospace);
+      font-size:.78rem; line-height:1.5; padding:.7rem .8rem; border:1px solid var(--line,#e3ddcf);
+      border-radius:9px; background:var(--paper,#f7f4ed); color:var(--ink,#1c2b2a); resize:vertical; }
+    .vb-copy { margin-top:.5rem; }
+    .vb-copied { margin-left:.6rem; font-size:.85rem; font-weight:600; color:var(--teal-deep,#0a4f46); }
+  </style>
+
+  <script is:inline>
+    (function () {
+      var root = document.querySelector('.vb');
+      if (!root) return;
+      var SITE_URL = (root.getAttribute('data-site') || '').replace(/\/$/, '');
+      var BADGE_SRC = root.getAttribute('data-badge-src');
+      var urlIn = root.querySelector('#vb-url');
+      var out = root.querySelector('.vb-out');
+      var code = root.querySelector('.vb-code');
+      var nameEl = root.querySelector('.vb-name');
+      var copied = root.querySelector('.vb-copied');
+
+      function slugFrom(v) {
+        var m = (v || '').match(/\/clinic\/([a-z0-9-]+)\/?/i);
+        return m ? m[1] : '';
+      }
+
+      function esc(s) {
+        return (s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+          .replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      }
+
+      function render(slug, name) {
+        var profile = SITE_URL + '/clinic/' + slug + '/?src=badge';
+        var label = name ? esc(name) + ' is a verified pain clinic on PainBeacon'
+                         : 'Verified pain clinic on PainBeacon';
+        // Built as lines to keep this inline script free of literal closing tags.
+        var snippet = [
+          '<a href="' + profile + '"',
+          '   title="' + label + '">',
+          '  <img src="' + BADGE_SRC + '"',
+          '       alt="' + label + '"',
+          '       width="230" height="60" style="border:0" loading="lazy">',
+          '<' + '/a>',
+        ].join('\n');
+        code.value = snippet;
+        nameEl.textContent = name || ('/clinic/' + slug + '/');
+        out.hidden = false;
+      }
+
+      // Pre-fill from ?slug=&name= (the "Get your badge" link on profiles).
+      try {
+        var qp = new URLSearchParams(location.search);
+        var slug = (qp.get('slug') || '').trim();
+        if (slug && /^[a-z0-9-]+$/i.test(slug)) {
+          urlIn.value = SITE_URL + '/clinic/' + slug + '/';
+          render(slug, (qp.get('name') || '').trim());
+        }
+      } catch (e) {}
+
+      urlIn.addEventListener('input', function () {
+        var slug = slugFrom(urlIn.value);
+        if (slug) render(slug, '');
+        else out.hidden = true;
+      });
+
+      root.querySelector('.vb-copy').addEventListener('click', function () {
+        code.select();
+        var done = function () { copied.hidden = false; setTimeout(function () { copied.hidden = true; }, 2000); };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(code.value).then(done).catch(function () {
+            document.execCommand('copy'); done();
+          });
+        } else { document.execCommand('copy'); done(); }
+      });
+    })();
+  </script>
+</Base>

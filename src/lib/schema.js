@@ -44,7 +44,11 @@ export function clinicLd(c, canonicalUrl) {
     },
   };
   if (c.phone) ld.telephone = c.phone;
-  if (c.website && SITE.linkClinicWebsites) ld.sameAs = [c.website];
+  // sameAs only for URLs that passed the build-time Safe Browsing check —
+  // an unvalidated or flagged URL never appears in structured data either.
+  if (c.websiteHref && c.websiteSafe === true && SITE.linkClinicWebsites) {
+    ld.sameAs = [c.websiteHref];
+  }
   if (c.latitude && c.longitude) {
     ld.geo = { '@type': 'GeoCoordinates', latitude: c.latitude, longitude: c.longitude };
   }
