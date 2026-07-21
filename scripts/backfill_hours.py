@@ -22,7 +22,10 @@ Env vars (set as GitHub Actions secrets):
   SUPABASE_URL          e.g. https://eojjpozaoanwqzngxtuz.supabase.co
   SUPABASE_SERVICE_KEY  service role key (NOT the anon key)
   GOOGLE_MAPS_API_KEY   the key you just rotated after the incident
-  MAX_CALLS             OPTIONAL override, e.g. MAX_CALLS=10 for a dry run
+  LIMIT                 max calls this run (the workflow input; falls back to
+                        MAX_CALLS, then 4500)
+  DRY_RUN               "1" = count candidates only, no Google calls/writes
+  MAX_CALLS             OPTIONAL legacy override for manual shell runs
 
 Schema assumptions in the `clinics` table (verify column names before commit):
   id             bigint / uuid    primary key
@@ -41,7 +44,12 @@ import requests
 # ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
-MAX_CALLS = int(os.environ.get("MAX_CALLS", "4500"))
+# The workflow passes LIMIT (its input) and DRY_RUN; MAX_CALLS kept as a
+# fallback for manual shell runs. Previously only MAX_CALLS was read, so the
+# Actions "limit" input silently did nothing and "dry run" still made billed
+# Google calls and wrote to the DB.
+MAX_CALLS = int(os.environ.get("LIMIT") or os.environ.get("MAX_CALLS") or "4500")
+DRY_RUN = os.environ.get("DRY_RUN", "") == "1"
 BATCH_SIZE = 500                # Supabase page size
 SLEEP_BETWEEN_CALLS = 0.10      # ~10 QPS, well under Google's per-second limit
 GOOGLE_TIMEOUT = 15
@@ -128,7 +136,14 @@ def google_fetch_hours(place_id):
 # ---------------------------------------------------------------------------
 def main():
     started = datetime.now(timezone.utc).isoformat()
-    print(f"[{started}] backfill_hours: start  MAX_CALLS={MAX_CALLS}")
+    print(f"[{started}] backfill_hours: start  MAX_CALLS={MAX_CALLS}  DRY_RUN={DRY_RUN}")
+
+    if DRY_RUN:
+        candidates = sb_get_candidates(BATCH_SIZE)
+        more = "+" if len(candidates) == BATCH_SIZE else ""
+        print(f"[dry-run] {len(candidates)}{more} candidates still missing hours "
+              f"(first page). No Google calls made, nothing written.")
+        return
 
     calls_made = 0
     written = 0
