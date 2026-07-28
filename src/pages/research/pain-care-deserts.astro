@@ -63,6 +63,7 @@ const datasetLd = {
   url: new URL('/research/pain-care-deserts/', SITE.url).href,
   license: 'https://creativecommons.org/licenses/by/4.0/',
   creator: { '@type': 'Organization', name: SITE.name, url: SITE.url },
+  author: { '@type': 'Person', name: 'Rich Shea', url: 'https://richshea.com' },
   temporalCoverage: year,
   spatialCoverage: 'United States',
   distribution: [
@@ -84,7 +85,8 @@ const datasetLd = {
     <Breadcrumbs items={crumbs} />
     <h1>Pain care deserts: the U.S. counties with no pain management clinic</h1>
     <p class="muted">
-      Original research by {SITE.name} · Updated {S.generatedAt} · Based on
+      Original research by <a href="https://richshea.com" target="_blank" rel="noopener">Rich
+      Shea</a>, {SITE.name} founder · Updated {S.generatedAt} · Based on
       {fmt(S.totalClinics)} clinic locations in the federal NPI registry
     </p>
 
@@ -185,9 +187,9 @@ const datasetLd = {
 
     <h2>How to cite this study</h2>
     <p class="muted">
-      PainBeacon ({year}). <em>Pain Care Deserts: U.S. Counties With No Pain Management
-      Clinic.</em> {SITE.url}/research/pain-care-deserts/ — based on federal NPI registry
-      data and U.S. Census Bureau vintage-{S.vintage} population estimates.
+      Shea, R. ({year}). <em>Pain Care Deserts: U.S. Counties With No Pain Management
+      Clinic.</em> PainBeacon. {SITE.url}/research/pain-care-deserts/ — based on federal
+      NPI registry data and U.S. Census Bureau vintage-{S.vintage} population estimates.
     </p>
 
     <hr class="rule" />
