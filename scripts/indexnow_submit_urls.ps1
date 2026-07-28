@@ -11,6 +11,15 @@ param(
 )
 
 $siteHost = "painbeacon.com"
+# We FETCH (sitemap + key preflight) from the Cloudflare Pages *.pages.dev
+# origin instead of the custom domain: Cloudflare's Bot Fight Mode challenges
+# datacenter IPs (e.g. GitHub Actions runners) on painbeacon.com, returning an
+# HTML challenge page instead of the XML and breaking the parse. pages.dev
+# serves byte-identical content but isn't behind the custom zone's bot
+# protection. Everything we SUBMIT stays canonical painbeacon.com (the URLs in
+# the sitemap already are, and keyLocation below is verified by Bing, a
+# verified bot Cloudflare lets through).
+$fetchHost = "painbeacon.pages.dev"
 # The key is public by design -- IndexNow verifies ownership by fetching
 # keyLocation and checking its contents match. Source of truth is the file
 # in public/, which deploys to the site root.
@@ -21,13 +30,16 @@ $keyLocation = "https://$siteHost/$key.txt"
 
 if ($FromSitemap) {
     Write-Host "Fetching sitemap..."
-    [xml]$sitemap = (Invoke-WebRequest -Uri "https://$siteHost/sitemap.xml" -UseBasicParsing).Content
+    [xml]$sitemap = (Invoke-WebRequest -Uri "https://$fetchHost/sitemap.xml" -UseBasicParsing).Content
 
     if ($sitemap.sitemapindex) {
         # Sitemap index: fetch each child sitemap and collect its URLs.
+        # Child <loc>s are canonical painbeacon.com URLs; swap the host so these
+        # fetches also bypass Bot Fight Mode (see $fetchHost note above).
         foreach ($child in $sitemap.sitemapindex.sitemap) {
-            Write-Host "  Fetching $($child.loc)..."
-            [xml]$childMap = (Invoke-WebRequest -Uri $child.loc -UseBasicParsing).Content
+            $childUri = $child.loc -replace "://$siteHost/", "://$fetchHost/"
+            Write-Host "  Fetching $childUri..."
+            [xml]$childMap = (Invoke-WebRequest -Uri $childUri -UseBasicParsing).Content
             $urls += $childMap.urlset.url | ForEach-Object { $_.loc }
         }
     } else {
@@ -50,15 +62,17 @@ if ($urls.Count -eq 0) {
 }
 
 # Verify the key file is live before submitting -- a missing key file makes
-# IndexNow silently ignore every submission.
+# IndexNow silently ignore every submission. Fetch via $fetchHost (same reason
+# as the sitemap); the deployed file is identical on both hosts.
+$keyCheckUrl = "https://$fetchHost/$key.txt"
 try {
-    $keyCheck = Invoke-WebRequest -Uri $keyLocation -UseBasicParsing
+    $keyCheck = Invoke-WebRequest -Uri $keyCheckUrl -UseBasicParsing
     if ($keyCheck.Content.Trim() -ne $key) {
-        Write-Error "Key file at $keyLocation does not match the key. Deploy public/$key.txt first."
+        Write-Error "Key file at $keyCheckUrl does not match the key. Deploy public/$key.txt first."
         exit 1
     }
 } catch {
-    Write-Error "Key file not reachable at $keyLocation. Deploy public/$key.txt first."
+    Write-Error "Key file not reachable at $keyCheckUrl. Deploy public/$key.txt first."
     exit 1
 }
 
