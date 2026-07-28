@@ -188,6 +188,12 @@ p { margin: 0 0 1rem; }
 .tile:hover { border-color: color-mix(in srgb, var(--teal) 40%, var(--line)); text-decoration: none; }
 .tile .n { font-family: var(--mono); font-size: 0.78rem; color: var(--ink-faint); }
 .tile .label { color: var(--ink); }
+/* Phones: a smaller minimum keeps the browse grid two-up now that the wrapper's
+   side padding is honoured (13rem tiles would drop it to a single column). */
+@media (max-width: 560px) {
+  .tile-grid { grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); }
+  .tile { padding: 0.7rem 0.8rem; }
+}
 
 /* ---- profile ---- */
 .profile-head { display: grid; grid-template-columns: 1fr auto; gap: 2rem; align-items: end;
