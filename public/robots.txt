@@ -1,4 +1,6 @@
 User-agent: *
 Allow: /
+# Postcard QR redirect endpoint — tracking URLs, not content.
+Disallow: /c/
 
 Sitemap: https://painbeacon.com/sitemap.xml
