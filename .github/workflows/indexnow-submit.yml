@@ -1,0 +1,34 @@
+name: IndexNow submit
+
+# Notifies Bing/Yandex/Seznam/Naver of the full sitemap after every deploy.
+# Covers both deploy paths: direct pushes to main (Cloudflare Pages git
+# integration) and the NPPES monthly sync, which rebuilds via deploy hook.
+# Submissions are idempotent and quota-free, so over-submitting is harmless.
+
+on:
+  push:
+    branches: [main]
+  workflow_run:
+    workflows: ["NPPES monthly sync"]
+    types: [completed]
+  workflow_dispatch:
+    # "Run workflow" button in the Actions tab for manual resubmission.
+
+jobs:
+  submit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # For the workflow_run trigger, only submit if the sync actually succeeded.
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Wait for Cloudflare Pages deploy
+        # The script submits whatever the LIVE sitemap contains, so worst case
+        # a slow build means this run submits the previous sitemap — corrected
+        # automatically on the next deploy. 5 minutes covers typical builds.
+        run: sleep 300
+
+      - name: Submit sitemap to IndexNow
+        shell: pwsh
+        run: ./scripts/indexnow_submit_urls.ps1 -FromSitemap
