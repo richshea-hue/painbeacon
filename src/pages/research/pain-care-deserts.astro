@@ -1,0 +1,232 @@
+---
+import Base from '../../layouts/Base.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import { breadcrumbLd, faqLd } from '../../lib/schema.js';
+import { SITE } from '../../lib/site.js';
+import { getDesertStats } from '../../lib/deserts.js';
+
+const S = await getDesertStats();
+const fmt = (n) => n.toLocaleString('en-US');
+const millions = (n) => (n / 1e6 >= 10 ? Math.round(n / 1e6) : +(n / 1e6).toFixed(1));
+
+const year = S.generatedAt.slice(0, 4);
+const title = `Pain Care Deserts: ${fmt(S.desertCount)} U.S. Counties Have No Pain Management Clinic (${year})`;
+const description =
+  `${fmt(S.desertCount)} of ${fmt(S.totalCounties)} U.S. counties (${S.desertPct}%) have no ` +
+  `pain management clinic — ${millions(S.desertPop)} million Americans live in these pain care ` +
+  `deserts. Original analysis of federal NPI registry data, county by county.`;
+
+const crumbs = [
+  { name: 'Home', href: '/' },
+  { name: 'Research', href: '/research/' },
+  { name: 'Pain care deserts', href: '/research/pain-care-deserts/' },
+];
+
+const faqs = [
+  {
+    q: 'What is a pain care desert?',
+    a:
+      `A pain care desert is a U.S. county with no pain management clinic. In this analysis, ` +
+      `${fmt(S.desertCount)} of the nation's ${fmt(S.totalCounties)} counties (${S.desertPct}%) had no ` +
+      `practice registered in the federal NPI registry under a pain medicine specialty, leaving about ` +
+      `${millions(S.desertPop)} million residents without a local pain management option.`,
+  },
+  {
+    q: 'How many Americans live in a county with no pain clinic?',
+    a:
+      `Approximately ${millions(S.desertPop)} million people — ${S.desertPopPct}% of the U.S. population — ` +
+      `live in one of the ${fmt(S.desertCount)} counties with no pain management clinic. A further ` +
+      `${millions(S.singleClinicPop)} million live in a county served by exactly one clinic.`,
+  },
+  {
+    q: 'Which data does this analysis use?',
+    a:
+      `Clinic locations come from the U.S. federal NPI registry (NPPES), filtered to practices with pain ` +
+      `medicine taxonomies and de-duplicated to one record per practice location. County assignment uses the ` +
+      `Census Bureau's 2020 ZCTA-to-county crosswalk, and population figures are Census Bureau vintage-` +
+      `${S.vintage} county estimates. The full county-level table is available as a free CSV download.`,
+  },
+  {
+    q: 'Can I cite or republish these figures?',
+    a:
+      `Yes — these statistics are free to cite with attribution and a link to PainBeacon ` +
+      `(${SITE.url}/research/pain-care-deserts/). Journalists can download the full county-level dataset ` +
+      `below; for questions or custom cuts of the data, use the contact options in the site footer.`,
+  },
+];
+
+const datasetLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Dataset',
+  name: `U.S. Pain Care Deserts by County, ${year}`,
+  description,
+  url: new URL('/research/pain-care-deserts/', SITE.url).href,
+  license: 'https://creativecommons.org/licenses/by/4.0/',
+  creator: { '@type': 'Organization', name: SITE.name, url: SITE.url },
+  temporalCoverage: year,
+  spatialCoverage: 'United States',
+  distribution: [
+    {
+      '@type': 'DataDownload',
+      encodingFormat: 'text/csv',
+      contentUrl: new URL('/research/pain-care-deserts.csv', SITE.url).href,
+    },
+  ],
+  isBasedOn: [
+    'https://npiregistry.cms.hhs.gov/',
+    'https://www.census.gov/programs-surveys/popest.html',
+  ],
+};
+---
+
+<Base title={title} description={description} jsonld={[breadcrumbLd(crumbs), datasetLd, faqLd(faqs)]}>
+  <div class="wrap narrow prose">
+    <Breadcrumbs items={crumbs} />
+    <h1>Pain care deserts: the U.S. counties with no pain management clinic</h1>
+    <p class="muted">
+      Original research by {SITE.name} · Updated {S.generatedAt} · Based on
+      {fmt(S.totalClinics)} clinic locations in the federal NPI registry
+    </p>
+
+    <p class="lede">
+      {fmt(S.desertCount)} of the {fmt(S.totalCounties)} counties in the United States
+      — {S.desertPct}% — have no pain management clinic. About {millions(S.desertPop)} million
+      Americans ({S.desertPopPct}% of the population) live in these <strong>pain care
+      deserts</strong>, where seeing a pain specialist means traveling to another county.
+    </p>
+
+    <h2>Key findings</h2>
+    <ul>
+      <li>
+        <strong>{S.desertPct}% of U.S. counties have no pain management clinic.</strong>
+        {' '}{fmt(S.desertCount)} of {fmt(S.totalCounties)} counties across the 50 states and
+        Washington, D.C. have zero practices registered under a pain medicine specialty.
+      </li>
+      <li>
+        <strong>{millions(S.desertPop)} million Americans live in a pain care desert.</strong>
+        {' '}That is {S.desertPopPct}% of the U.S. population without a pain management
+        practice in their home county.
+      </li>
+      <li>
+        <strong>Another {fmt(S.singleClinicCount)} counties are one closure away.</strong>
+        {' '}{millions(S.singleClinicPop)} million people live in a county served by exactly
+        one pain management clinic.
+      </li>
+      <li>
+        <strong>Access varies sharply by state.</strong> In {S.states[0].stateName},
+        {' '}{S.states[0].desertPct}% of counties have no pain clinic, while in
+        {' '}{S.states[S.states.length - 1].stateName} nearly every county has at least one.
+      </li>
+    </ul>
+
+    <h2>The largest pain care deserts</h2>
+    <p>
+      These are the most populous U.S. counties with no pain management clinic — places
+      where tens or hundreds of thousands of residents have no in-county option.
+    </p>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr><th>#</th><th>County</th><th>State</th><th style="text-align:right;">Population</th></tr>
+        </thead>
+        <tbody>
+          {S.topDeserts.map((d, i) => (
+            <tr>
+              <td>{i + 1}</td>
+              <td>{d.county}</td>
+              <td>{d.state}</td>
+              <td style="text-align:right;">{fmt(d.pop)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    <h2>Pain clinic access by state</h2>
+    <p>
+      Sorted by the share of counties with no pain management clinic. "Clinics per 100k"
+      is the number of registered pain management practice locations per 100,000 residents.
+    </p>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>State</th>
+            <th style="text-align:right;">Clinics</th>
+            <th style="text-align:right;">Per 100k</th>
+            <th style="text-align:right;">Counties</th>
+            <th style="text-align:right;">Deserts</th>
+            <th style="text-align:right;">% deserts</th>
+            <th style="text-align:right;">People in deserts</th>
+          </tr>
+        </thead>
+        <tbody>
+          {S.states.map((s) => (
+            <tr>
+              <td><a href={`/pain-clinics/${s.state.toLowerCase()}/`}>{s.stateName}</a></td>
+              <td style="text-align:right;">{fmt(s.clinics)}</td>
+              <td style="text-align:right;">{s.per100k}</td>
+              <td style="text-align:right;">{fmt(s.counties)}</td>
+              <td style="text-align:right;">{fmt(s.deserts)}</td>
+              <td style="text-align:right;">{s.desertPct}%</td>
+              <td style="text-align:right;">{fmt(s.desertPop)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    <h2>Download the data</h2>
+    <p>
+      The full county-level table ({fmt(S.totalCounties)} rows: county, state, population,
+      clinic count, desert flag) is free to download and reuse with attribution:
+      {' '}<a href="/research/pain-care-deserts.csv">pain-care-deserts.csv</a>.
+    </p>
+
+    <h2>How to cite this study</h2>
+    <p class="muted">
+      PainBeacon ({year}). <em>Pain Care Deserts: U.S. Counties With No Pain Management
+      Clinic.</em> {SITE.url}/research/pain-care-deserts/ — based on federal NPI registry
+      data and U.S. Census Bureau vintage-{S.vintage} population estimates.
+    </p>
+
+    <hr class="rule" />
+    <h2>Methodology</h2>
+    <p>
+      <strong>Clinic locations.</strong> We start from the federal National Provider
+      Identifier (NPI) registry (NPPES), the U.S. government's master file of healthcare
+      providers, filtered to practices registered under pain medicine taxonomies
+      (interventional pain medicine, pain medicine, and related specialties). Records are
+      de-duplicated to one entry per practice location ({fmt(S.totalClinics)} locations at
+      the time of this analysis), the same dataset that powers the
+      {' '}<a href="/pain-clinics/">PainBeacon directory</a>.
+    </p>
+    <p>
+      <strong>County assignment.</strong> Each clinic is assigned to a county via the
+      Census Bureau's 2020 ZCTA-to-county relationship file, using the county containing
+      the largest share of the ZIP code's land area. {fmt(S.mappedClinics)} of
+      {' '}{fmt(S.totalClinics)} locations mapped to a county in the 50 states or D.C.;
+      the remainder (territories and non-geographic ZIPs) are excluded.
+    </p>
+    <p>
+      <strong>Population.</strong> County population figures are U.S. Census Bureau
+      vintage-{S.vintage} estimates. The analysis covers the {fmt(S.totalCounties)} counties
+      and county-equivalents of the 50 states plus Washington, D.C.
+    </p>
+    <p>
+      <strong>Limitations.</strong> NPI registration reflects where practices are
+      registered, which can lag openings, closures, and relocations. A county with no
+      registered pain management practice may still have primary-care physicians who manage
+      pain, and residents near county lines may have access across the border. County-level
+      analysis measures local availability, not drive time.
+    </p>
+
+    <h2>Frequently asked questions</h2>
+    {faqs.map((f) => (
+      <>
+        <h3>{f.q}</h3>
+        <p>{f.a}</p>
+      </>
+    ))}
+  </div>
+</Base>
