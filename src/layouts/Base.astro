@@ -78,12 +78,21 @@ const blocks = Array.isArray(jsonld) ? jsonld : [jsonld];
       </div>
     )}
 
-    <header class="site-head">
+    <header class="site-head" id="siteHead">
       <div class="wrap bar">
         <a class="brand" href="/" aria-label="PainBeacon home">
           <img class="logo-img" src="/brand/painbeacon-logo-horizontal-dark.svg" alt="PainBeacon" width="153" height="38" />
         </a>
-        <nav class="nav">
+        <button class="nav-toggle" id="navToggle" type="button" aria-expanded="false" aria-controls="siteNav">
+          <svg class="nav-icon-open" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
+            <path d="M2 5h16M2 10h16M2 15h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
+          </svg>
+          <svg class="nav-icon-close" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
+            <path d="M4 4l12 12M16 4L4 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
+          </svg>
+          <span>Menu</span>
+        </button>
+        <nav class="nav" id="siteNav">
           <a href="/pain-clinics/">Browse by state</a>
           <a href="/news/">News &amp; guides</a>
           <a href="/research/">Research</a>
@@ -164,6 +173,36 @@ const blocks = Array.isArray(jsonld) ? jsonld : [jsonld];
     </footer>
 
     <LeadChat />
+
+    <script is:inline>
+      // Mobile nav — the six links collapse into one "Menu" button under 900px.
+      (function () {
+        var head = document.getElementById('siteHead');
+        var btn = document.getElementById('navToggle');
+        var nav = document.getElementById('siteNav');
+        if (!head || !btn || !nav) return;
+        function setOpen(on) {
+          head.classList.toggle('nav-open', on);
+          btn.setAttribute('aria-expanded', on ? 'true' : 'false');
+        }
+        btn.addEventListener('click', function () {
+          setOpen(!head.classList.contains('nav-open'));
+        });
+        nav.addEventListener('click', function (e) {
+          if (e.target.closest('a')) setOpen(false);
+        });
+        document.addEventListener('keydown', function (e) {
+          if (e.key === 'Escape') setOpen(false);
+        });
+        // Tapping outside the header closes it; resizing to desktop resets it.
+        document.addEventListener('click', function (e) {
+          if (!head.contains(e.target)) setOpen(false);
+        });
+        window.addEventListener('resize', function () {
+          if (window.innerWidth > 900) setOpen(false);
+        });
+      })();
+    </script>
 
     <script is:inline>
       // Lazy-load Leaflet (free OpenStreetMap maps) ONLY on pages that have a
