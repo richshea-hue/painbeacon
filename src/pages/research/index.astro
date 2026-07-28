@@ -1,0 +1,34 @@
+---
+import Base from '../../layouts/Base.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import { breadcrumbLd } from '../../lib/schema.js';
+import { getDesertStats } from '../../lib/deserts.js';
+
+const S = await getDesertStats();
+const fmt = (n) => n.toLocaleString('en-US');
+const crumbs = [{ name: 'Home', href: '/' }, { name: 'Research', href: '/research/' }];
+---
+
+<Base
+  title="Research & data studies"
+  description="Original data studies on pain management access in the United States, built from the federal NPI registry. Free to cite with attribution."
+  jsonld={breadcrumbLd(crumbs)}
+>
+  <div class="wrap narrow prose">
+    <Breadcrumbs items={crumbs} />
+    <h1>Research &amp; data studies</h1>
+    <p class="lede">
+      Original analyses of pain management access in the United States, built from the
+      federal NPI registry and U.S. Census data. All statistics are free to cite with
+      attribution, and every study includes a downloadable dataset.
+    </p>
+
+    <h2><a href="/research/pain-care-deserts/">Pain care deserts: U.S. counties with no pain management clinic</a></h2>
+    <p>
+      {fmt(S.desertCount)} of {fmt(S.totalCounties)} U.S. counties ({S.desertPct}%) have no
+      pain management clinic. County-by-county analysis of where {S.desertPopPct}% of
+      Americans live without a local pain management option — with the full dataset as CSV.
+    </p>
+    <p class="muted">Updated {S.generatedAt}</p>
+  </div>
+</Base>
