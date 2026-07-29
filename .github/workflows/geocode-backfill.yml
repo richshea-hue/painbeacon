@@ -1,0 +1,51 @@
+name: Geocode backfill (Google Places)
+
+on:
+  schedule:
+    # 15:00 UTC on the 8th of every month — after Google's free-tier reset (the
+    # 1st), the hours backfill (the 5th) and the website backfill (the 6th),
+    # and before the NPPES sync (the 10th). Kept on its own day so a long run
+    # never overlaps the other two.
+    #
+    # This job bills as Text Search PRO: $32/1,000 with 5,000 free per month.
+    # That is a SEPARATE free pool from the Place Details ENTERPRISE one the
+    # hours and website backfills share (~1,000 free/month between them, which
+    # is why they run at 200 + 700). Nothing else here uses Text Search Pro, so
+    # this job has the whole 5,000 to itself, and 4,000 leaves a 20% margin so
+    # a re-run or a manual dispatch in the same month still lands inside the
+    # free tier.
+    - cron: "0 15 8 * *"
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "Max Google calls this run (Text Search Pro — 5,000 free/month, separate from the hours/websites pool, then $32/1,000)"
+        type: string
+        default: "4000"
+      dry_run:
+        description: "Dry run (count the backlog only — no Google calls, no writes)"
+        type: boolean
+        default: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - run: pip install requests
+
+      - name: Backfill geocodes
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+          CLOUDFLARE_DEPLOY_HOOK: ${{ secrets.CLOUDFLARE_DEPLOY_HOOK }}
+          # On a scheduled run inputs.limit is empty, so it falls back to 4000.
+          LIMIT: ${{ inputs.limit || '4000' }}
+          DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
+        run: python scripts/backfill_geocodes.py
