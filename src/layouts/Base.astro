@@ -227,29 +227,73 @@ const blocks = Array.isArray(jsonld) ? jsonld : [jsonld];
               maxZoom: 19,
               attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
             }).addTo(map);
-            var pbIcon = L.divIcon({
-              className: 'pb-pin',
-              html: '<svg viewBox="0 0 56 72" width="38" height="49" xmlns="http://www.w3.org/2000/svg">'
-                + '<path d="M28 71 C23 60 2 46 2 28 A26 26 0 1 1 54 28 C54 46 33 60 28 71 Z" fill="#0f2e3a"/>'
-                + '<circle cx="28" cy="28" r="21" fill="#ffffff"/>'
-                + '<rect x="25.5" y="13" width="5" height="4" rx="1.8" fill="#23b3a3"/><circle cx="24.2" cy="15" r="1.3" fill="#23b3a3"/><circle cx="31.8" cy="15" r="1.3" fill="#23b3a3"/>'
-                + '<rect x="25" y="20" width="6" height="4" rx="1.8" fill="#23b3a3"/><circle cx="23.7" cy="22" r="1.3" fill="#23b3a3"/><circle cx="32.3" cy="22" r="1.3" fill="#23b3a3"/>'
-                + '<rect x="24.75" y="27" width="6.5" height="4" rx="1.8" fill="#23b3a3"/><circle cx="23.45" cy="29" r="1.3" fill="#23b3a3"/><circle cx="32.55" cy="29" r="1.3" fill="#23b3a3"/>'
-                + '<rect x="25.25" y="34" width="5.5" height="4" rx="1.8" fill="#23b3a3"/><circle cx="23.95" cy="36" r="1.3" fill="#23b3a3"/><circle cx="32.05" cy="36" r="1.3" fill="#23b3a3"/>'
-                + '<g fill="none" stroke="#23b3a3" stroke-width="2.4" stroke-linecap="round"><path d="M20 23.5 A 5.5 5.5 0 0 0 20 32.5"/><path d="M16 21 A 8 8 0 0 0 16 35"/><path d="M36 23.5 A 5.5 5.5 0 0 1 36 32.5"/><path d="M40 21 A 8 8 0 0 1 40 35"/></g></svg>',
-              iconSize: [38, 49],
-              iconAnchor: [19, 49],
-              popupAnchor: [0, -45],
-            });
-            var coords = [];
+            // The pin is the brand mark itself, served as one cached file rather
+            // than inlined per marker. Regenerate it from the logo with
+            // scripts/build_pin_svg.mjs if the logo ever changes.
+            function pbIcon(count) {
+              var html = '<img src="/brand/painbeacon-pin.svg" width="38" height="43" alt="" />';
+              if (count > 1) html += '<span class="pb-pin-count">' + count + '</span>';
+              return L.divIcon({
+                className: 'pb-pin',
+                html: html,
+                iconSize: [38, 43],
+                iconAnchor: [19, 43], // the tip of the tail, not the middle
+                popupAnchor: [0, -40],
+              });
+            }
+
+            function esc(s) {
+              return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+              });
+            }
+
+            function entry(p) {
+              var s = p.slug
+                ? '<a href="/clinic/' + encodeURIComponent(p.slug) + '/"><strong>' + esc(p.name) + '</strong></a>'
+                : '<strong>' + esc(p.name) + '</strong>';
+              if (p.street) s += '<br>' + esc(p.street);
+              if (p.address) s += '<br>' + esc(p.address);
+              return s;
+            }
+
+            // Several practices commonly share one medical building, and their
+            // coordinates land on the same spot — so the pins stack and the map
+            // reads as a single clinic. Group them onto one pin that carries a
+            // count and lists every practice in its popup. Grouping rather than
+            // scattering the pins keeps each clinic on its real coordinates.
+            // 4 decimal places is about 11m: tight enough to keep neighbouring
+            // practices apart, loose enough to catch the slightly different
+            // geocodes one building can produce.
+            var groups = {};
+            var order = [];
             pts.forEach(function (p) {
-              var mk = L.marker([p.lat, p.lng], { icon: pbIcon }).addTo(map);
-              var label = p.slug
-                ? '<a href="/clinic/' + p.slug + '/"><strong>' + p.name + '</strong></a>'
-                : '<strong>' + p.name + '</strong>';
-              if (p.address) label += '<br>' + p.address;
+              var key = p.lat.toFixed(4) + ',' + p.lng.toFixed(4);
+              if (!groups[key]) { groups[key] = []; order.push(key); }
+              groups[key].push(p);
+            });
+
+            var coords = [];
+            order.forEach(function (key) {
+              var list = groups[key];
+              var first = list[0];
+              var mk = L.marker([first.lat, first.lng], {
+                icon: pbIcon(list.length),
+                title: list.length > 1 ? list.length + ' clinics at this location' : first.name,
+                riseOnHover: true,
+              }).addTo(map);
+
+              var label;
+              if (list.length === 1) {
+                label = entry(first);
+              } else {
+                label = '<strong class="pb-pop-head">' + list.length + ' clinics at this location</strong>'
+                  + '<ul class="pb-pop-list">'
+                  + list.map(function (p) { return '<li>' + entry(p) + '</li>'; }).join('')
+                  + '</ul>';
+              }
               mk.bindPopup(label);
-              coords.push([p.lat, p.lng]);
+              coords.push([first.lat, first.lng]);
             });
             var z = parseInt(el.getAttribute('data-zoom'), 10);
             if (coords.length === 1) {

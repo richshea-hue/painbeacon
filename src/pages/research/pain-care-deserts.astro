@@ -1,6 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import DesertMap from '../../components/DesertMap.astro';
 import { breadcrumbLd, faqLd } from '../../lib/schema.js';
 import { SITE } from '../../lib/site.js';
 import { getDesertStats } from '../../lib/deserts.js';
@@ -96,6 +97,8 @@ const datasetLd = {
       Americans ({S.desertPopPct}% of the population) live in these <strong>pain care
       deserts</strong>, where seeing a pain specialist means traveling to another county.
     </p>
+
+    <DesertMap rows={S.rows} />
 
     <h2>Key findings</h2>
     <ul>
@@ -220,7 +223,11 @@ const datasetLd = {
       registered, which can lag openings, closures, and relocations. A county with no
       registered pain management practice may still have primary-care physicians who manage
       pain, and residents near county lines may have access across the border. County-level
-      analysis measures local availability, not drive time.
+      analysis measures local availability, not drive time. The land-area assignment rule
+      also works against small county-equivalents: where a ZIP code spans an independent
+      city and the larger county around it, the clinics in that ZIP are credited to the
+      county, so a handful of Virginia's independent cities are counted as deserts even
+      where a practice operates inside the city limits.
     </p>
 
     <h2>Frequently asked questions</h2>
