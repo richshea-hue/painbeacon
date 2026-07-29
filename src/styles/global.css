@@ -346,11 +346,33 @@ hr.rule { border: 0; border-top: 1px solid var(--line); margin: 2.5rem 0; }
   position: relative; overflow: hidden; color: var(--paper);
   background: radial-gradient(120% 140% at 85% 10%, #15414e 0%, #0f2e3a 52%, #07222e 100%);
 }
-.hero-dark .hero-art {
-  position: absolute; top: 0; right: 0; height: 100%; width: auto;
-  opacity: 0.92; pointer-events: none; user-select: none;
-  -webkit-mask-image: linear-gradient(to left, #000 58%, transparent 97%);
-          mask-image: linear-gradient(to left, #000 58%, transparent 97%);
+/* Hero photograph. The radial gradient above stays as the base layer so the
+   band still looks designed if the image is slow or fails. */
+.hero-dark .hero-photo { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.hero-dark .hero-photo img {
+  width: 100%; height: 100%; object-fit: cover;
+  /* Hold the clinician right-of-centre, clear of the headline column. */
+  object-position: 68% 28%;
+  user-select: none;
+}
+/* Scrim. White display type over a photo needs a real gradient behind it —
+   the copy column sits over the near-opaque end, the clinician stays readable
+   at the open end. */
+.hero-dark::before {
+  content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background:
+    /* Keeps the small-print trust strip off the bright end of the photo — it
+       runs the full width, so the horizontal scrim alone leaves it short of AA
+       at narrower desktop widths. */
+    linear-gradient(0deg,
+      rgba(7, 34, 46, 0.62) 0%,
+      rgba(7, 34, 46, 0.34) 14%,
+      rgba(7, 34, 46, 0) 26%),
+    linear-gradient(90deg,
+      rgba(7, 34, 46, 0.97) 0%,
+      rgba(7, 34, 46, 0.94) 36%,
+      rgba(7, 34, 46, 0.72) 58%,
+      rgba(10, 44, 56, 0.32) 100%);
 }
 .hero-dark .inner { position: relative; z-index: 2; padding: 3.75rem 0 2.75rem; max-width: 42rem; }
 .hero-dark .eyebrow { color: #5fd8c8; }
@@ -374,13 +396,23 @@ hr.rule { border: 0; border-top: 1px solid var(--line); margin: 2.5rem 0; }
   font-size: 0.84rem; color: #cfe0de;
 }
 .hero-dark .hero-trust b { color: #ffffff; font-weight: 600; }
-@media (max-width: 980px) { .hero-dark .hero-art { opacity: 0.55; right: -90px; } }
-@media (max-width: 640px) {
-  .hero-dark .hero-art {
-    opacity: 0.42; right: -130px; height: 108%;
-    -webkit-mask-image: linear-gradient(to left, #000 40%, transparent 92%);
-            mask-image: linear-gradient(to left, #000 40%, transparent 92%);
+/* Below ~980px there is no room for the clinician beside the copy — overlaying
+   runs the headline straight across her face. So the photo leaves the
+   background and becomes its own band under the hero copy: undimmed, full
+   bleed, and legible at a glance. */
+@media (max-width: 980px) {
+  .hero-dark { display: flex; flex-direction: column; }
+  .hero-dark .wrap { order: 1; }
+  .hero-dark .hero-photo {
+    position: static; order: 2; z-index: 2;
+    height: 12rem; border-top: 1px solid rgba(95, 216, 200, 0.18);
   }
+  .hero-dark .hero-photo img { object-position: 50% 24%; }
+  /* Nothing left to scrim but the base gradient. */
+  .hero-dark::before { background: none; }
+}
+@media (max-width: 480px) {
+  .hero-dark .hero-photo { height: 10rem; }
 }
 
 .cta-band { background: #0f2e3a; color: var(--paper); margin-top: 3rem; }

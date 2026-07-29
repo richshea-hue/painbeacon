@@ -41,15 +41,19 @@ const total = primaries.length;
 ---
 <Base description={SITE.description} jsonld={websiteLd()}>
   <section class="hero-dark">
-    <img
-      class="hero-art"
-      src="/brand/hero-spine-1x.jpg"
-      srcset="/brand/hero-spine-1x.jpg 1x, /brand/hero-spine-2x.jpg 2x"
-      alt=""
-      aria-hidden="true"
-      fetchpriority="high"
-      decoding="async"
-    />
+    <picture class="hero-photo">
+      <source media="(max-width: 980px)" type="image/webp" srcset="/brand/hero-clinic-band.webp" />
+      <source media="(max-width: 980px)" srcset="/brand/hero-clinic-band.jpg" />
+      <source type="image/webp" srcset="/brand/hero-clinic-wide.webp" />
+      <img
+        src="/brand/hero-clinic-wide.jpg"
+        width="1600"
+        height="720"
+        alt="A board-certified pain specialist listening to a patient during a clinic consultation"
+        fetchpriority="high"
+        decoding="async"
+      />
+    </picture>
     <div class="wrap">
       <div class="inner">
         <p class="eyebrow">{total.toLocaleString()} pain clinics · {states.length} states and territories</p>
