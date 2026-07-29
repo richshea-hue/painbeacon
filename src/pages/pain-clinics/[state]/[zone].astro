@@ -44,6 +44,11 @@ const mapMarkers = ranked
     lng: c.longitude,
     name: titleCase(c.name),
     slug: c.slug,
+    // Street line included so that clinics sharing a building — which the map
+    // groups onto one pin — are told apart by their suite in the popup.
+    street: [c.address_1 && titleCase(c.address_1), c.address_2 && titleCase(c.address_2)]
+      .filter(Boolean)
+      .join(', '),
     address: `${c.cityLabel}, ${c.state}`,
   }));
 

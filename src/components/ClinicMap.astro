@@ -11,6 +11,9 @@ const pts = (markers || [])
     lng: Number(m.lng),
     name: m.name || '',
     slug: m.slug || '',
+    // Optional street line — set where clinics can share a building, so the
+    // grouped popup can distinguish them by suite.
+    street: m.street || '',
     address: m.address || '',
   }))
   // Drop missing/invalid coords and the 0,0 "null island" sentinel.
