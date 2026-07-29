@@ -1,7 +1,7 @@
 ---
 title: 'How to Spot a Pill Mill: The Red Flags Worth Checking Before You Book'
 dek: 'A rogue prescribing clinic looks like a pain clinic from the outside. Here are the warning signs you can check from home — and the strict-sounding policies that actually mean a practice is doing it right.'
-date: 2026-07-28
+date: 2026-07-29
 category: 'Choosing a Clinic'
 heroImg: '/images/news/how-to-spot-a-pill-mill/patient-researching-pain-clinic-online-hero.jpg'
 heroAlt: 'A woman sits on a sofa with a laptop, researching pain clinics before booking an appointment.'
