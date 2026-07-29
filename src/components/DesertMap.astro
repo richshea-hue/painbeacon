@@ -1,0 +1,366 @@
+---
+// County choropleth of pain clinic access, for /research/pain-care-deserts/.
+//
+// Geometry is inline SVG built at compile time from src/data/county_geo.json
+// (see scripts/build_county_geo.mjs) — no map library, no tiles, no API key,
+// and the map is present in the HTML itself rather than assembled by script.
+//
+// Encoding is sequential on a single hue: one quantity — how scarce pain care
+// is — running light (well served) to dark (no clinic at all). Because 61% of
+// counties are deserts, the dark end carries most of the map, which is the
+// finding.
+//
+// The ramp is the site's amber, checked for monotone lightness, single hue and
+// a visible gap between every step. The lightest step deliberately sits close
+// to the --paper surface: a version with all five steps pushed dark enough to
+// clear a 2:1 contrast floor was rendered and compared, and it read as
+// undifferentiated brown — the desert mass stopped separating from the rest,
+// which is the whole point of the graphic. Letting the lightest step recede is
+// the standard allowance for a choropleth, where the palest counties mean
+// "nothing to see here" and are read in context against their neighbours. The
+// relief for that choice is elsewhere on the page: every county is hoverable
+// for its exact figures, and the full county and state tables follow the map.
+//
+// Props: rows — the per-county table from getDesertStats().
+import geo from '../data/county_geo.json';
+
+const { rows = [] } = Astro.props;
+
+// Bins ascend by clinic count; `cls` runs d0 (darkest, no clinic) to d4
+// (lightest, best served). Cutpoints follow the real distribution — 61% / 12% /
+// 13% / 6% / 8% — so no bin is empty and the single-clinic counties the study
+// calls "one closure away" stay visible as their own step.
+const BINS = [
+  { cls: 'd0', test: (n) => n === 0, legend: 'No pain clinic' },
+  { cls: 'd1', test: (n) => n === 1, legend: '1' },
+  { cls: 'd2', test: (n) => n <= 4, legend: '2–4' },
+  { cls: 'd3', test: (n) => n <= 9, legend: '5–9' },
+  { cls: 'd4', test: () => true, legend: '10 or more' },
+];
+
+const binFor = (n) => BINS.find((b) => b.test(n)).cls;
+
+const byFips = new Map(rows.map((r) => [r.fips, r]));
+
+// One <path> per county, carrying only its FIPS. The bin lives in a class
+// rather than a fill attribute so the markup stays small and the ramp is
+// defined once in CSS.
+const paths = Object.entries(geo.counties).map(([fips, d]) => {
+  const row = byFips.get(fips);
+  return { fips, d, cls: row ? binFor(row.clinics) : 'no-data' };
+});
+
+// Tooltip lookup, resolved on the client from the FIPS on each path. Kept as a
+// flat array per county — [name, state, clinics, population] — because the key
+// names would otherwise repeat 3,144 times.
+const tooltipData = Object.fromEntries(
+  rows.map((r) => [r.fips, [r.county, r.state, r.clinics, r.pop]])
+);
+
+const desertCount = rows.filter((r) => r.clinics === 0).length;
+const missing = paths.filter((p) => p.cls === 'no-data').length;
+---
+
+<figure class="desert-map">
+  <div class="map-frame">
+    <svg
+      viewBox={geo.viewBox}
+      class="us-map"
+      role="img"
+      aria-labelledby="desert-map-title desert-map-desc"
+    >
+      <title id="desert-map-title">
+        Map of pain management clinic access in every U.S. county
+      </title>
+      <desc id="desert-map-desc">
+        Choropleth of the {rows.length.toLocaleString('en-US')} U.S. counties, shaded by how many
+        pain management clinics each contains. The {desertCount.toLocaleString('en-US')} counties
+        with none are shown darkest. County-level figures are listed in the tables below this map.
+      </desc>
+
+      <g class="counties">
+        {paths.map((p) => <path class={p.cls} d={p.d} data-f={p.fips} />)}
+      </g>
+
+      {/* Drawn after the fills so state lines sit on top of them. */}
+      <g class="state-lines">
+        {Object.entries(geo.stateBorders).map(([fips, d]) => <path d={d} data-s={fips} />)}
+      </g>
+
+      {/* A single spare path that re-draws whichever county is hovered, on top
+          of its neighbours — SVG has no z-index, so an outline applied in place
+          would be painted over by the counties that come after it. */}
+      <path class="hl" d="" aria-hidden="true"></path>
+    </svg>
+
+    <div class="tip" role="status" aria-live="off" hidden></div>
+  </div>
+
+  <div class="legend">
+    <span class="legend-title">Pain management clinics in county</span>
+    <ul>
+      {BINS.map((b) => (
+        <li><span class={`sw ${b.cls}`} aria-hidden="true"></span>{b.legend}</li>
+      ))}
+    </ul>
+  </div>
+
+  <figcaption>
+    Every U.S. county shaded by its number of registered pain management clinics.
+    The darkest counties — {desertCount.toLocaleString('en-US')} of
+    {' '}{rows.length.toLocaleString('en-US')} — have none at all. Alaska and Hawaii are shown
+    as insets at their true relative scale. Hover or tap any county for its figures.
+    {missing > 0 && ` ${missing} counties have no boundary data and are unshaded.`}
+  </figcaption>
+
+  <script
+    type="application/json"
+    id="desert-map-data"
+    set:html={JSON.stringify(tooltipData)}
+  />
+</figure>
+
+<style>
+  .desert-map {
+    margin: 2rem 0 2.5rem;
+    /* Break out of the 44rem prose column — a national county map needs the
+       width. Centred on the column's midline, which is also the viewport's, and
+       held inside the viewport on narrow screens. */
+    width: min(58rem, 100vw - 3rem);
+    margin-left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .map-frame {
+    position: relative;
+  }
+
+  .us-map {
+    display: block;
+    width: 100%;
+    height: auto;
+    /* Albers USA leaves the map's corners empty, so the frame reads better
+       without a border around all that blank space. */
+    background: transparent;
+  }
+
+  /* The validated sequential ramp. Each step is set as `color` so a single rule
+     can drive both fill and stroke: the hairline stroke closes the sub-pixel
+     seams left when neighbouring counties are generalised independently. */
+  .us-map .d0 { color: #5c3009; }
+  .us-map .d1 { color: #965e1f; }
+  .us-map .d2 { color: #bd8442; }
+  .us-map .d3 { color: #d8ae76; }
+  .us-map .d4 { color: #eddcc0; }
+  .us-map .no-data { color: var(--line, #e3ddcf); }
+
+  .counties path {
+    fill: currentColor;
+    stroke: currentColor;
+    stroke-width: 0.5;
+    /* Counties are hit-tested individually; the fill is what receives the
+       pointer, which is why none of them may be pointer-events:none. */
+  }
+
+  .state-lines path {
+    fill: none;
+    stroke: var(--paper, #f7f4ed);
+    stroke-width: 0.8;
+    stroke-linejoin: round;
+    opacity: 0.55;
+    pointer-events: none;
+  }
+
+  .hl {
+    fill: none;
+    stroke: var(--ink, #1c2b2a);
+    stroke-width: 1.4;
+    stroke-linejoin: round;
+    pointer-events: none;
+  }
+
+  .tip {
+    position: absolute;
+    z-index: 2;
+    min-width: 9rem;
+    max-width: 15rem;
+    padding: 0.5rem 0.65rem;
+    border: 1px solid var(--line, #e3ddcf);
+    border-radius: var(--radius, 4px);
+    background: var(--card, #fffefb);
+    box-shadow: var(--shadow);
+    font-family: var(--sans);
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    color: var(--ink, #1c2b2a);
+    pointer-events: none;
+    transform: translate(-50%, calc(-100% - 12px));
+  }
+
+  .tip strong {
+    display: block;
+    font-weight: 600;
+  }
+
+  .tip .tip-stat {
+    color: var(--ink-soft, #4c5b59);
+  }
+
+  .tip .tip-desert {
+    font-weight: 600;
+    color: #5c3009;
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.4rem 1rem;
+    margin-top: 0.75rem;
+    font-family: var(--sans);
+    font-size: 0.8125rem;
+    color: var(--ink-soft, #4c5b59);
+  }
+
+  .legend-title {
+    font-weight: 600;
+    color: var(--ink, #1c2b2a);
+  }
+
+  .legend ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.9rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .legend li {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin: 0;
+  }
+
+  .sw {
+    width: 0.85rem;
+    height: 0.85rem;
+    border-radius: 2px;
+    background: currentColor;
+  }
+
+  .legend .d0 { color: #5c3009; }
+  .legend .d1 { color: #965e1f; }
+  .legend .d2 { color: #bd8442; }
+  .legend .d3 { color: #d8ae76; }
+  /* The lightest step recedes toward the paper surface by design — on the map
+     it is read in context, bounded by its neighbours and the state lines. In
+     the legend it has nothing around it, so the swatch gets a hairline ring to
+     stay visible. */
+  .legend .d4 { color: #eddcc0; }
+  .legend .d4.sw { box-shadow: inset 0 0 0 1px rgba(28, 43, 42, 0.18); }
+
+  figcaption {
+    margin-top: 0.75rem;
+    font-family: var(--sans);
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--ink-faint, #7c8a87);
+  }
+
+  @media (max-width: 40rem) {
+    .legend {
+      font-size: 0.75rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .counties path {
+      transition: opacity 120ms ease;
+    }
+  }
+</style>
+
+<script>
+  // Hover/tap read-out. One delegated listener on the <svg> rather than a
+  // listener per county — there are 3,144 of them.
+  (function () {
+    const figures = document.querySelectorAll('.desert-map');
+
+    figures.forEach((fig) => {
+      const svg = fig.querySelector('.us-map');
+      const tip = fig.querySelector('.tip');
+      const frame = fig.querySelector('.map-frame');
+      const hl = fig.querySelector('.hl');
+      const raw = fig.querySelector('#desert-map-data');
+      if (!svg || !tip || !frame || !hl || !raw) return;
+
+      let data;
+      try {
+        data = JSON.parse(raw.textContent || '{}');
+      } catch {
+        return;
+      }
+
+      const fmt = (n) => n.toLocaleString('en-US');
+      let active = null;
+
+      function hide() {
+        active = null;
+        tip.hidden = true;
+        hl.setAttribute('d', '');
+      }
+
+      function show(path, clientX, clientY) {
+        const fips = path.getAttribute('data-f');
+        const row = data[fips];
+        if (!row) return hide();
+
+        if (fips !== active) {
+          active = fips;
+          const [name, state, clinics, pop] = row;
+          const count =
+            clinics === 0
+              ? '<span class="tip-desert">No pain clinic</span>'
+              : `${fmt(clinics)} pain ${clinics === 1 ? 'clinic' : 'clinics'}`;
+          tip.innerHTML =
+            `<strong>${name}, ${state}</strong>` +
+            `<span class="tip-stat">${count} · ${fmt(pop)} residents</span>`;
+          hl.setAttribute('d', path.getAttribute('d'));
+        }
+
+        // Position within the frame, then keep the tooltip inside it.
+        const box = frame.getBoundingClientRect();
+        const x = clientX - box.left;
+        const y = clientY - box.top;
+        tip.hidden = false;
+        const half = tip.offsetWidth / 2;
+        const clampedX = Math.min(Math.max(x, half + 4), box.width - half - 4);
+        tip.style.left = `${clampedX}px`;
+        tip.style.top = `${Math.max(y, tip.offsetHeight + 14)}px`;
+      }
+
+      svg.addEventListener('pointermove', (e) => {
+        const path = e.target.closest('.counties path');
+        if (path) show(path, e.clientX, e.clientY);
+        else hide();
+      });
+
+      svg.addEventListener('pointerleave', hide);
+
+      // Touch: a tap reads out the county without the map swallowing the
+      // gesture, and a second tap anywhere clears it.
+      svg.addEventListener('pointerdown', (e) => {
+        if (e.pointerType === 'mouse') return;
+        const path = e.target.closest('.counties path');
+        if (path) show(path, e.clientX, e.clientY);
+        else hide();
+      });
+
+      document.addEventListener('pointerdown', (e) => {
+        if (!fig.contains(e.target)) hide();
+      });
+    });
+  })();
+</script>
