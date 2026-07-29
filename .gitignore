@@ -7,5 +7,6 @@ dist/
 stannp_*.csv
 Thumbs.db
 /scripts/places_hours_cache
+/scripts/.cache
 scripts/outreach/out/
 __pycache__/
