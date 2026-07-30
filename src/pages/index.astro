@@ -1,5 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
+import ClinicFinderMap from '../components/ClinicFinderMap.astro';
 import { SITE } from '../lib/site.js';
 import { getClinics, groupBy, stateName } from '../lib/data.js';
 import { websiteLd } from '../lib/schema.js';
@@ -97,14 +98,19 @@ const total = primaries.length;
   </section>
 
   <section class="wrap" style="padding-block:2.5rem;">
-    <p class="eyebrow">Browse by state</p>
-    <ul class="tile-grid">
+    <p class="eyebrow">Every clinic, mapped</p>
+    <h2 class="map-head">{total.toLocaleString()} pain clinics across {states.length} states and territories</h2>
+    <ClinicFinderMap />
+
+    {/* The map is JavaScript and WebGL; these links are neither. They keep every
+        state hub one crawlable hop from the home page — which is what gets them
+        indexed — and give a no-JS visitor the same route the map offers. */}
+    <nav class="state-links" aria-label="Browse pain clinics by state">
+      <span class="state-links-head">Or browse by state:</span>
       {states.map((s) => (
-        <li><a class="tile" href={`/pain-clinics/${s.abbr.toLowerCase()}/`}>
-          <span class="label">{s.name}</span><span class="n">{s.count}</span>
-        </a></li>
+        <a href={`/pain-clinics/${s.abbr.toLowerCase()}/`}>{s.name} <span class="n">{s.count}</span></a>
       ))}
-    </ul>
+    </nav>
   </section>
 
   <section class="wrap narrow prose" style="padding-block:1rem 2rem;">
@@ -147,6 +153,16 @@ const total = primaries.length;
       padding: 0.7rem 0.85rem; border: 1px dashed rgba(47, 212, 191, 0.45);
       border-radius: var(--radius, 10px); color: #cfe0de; font-size: 0.9rem; }
     #results .search-add a { color: #2fd4bf; font-weight: 600; }
+
+    /* Map section heading + the crawlable state strip that replaced the tiles. */
+    .map-head { margin: 0.2rem 0 0; font-size: 1.35rem; }
+    .state-links { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.35rem 0.9rem;
+      margin-top: 1rem; font-size: 0.92rem; line-height: 1.5; }
+    .state-links-head { color: var(--ink-faint); font-size: 0.82rem; }
+    .state-links a { color: var(--ink-soft); text-decoration: none;
+      border-bottom: 1px solid var(--line); }
+    .state-links a:hover { color: var(--teal-deep); border-bottom-color: var(--teal); }
+    .state-links .n { font-family: var(--mono); font-size: 0.74rem; color: var(--ink-faint); }
   </style>
   <script type="application/json" id="city-index" set:html={JSON.stringify(cityIndex)}></script>
   <script>

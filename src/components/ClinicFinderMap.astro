@@ -1,0 +1,468 @@
+---
+// Clustered national clinic map + "find a clinic" search.
+//
+// Data: /clinic-points.json (see src/pages/clinic-points.json.js) — one tuple
+// per mappable primary practice, ~12k of them. Basemap: OpenFreeMap vector
+// tiles (openfreemap.org) — OpenStreetMap data, no API key, no request cap,
+// attribution only. Swapping providers is a one-line change to STYLE_URL.
+//
+// MapLibre and the pin index are BOTH loaded lazily, when the map scrolls near
+// the viewport — together they're the heaviest thing on the home page and most
+// visitors convert from the hero search above without ever reaching it. The
+// crawlable state links next to this component are what keep the page useful
+// with no JavaScript at all.
+//
+// Library is CDN-loaded and version-pinned, matching how Base.astro loads
+// Leaflet for the per-clinic maps, so neither map adds a build dependency.
+const { height = '520px' } = Astro.props;
+---
+<div class="cmap-tool" id="cmapTool" data-h={height}>
+  <div class="cmap-find">
+    <label class="cmap-label" for="cmapQ">Find a clinic on the map</label>
+    <div class="cmap-find-wrap">
+      <input
+        type="text" id="cmapQ" autocomplete="off" placeholder="Clinic or city name"
+        role="combobox" aria-expanded="false" aria-controls="cmapList"
+        aria-autocomplete="list" aria-describedby="cmapHint"
+      />
+      <button class="cmap-clear" id="cmapClear" type="button" hidden>Clear</button>
+      <ul class="cmap-list" id="cmapList" role="listbox" aria-label="Matching clinics" hidden></ul>
+    </div>
+    <span class="cmap-sr" id="cmapHint" aria-live="polite"></span>
+  </div>
+
+  <div class="cmap" id="cmap" style={`height:${height}`}></div>
+  <p class="cmap-status" id="cmapStatus">Scroll down to load the map.</p>
+</div>
+
+<style>
+  .cmap-tool { border: 1px solid var(--line, #e3ddcf); border-radius: 12px;
+    background: var(--card, #fffefb); overflow: hidden; margin: 1.25rem 0; }
+  .cmap-find { padding: 0.9rem 1rem 0.75rem; border-bottom: 1px solid var(--line, #e3ddcf); }
+  .cmap-label { display: block; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--ink-faint, #7c8a87); margin-bottom: 0.35rem; }
+  .cmap-find-wrap { position: relative; display: flex; gap: 0.5rem; align-items: center; }
+  .cmap-find-wrap input { flex: 1; padding: 0.6rem 0.75rem; font: inherit; font-size: 1rem;
+    border: 1px solid var(--line, #e3ddcf); border-radius: 9px;
+    background: var(--paper, #f7f4ed); color: var(--ink, #1c2b2a); }
+  .cmap-find-wrap input:focus { outline: none; border-color: var(--teal, #0e6e62);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--teal, #0e6e62) 16%, transparent); }
+  .cmap-find-wrap input:disabled { opacity: 0.6; cursor: progress; }
+  .cmap-clear { background: none; border: 0; padding: 0.2rem 0.35rem; font: inherit;
+    font-size: 0.85rem; color: var(--teal-deep, #0a4f46); cursor: pointer;
+    text-decoration: underline; text-underline-offset: 2px; }
+
+  /* Suggestion list. Above the map canvas, which MapLibre paints at z-index 0. */
+  .cmap-list { position: absolute; top: calc(100% + 0.3rem); left: 0; right: 0; z-index: 5;
+    list-style: none; margin: 0; padding: 0.25rem; max-height: 17rem; overflow-y: auto;
+    background: var(--card, #fffefb); border: 1px solid var(--line, #e3ddcf);
+    border-radius: 10px; box-shadow: 0 10px 30px rgba(28, 43, 42, 0.16); }
+  .cmap-list li { padding: 0.45rem 0.6rem; border-radius: 7px; cursor: pointer;
+    display: flex; flex-direction: column; gap: 0.05rem; }
+  .cmap-list li.is-active, .cmap-list li:hover { background: var(--paper-2, #efeadd); }
+  .cmap-name { font-size: 0.94rem; color: var(--ink, #1c2b2a); }
+  .cmap-where { font-size: 0.78rem; color: var(--ink-faint, #7c8a87); }
+
+  .cmap { width: 100%; background: #e9eef2; }
+  .cmap-status { margin: 0; padding: 0.6rem 1rem; font-size: 0.82rem;
+    color: var(--ink-faint, #7c8a87); border-top: 1px solid var(--line, #e3ddcf); }
+
+  .cmap-sr { position: absolute; width: 1px; height: 1px; overflow: hidden;
+    clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+
+  @media (max-width: 640px) { .cmap { height: 380px !important; } }
+</style>
+
+<!-- Popup styling has to be global: MapLibre builds popups outside this
+     component's scoped-style tree. -->
+<style is:global>
+  .maplibregl-popup-content { border-radius: 10px; padding: 0.7rem 0.85rem;
+    font-family: var(--sans); box-shadow: 0 10px 30px rgba(28, 43, 42, 0.2); }
+  .cmap-pop-name { display: block; font-weight: 600; color: var(--teal-deep, #0a4f46);
+    font-size: 0.98rem; text-decoration: none; }
+  .cmap-pop-name:hover { text-decoration: underline; }
+  .cmap-pop-meta { font-size: 0.8rem; color: var(--ink-faint, #7c8a87); margin-top: 0.1rem; }
+  .cmap-pop-many ul { list-style: none; margin: 0.4rem 0 0; padding: 0;
+    max-height: 15rem; overflow-y: auto; }
+  .cmap-pop-many li { padding: 0.35rem 0; border-top: 1px solid var(--line, #e3ddcf); }
+  .cmap-pop-count { margin: 0; font-size: 0.8rem; font-weight: 600; color: var(--ink, #1c2b2a); }
+</style>
+
+<script is:inline>
+  (function () {
+    var tool = document.getElementById('cmapTool');
+    if (!tool) return;
+
+    // Pinned to MapLibre v5. v6 loads the style but never paints a first frame,
+    // so `load` never fires and the canvas stays blank; it also flips the export
+    // shape (v5 default-only, v6 named-only), so an upgrade means changing how
+    // this is read off window too.
+    var LIB_JS = 'https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js';
+    var LIB_CSS = 'https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css';
+    var STYLE_URL = 'https://tiles.openfreemap.org/styles/positron';
+
+    // Row layout of /clinic-points.json — mirrors clinic-points.json.js.
+    var R = { SLUG: 0, NAME: 1, CITY: 2, ST: 3, LAT: 4, LNG: 5 };
+
+    var statusEl = document.getElementById('cmapStatus');
+    var qEl = document.getElementById('cmapQ');
+    var listEl = document.getElementById('cmapList');
+    var clearEl = document.getElementById('cmapClear');
+    var hintEl = document.getElementById('cmapHint');
+    var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    var map = null, all = [], openPop = null;
+    var started = false, mapLoaded = false, drawn = false;
+    function say(s) { statusEl.textContent = s; }
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+
+    // ---- Lazy boot ---------------------------------------------------------
+    // 400px of margin so the map is usually ready by the time it's scrolled to,
+    // without loading it for the majority who never get this far. Typing in the
+    // search box boots it too — someone can tab straight there from the hero
+    // without the map ever entering the viewport, and a search box that silently
+    // does nothing until you scroll is worse than a slow one.
+    var pendingQuery = '';
+    function boot() {
+      if (started) return;
+      started = true;
+      say('Loading the map…');
+      // Fetched alongside the library rather than after it: MapLibre's `load`
+      // only fires once a frame has actually painted, so a page opened in a
+      // BACKGROUND TAB never gets there. Gating the index on that event would
+      // leave the search box permanently empty in exactly that case.
+      loadIndex();
+      var css = document.createElement('link');
+      css.rel = 'stylesheet';
+      css.href = LIB_CSS;
+      document.head.appendChild(css);
+      var js = document.createElement('script');
+      js.src = LIB_JS;
+      js.onerror = function () { say('The map failed to load. Browse by state below instead.'); };
+      js.onload = init;
+      document.head.appendChild(js);
+    }
+    if ('IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function (entries) {
+        if (entries.some(function (e) { return e.isIntersecting; })) { io.disconnect(); boot(); }
+      }, { rootMargin: '400px' });
+      io.observe(tool);
+    } else {
+      boot();
+    }
+
+    function init() {
+      var maplibregl = window.maplibregl;
+      // MapLibre needs WebGL. Browsers with it disabled throw here rather than
+      // rendering a blank box — say so and leave the state links to do the job.
+      try {
+        map = new maplibregl.Map({
+          container: 'cmap',
+          style: STYLE_URL,
+          center: [-98.5, 39.5],
+          zoom: 3.3,
+          minZoom: 2,
+          maxZoom: 17,
+          attributionControl: { compact: true },
+        });
+      } catch (err) {
+        say('This map needs WebGL, which this browser has turned off. Browse by state below instead.');
+        return;
+      }
+      map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+      map.addControl(new maplibregl.GeolocateControl({ trackUserLocation: false }), 'top-right');
+      map.addControl(new maplibregl.FullscreenControl(), 'top-right');
+      map.on('load', function () { mapLoaded = true; maybeDraw(); });
+    }
+
+    function toGeoJSON(rows) {
+      return {
+        type: 'FeatureCollection',
+        features: rows.map(function (r) {
+          return {
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: [r[R.LNG], r[R.LAT]] },
+            properties: { slug: r[R.SLUG], name: r[R.NAME], city: r[R.CITY], st: r[R.ST] },
+          };
+        }),
+      };
+    }
+
+    function loadIndex() {
+      fetch('/clinic-points.json')
+        .then(function (res) { return res.ok ? res.json() : Promise.reject(res.status); })
+        .then(function (data) {
+          all = data.clinics || [];
+          if (!all.length) {
+            say('No mapped clinic locations yet. Browse by state below.');
+            return;
+          }
+          // Search works from here on, whether or not the canvas ever paints.
+          if (pendingQuery) {
+            matches = search(pendingQuery);
+            active = -1;
+            drawFind();
+            pendingQuery = '';
+          }
+          if (!mapLoaded) say(all.length.toLocaleString() + ' clinics loaded — drawing the map…');
+          maybeDraw();
+        })
+        .catch(function () {
+          say('The clinic locations failed to load. Reload, or browse by state below.');
+        });
+    }
+
+    // Source and layers need the library painted AND the index in hand; whichever
+    // lands second triggers the draw.
+    function maybeDraw() {
+      if (!mapLoaded || !all.length || drawn) return;
+      drawn = true;
+      draw();
+    }
+
+    function draw() {
+      var maplibregl = window.maplibregl;
+      map.addSource('clinics', {
+        type: 'geojson',
+        data: toGeoJSON(all),
+        cluster: true,
+        clusterRadius: 44,
+        // Cluster all the way in: clinics sharing a building share a coordinate,
+        // so stopping early would render them as a silent stack with only the
+        // top pin clickable. Genuinely separate clinics still split apart on the
+        // way in, because clusterRadius is measured in pixels.
+        clusterMaxZoom: 16,
+      });
+
+      map.addLayer({
+        id: 'clusters', type: 'circle', source: 'clinics', filter: ['has', 'point_count'],
+        paint: {
+          'circle-color': '#0a4f46',
+          'circle-opacity': 0.92,
+          'circle-radius': ['step', ['get', 'point_count'], 15, 10, 20, 50, 26, 200, 33],
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#5fd0c2',
+        },
+      });
+      map.addLayer({
+        id: 'cluster-count', type: 'symbol', source: 'clinics', filter: ['has', 'point_count'],
+        layout: { 'text-field': ['get', 'point_count_abbreviated'],
+          'text-font': ['Noto Sans Bold'], 'text-size': 13 },
+        paint: { 'text-color': '#ffffff' },
+      });
+      map.addLayer({
+        id: 'clinic-point', type: 'circle', source: 'clinics', filter: ['!', ['has', 'point_count']],
+        paint: {
+          'circle-color': '#0e6e62',
+          'circle-radius': ['interpolate', ['linear'], ['zoom'], 8, 5, 14, 9],
+          'circle-stroke-width': 1.5,
+          'circle-stroke-color': '#ffffff',
+        },
+      });
+
+      map.on('click', 'clusters', onClusterClick);
+      map.on('click', 'clinic-point', function (e) {
+        // Above clusterMaxZoom, coincident clinics render stacked and the top
+        // pin hides the rest — ask for everything under the cursor, not the hit.
+        var hits = dedupe(map.queryRenderedFeatures(e.point, { layers: ['clinic-point'] }));
+        if (!hits.length) return;
+        openPopup(hits[0].geometry.coordinates.slice(), hits);
+      });
+      ['clusters', 'clinic-point'].forEach(function (layer) {
+        map.on('mouseenter', layer, function () { map.getCanvas().style.cursor = 'pointer'; });
+        map.on('mouseleave', layer, function () { map.getCanvas().style.cursor = ''; });
+      });
+
+      say(all.length.toLocaleString() + ' clinics on the map. Zoom in, or search above.');
+    }
+
+    // Largest genuinely co-located group is a single medical building's worth of
+    // practices; 50 leaves headroom without probing real geographic clusters.
+    var COINCIDENT_MAX = 50;
+
+    function dedupe(features) {
+      var seen = {}, out = [];
+      features.forEach(function (f) {
+        var k = f.properties.slug;
+        if (k && !seen[k]) { seen[k] = 1; out.push(f); }
+      });
+      return out;
+    }
+
+    function onClusterClick(e) {
+      var f = map.queryRenderedFeatures(e.point, { layers: ['clusters'] })[0];
+      if (!f) return;
+      var src = map.getSource('clinics');
+      var id = f.properties.cluster_id;
+      var count = Number(f.properties.point_count);
+      var center = f.geometry.coordinates.slice();
+
+      // A cluster of clinics sharing one address can never be split by zooming,
+      // so it would sit there refusing to open. Detect a pure stack and list it.
+      if (count <= COINCIDENT_MAX) {
+        src.getClusterLeaves(id, count, 0, function (err, leaves) {
+          if (err || !leaves) return expand(src, id, center);
+          var spots = {};
+          leaves.forEach(function (l) { spots[l.geometry.coordinates.join(',')] = 1; });
+          if (Object.keys(spots).length === 1) { openPopup(center, dedupe(leaves)); return; }
+          expand(src, id, center);
+        });
+        return;
+      }
+      expand(src, id, center);
+    }
+
+    function expand(src, id, center) {
+      src.getClusterExpansionZoom(id, function (err, zoom) {
+        if (err) return;
+        map.easeTo({ center: center, zoom: Math.min(zoom, map.getMaxZoom()) });
+      });
+    }
+
+    function card(p) {
+      var where = [p.city, p.st].filter(Boolean).join(', ');
+      return '<a class="cmap-pop-name" href="/clinic/' + esc(p.slug) + '/">' + esc(p.name) + '</a>' +
+        '<div class="cmap-pop-meta">' + esc(where) + '</div>';
+    }
+
+    function openPopup(lngLat, features) {
+      if (openPop) openPop.remove();
+      var props = features.map(function (f) { return f.properties; });
+      var html = props.length === 1
+        ? '<div class="cmap-pop">' + card(props[0]) + '</div>'
+        : '<div class="cmap-pop cmap-pop-many"><p class="cmap-pop-count">' + props.length +
+          ' clinics at this address</p><ul>' +
+          props.map(function (p) { return '<li>' + card(p) + '</li>'; }).join('') +
+          '</ul></div>';
+      openPop = new window.maplibregl.Popup({ offset: 12, closeButton: true, maxWidth: '300px' })
+        .setLngLat(lngLat)
+        .setHTML(html)
+        .addTo(map);
+      return openPop;
+    }
+
+    // ---- Find a clinic -----------------------------------------------------
+    // Runs against the index already in memory: a local substring match with no
+    // network round-trip. Name first, then "city, ST".
+    var FIND_MAX = 8;
+    var matches = [], active = -1;
+
+    function closeFind() {
+      listEl.hidden = true;
+      listEl.innerHTML = '';
+      qEl.setAttribute('aria-expanded', 'false');
+      active = -1;
+    }
+
+    function search(q) {
+      var needle = q.trim().toLowerCase();
+      if (needle.length < 2) return [];
+      var hits = [];
+      // Full scan. Capping the collection would bias results toward whatever
+      // sorts first — a common word like "pain" would only ever surface clinics
+      // from the start of the index. 12k rows is well under a millisecond.
+      for (var i = 0; i < all.length; i++) {
+        var r = all[i];
+        var name = String(r[R.NAME] || '').toLowerCase();
+        var place = (String(r[R.CITY] || '') + ', ' + String(r[R.ST] || '')).toLowerCase();
+        var at = name.indexOf(needle);
+        if (at === 0) hits.push([r, 0]);
+        else if (at > 0) hits.push([r, 1]);
+        else if (place.indexOf(needle) === 0) hits.push([r, 2]);
+        else if (place.indexOf(needle) > 0) hits.push([r, 3]);
+      }
+      hits.sort(function (a, b) {
+        return a[1] - b[1] || String(a[0][R.NAME]).localeCompare(String(b[0][R.NAME]));
+      });
+      return hits.slice(0, FIND_MAX).map(function (h) { return h[0]; });
+    }
+
+    function drawFind() {
+      if (!matches.length) {
+        closeFind();
+        hintEl.textContent = qEl.value.trim().length >= 2 ? 'No matching clinics' : '';
+        return;
+      }
+      listEl.innerHTML = matches.map(function (r, i) {
+        return '<li role="option" id="cmap-opt-' + i + '" aria-selected="' + (i === active) + '"' +
+          ' class="' + (i === active ? 'is-active' : '') + '" data-i="' + i + '">' +
+          '<span class="cmap-name">' + esc(r[R.NAME]) + '</span>' +
+          '<span class="cmap-where">' + esc([r[R.CITY], r[R.ST]].filter(Boolean).join(', ')) + '</span></li>';
+      }).join('');
+      listEl.hidden = false;
+      qEl.setAttribute('aria-expanded', 'true');
+      hintEl.textContent = matches.length + ' match' + (matches.length === 1 ? '' : 'es');
+    }
+
+    function choose(r) {
+      if (!r) return;
+      // Nothing drawn yet — WebGL is off, or the canvas hasn't painted because
+      // the page is in a background tab. Send them to the clinic's own page
+      // rather than swallowing the click.
+      if (!drawn) { window.location.href = '/clinic/' + r[R.SLUG] + '/'; return; }
+      var lngLat = [r[R.LNG], r[R.LAT]];
+      closeFind();
+      qEl.value = r[R.NAME];
+      clearEl.hidden = false;
+      var to = { center: lngLat, zoom: 12 };
+      if (reduceMotion) map.jumpTo(to); else map.flyTo(Object.assign({ speed: 1.2 }, to));
+      // Wait for the camera to settle before asking what's rendered there —
+      // querying mid-flight returns whatever the old viewport still had drawn.
+      map.once('moveend', function () {
+        var pt = map.project(lngLat);
+        var box = [[pt.x - 8, pt.y - 8], [pt.x + 8, pt.y + 8]];
+        var loose = dedupe(map.queryRenderedFeatures(box, { layers: ['clinic-point'] }));
+        if (loose.length) { openPopup(lngLat, loose); return; }
+        // Still inside a cluster at this zoom (co-located practices): show the
+        // searched clinic itself rather than nothing.
+        openPopup(lngLat, [{ properties: { slug: r[R.SLUG], name: r[R.NAME], city: r[R.CITY], st: r[R.ST] } }]);
+      });
+      say('Showing ' + r[R.NAME] + ' — ' + [r[R.CITY], r[R.ST]].filter(Boolean).join(', ') +
+        '. Zoom out to see the rest.');
+    }
+
+    qEl.addEventListener('input', function () {
+      clearEl.hidden = !qEl.value;
+      boot();
+      if (!all.length) {
+        // Index still loading — remember the query so load() can answer it.
+        pendingQuery = qEl.value;
+        hintEl.textContent = qEl.value.trim().length >= 2 ? 'Loading clinics…' : '';
+        return;
+      }
+      matches = search(qEl.value);
+      active = -1;
+      drawFind();
+    });
+    qEl.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') { closeFind(); return; }
+      if (!matches.length) return;
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        active = (active + (e.key === 'ArrowDown' ? 1 : -1) + matches.length) % matches.length;
+        drawFind();
+        qEl.setAttribute('aria-activedescendant', 'cmap-opt-' + active);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        choose(matches[active >= 0 ? active : 0]);
+      }
+    });
+    listEl.addEventListener('click', function (e) {
+      var li = e.target.closest('li[data-i]');
+      if (li) choose(matches[Number(li.dataset.i)]);
+    });
+    clearEl.addEventListener('click', function () {
+      qEl.value = '';
+      clearEl.hidden = true;
+      closeFind();
+      qEl.focus();
+    });
+    document.addEventListener('click', function (e) {
+      if (!tool.contains(e.target)) closeFind();
+    });
+  })();
+</script>
