@@ -163,8 +163,14 @@ const { height = '520px' } = Astro.props;
         map = new maplibregl.Map({
           container: 'cmap',
           style: STYLE_URL,
-          center: [-98.5, 39.5],
-          zoom: 3.3,
+          // Framed by BOUNDS, not a fixed center/zoom: this container is as wide
+          // as the page, so one hardcoded zoom that suits a phone leaves a
+          // desktop showing the US squeezed against the left edge with half the
+          // Atlantic beside it. Bounds re-fit to whatever width they're given.
+          // Lower 48 only — Alaska, Hawaii and Puerto Rico are one zoom out, and
+          // including them would shrink the part nearly every visitor wants.
+          bounds: [[-125, 24.5], [-66.9, 49.5]],
+          fitBoundsOptions: { padding: 20 },
           minZoom: 2,
           maxZoom: 17,
           attributionControl: { compact: true },
