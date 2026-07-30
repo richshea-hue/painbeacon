@@ -33,6 +33,40 @@ const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || '';
         <input class="lc-input" id="lcLoc" type="text" placeholder="e.g. Austin or 78701" autocomplete="off" />
         <input class="lc-hp" id="lcCompany" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" />
         <button class="btn lc-next" type="button">Next</button>
+        <p class="lc-alt">Work at a pain clinic?
+          <button class="lc-link" id="lcPracticeStart" type="button">Find or add your practice</button>
+        </p>
+      </div>
+
+      <!-- Practice branch: search the directory BY CLINIC NAME, then claim the
+           match — or add the practice if it isn't listed yet. -->
+      <div class="lc-step" data-step="p-find" hidden>
+        <p class="lc-bot">What's your practice called? I'll look it up.</p>
+        <input class="lc-input" id="lcPq" type="text" placeholder="e.g. Austin Interventional Pain" autocomplete="organization" />
+        <button class="btn lc-psearch" type="button">Search</button>
+        <div class="lc-presults" id="lcPResults" aria-live="polite"></div>
+        <p class="lc-alt">
+          <button class="lc-link" id="lcAddOpen" type="button">My practice isn't listed — add it</button>
+        </p>
+      </div>
+
+      <div class="lc-step" data-step="p-add" hidden>
+        <p class="lc-bot">We'll add your practice — free. Just the basics:</p>
+        <input class="lc-input" id="lcAddName" type="text" placeholder="Practice name" autocomplete="organization" />
+        <input class="lc-input" id="lcAddCity" type="text" placeholder="City, ST" autocomplete="address-level2" />
+        <input class="lc-input" id="lcAddSite" type="url" inputmode="url" placeholder="Website (optional)" autocomplete="url" />
+        <input class="lc-input" id="lcAddContact" type="text" placeholder="Your name" autocomplete="name" />
+        <input class="lc-input" id="lcAddEmail" type="email" placeholder="Work email" autocomplete="email" />
+        <input class="lc-input" id="lcAddPhone" type="tel" placeholder="Phone (optional)" autocomplete="tel" />
+        <button class="btn lc-addsend" type="button">Add my practice</button>
+        <p class="lc-fine">We verify that you represent the practice before it goes live.
+          Adding your practice is free and doesn't charge you anything.</p>
+      </div>
+
+      <div class="lc-step" data-step="p-done" hidden>
+        <p class="lc-bot"><strong>Thanks — we've got it.</strong> We'll verify you represent the
+          practice and email you when your listing is live.</p>
+        <a class="btn" href="/for-practices/">See what claiming gets you</a>
       </div>
 
       <div class="lc-step" data-step="2" hidden>
@@ -133,6 +167,20 @@ const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || '';
   /* Honeypot — visually hidden without pushing layout off-canvas. */
   .lc-hp { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
     border: 0; overflow: hidden; clip-path: inset(50%); opacity: 0; }
+
+  /* Practice branch: name lookup + "not listed" fallback */
+  .lc-alt { font-size: .8rem; color: var(--ink-faint, #7c8a87); margin: .8rem 0 0; line-height: 1.45;
+    border-top: 1px solid var(--line, #e3ddcf); padding-top: .6rem; }
+  .lc-link { background: none; border: 0; padding: 0; font: inherit; cursor: pointer;
+    color: var(--teal-deep, #0a4f46); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+  .lc-link:hover { text-decoration: none; }
+  .lc-presults { display: flex; flex-direction: column; gap: .4rem; margin-top: .7rem; }
+  .lc-result { display: block; padding: .55rem .7rem; border: 1px solid var(--line, #e3ddcf);
+    border-radius: 9px; background: var(--paper, #f7f4ed); font-size: .92rem;
+    color: var(--ink, #1c2b2a); text-decoration: none; }
+  .lc-result:hover { border-color: var(--teal, #0e6e62); text-decoration: none; }
+  .lc-result .lc-where { display: block; font-size: .78rem; color: var(--ink-faint, #7c8a87); }
+  .lc-note { font-size: .84rem; color: var(--ink-faint, #7c8a87); margin: .7rem 0 0; }
 </style>
 
 <script is:inline>
@@ -225,12 +273,58 @@ const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || '';
       } catch (e) {}
     };
 
+    // Site-wide clinic-name lookup, exposed for the same reason as pbTrack:
+    // this widget renders on every page and already holds the anon creds, which
+    // are read-only on the public clinics_public view. Resolves to [] on any
+    // failure (no backend, network, bad query) so every caller can fall back to
+    // "not listed — add your clinic" instead of showing an error.
+    function lcTitle(s) {
+      return String(s || '').toLowerCase().replace(/\b\w/g, function (m) { return m.toUpperCase(); })
+        .replace(/\bLlc\b/, 'LLC').replace(/\bPc\b/, 'PC').replace(/\bPa\b/, 'PA');
+    }
+    window.pbSearchClinics = function (raw, limit) {
+      var max = limit || 6;
+      // Strip anything PostgREST would read as filter syntax; keep name chars.
+      var q = String(raw == null ? '' : raw).replace(/[^A-Za-z0-9 &'.-]/g, ' ').trim();
+      if (!SU || !SK || q.length < 3) return Promise.resolve([]);
+      var words = q.split(/\s+/).slice(0, 4);
+      var like = function (w) { return 'name.ilike.*' + encodeURIComponent(w) + '*'; };
+      // Every word must appear, so "austin pain" doesn't require that exact substring.
+      var filter = words.length > 1
+        ? 'and=(' + words.map(like).join(',') + ')'
+        : 'name=ilike.*' + encodeURIComponent(words[0]) + '*';
+      var url = SU.replace(/\/$/, '') + '/rest/v1/clinics_public'
+        + '?select=name,city,state,slug,npi,primary_npi&order=name.asc'
+        + '&limit=' + max * 4 + '&' + filter;
+      return fetch(url, { headers: { apikey: SK, Authorization: 'Bearer ' + SK } })
+        .then(function (r) { return r.ok ? r.json() : []; })
+        .then(function (rows) {
+          var seen = {}, out = [];
+          (rows || []).forEach(function (c) {
+            // Primaries only — folded duplicates would show the same practice twice.
+            if (c.primary_npi != null && c.primary_npi !== c.npi) return;
+            if (!c.slug || !c.city || !c.state || seen[c.slug]) return;
+            seen[c.slug] = 1;
+            out.push({ name: lcTitle(c.name), city: lcTitle(c.city), state: c.state,
+                       slug: c.slug, href: '/clinic/' + c.slug + '/' });
+          });
+          return out.slice(0, max);
+        })
+        .catch(function () { return []; });
+    };
+
     // Launcher + close + Esc + external triggers
     root.querySelector('#lcLaunch').addEventListener('click', open);
     root.querySelector('#lcClose').addEventListener('click', close);
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+    // data-open-leadchat opens the patient flow; ="practice" jumps straight to
+    // the clinic-name lookup for practice owners/managers.
     document.querySelectorAll('[data-open-leadchat]').forEach(function (b) {
-      b.addEventListener('click', function (e) { e.preventDefault(); open(); });
+      b.addEventListener('click', function (e) {
+        e.preventDefault();
+        open();
+        if (b.getAttribute('data-open-leadchat') === 'practice') openPractice();
+      });
     });
 
     // Flow
@@ -274,6 +368,90 @@ const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || '';
       zonePromise.then(function (href) {
         if (href) { window.location.href = href; } else { show('done'); }
       });
+    });
+
+    // ---- Practice branch: clinic-name search -> claim, or add if missing ----
+    var pq = root.querySelector('#lcPq');
+    var presults = root.querySelector('#lcPResults');
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, function (ch) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+      });
+    }
+    // 90ms > open()'s own 60ms focus timer, so the practice input wins the focus
+    // when a [data-open-leadchat="practice"] trigger opens the panel.
+    function openPractice() { show('p-find'); setTimeout(function () { pq.focus(); }, 90); }
+    function openAdd(prefill) {
+      root.querySelector('#lcAddName').value = prefill || '';
+      show('p-add');
+      setTimeout(function () {
+        root.querySelector('#lcAdd' + (prefill ? 'City' : 'Name')).focus();
+      }, 60);
+    }
+    root.querySelector('#lcPracticeStart').addEventListener('click', openPractice);
+    root.querySelector('#lcAddOpen').addEventListener('click', function () {
+      openAdd(pq.value.trim());
+    });
+
+    function runPracticeSearch() {
+      var v = pq.value.trim();
+      if (v.length < 3) { pq.focus(); return; }
+      presults.innerHTML = '<p class="lc-note">Searching the directory…</p>';
+      window.pbSearchClinics(v).then(function (list) {
+        window.pbTrack({ source: 'chatbot_practice', query: v, kind: 'clinic',
+                         zip3: null, matched: list.length > 0, zone: null });
+        if (!list.length) {
+          presults.innerHTML = '<p class="lc-note">No match for “' + esc(v) +
+            '” yet — add it below and we\'ll build your listing.</p>';
+          return;
+        }
+        // Claiming happens on the clinic's own page; ?claim=1 opens that form.
+        presults.innerHTML = '<p class="lc-note">Found these — pick yours to claim it:</p>' +
+          list.map(function (c) {
+            return '<a class="lc-result" href="' + esc(c.href) + '?claim=1&src=chat">' +
+              esc(c.name) + '<span class="lc-where">' + esc(c.city) + ', ' + esc(c.state) +
+              ' · Claim this profile →</span></a>';
+          }).join('');
+      });
+    }
+    root.querySelector('.lc-psearch').addEventListener('click', runPracticeSearch);
+    pq.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); runPracticeSearch(); }
+    });
+
+    // "Add my practice" writes to the same `claims` table as the claim form, so
+    // new practices land in the existing review queue (npi/slug are null because
+    // there's no listing yet; the details go in clinic_name/message).
+    root.querySelector('.lc-addsend').addEventListener('click', function () {
+      if (root.querySelector('#lcCompany').value) return;             // honeypot
+      var name = root.querySelector('#lcAddName').value.trim();
+      var contact = root.querySelector('#lcAddContact').value.trim();
+      var email = root.querySelector('#lcAddEmail').value.trim();
+      if (!name) { root.querySelector('#lcAddName').focus(); return; }
+      if (!contact) { root.querySelector('#lcAddContact').focus(); return; }
+      if (!email || email.indexOf('@') < 1) { root.querySelector('#lcAddEmail').focus(); return; }
+      var site = root.querySelector('#lcAddSite').value.trim();
+      if (site && !/^https?:\/\//i.test(site)) site = 'https://' + site;
+      var city = root.querySelector('#lcAddCity').value.trim();
+      if (SU && SK) {
+        fetch(SU.replace(/\/$/, '') + '/rest/v1/claims', {
+          method: 'POST',
+          headers: { apikey: SK, Authorization: 'Bearer ' + SK,
+            'Content-Type': 'application/json', Prefer: 'return=minimal' },
+          body: JSON.stringify({
+            npi: null, clinic_slug: null, clinic_name: name,
+            contact_name: contact, role: '', work_email: email,
+            phone: root.querySelector('#lcAddPhone').value.trim(),
+            interest: 'Add my clinic (not listed)',
+            website: /\.[a-z]{2,}/i.test(site) ? site : '',
+            message: 'NEW LISTING REQUEST (chat)\nPractice: ' + name +
+              '\nCity/State: ' + (city || '—') +
+              '\nSearched for: ' + (pq.value.trim() || '—'),
+            source_page: location.pathname, user_agent: navigator.userAgent,
+          }),
+        }).catch(function () {});
+      }
+      show('p-done');
     });
   })();
 </script>

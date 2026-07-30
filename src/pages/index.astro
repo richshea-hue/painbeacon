@@ -13,29 +13,41 @@ const states = [...byState.keys()].sort().map((s) => ({
   abbr: s, name: stateName(s), count: byState.get(s).length,
 }));
 
-// Search index: every CITY stays searchable (that's what people type), but
-// each entry links to the ZONE page that contains it — city pages no longer
-// exist after the zone migration. Cities split across zones link to the zone
-// holding most of their clinics. Zone labels are indexed too, so searching
-// either "Providence" or "Logan Area" works.
+// Search index: ONE entry per destination zone page. City pages no longer exist
+// after the zone migration, so every city a visitor might type routes to a zone —
+// which means indexing cities as their own rows produced duplicates of the same
+// page. "Beverly Hills, CA" and "Beverly Hills Area, CA" were two rows for one
+// page, and the city row understated the count (its own clinics, not the page's).
+//
+// So: each zone is one row carrying the zone's true count, and every city inside
+// it becomes a search ALIAS (`alt`) — searching "Malibu" still finds the Beverly
+// Hills Area page, and a city split across zones now surfaces every zone it's in
+// instead of only its majority one.
 const routable = primaries.filter((c) => c.zoneUrlSlug);
-const entries = new Map();
-for (const [, list] of groupBy(routable, (c) => `${c.state}/${c.citySlug}`)) {
-  const zoneCount = new Map();
-  for (const c of list) zoneCount.set(c.zoneUrlSlug, (zoneCount.get(c.zoneUrlSlug) || 0) + 1);
-  const topZone = [...zoneCount.entries()].sort((a, b) => b[1] - a[1])[0][0];
-  const c = list[0];
-  const label = `${c.cityLabel}, ${c.state}`;
-  entries.set(label, { label, href: `/pain-clinics/${c.stateSlug}/${topZone}/`, n: list.length });
-}
-for (const [, list] of groupBy(routable, (c) => c.zoneSlug)) {
-  const c = list[0];
-  const label = `${c.zoneLabel}, ${c.state}`;
-  if (!entries.has(label)) {
-    entries.set(label, { label, href: `/pain-clinics/${c.stateSlug}/${c.zoneUrlSlug}/`, n: list.length });
+const zones = new Map();
+for (const c of routable) {
+  const href = `/pain-clinics/${c.stateSlug}/${c.zoneUrlSlug}/`;
+  if (!zones.has(href)) {
+    zones.set(href, { label: `${c.zoneLabel}, ${c.state}`, href, n: 0, cities: new Map() });
   }
+  const z = zones.get(href);
+  z.n++;
+  const city = `${c.cityLabel}, ${c.state}`;
+  z.cities.set(city, (z.cities.get(city) || 0) + 1);
 }
-const cityIndex = [...entries.values()].sort((a, b) => b.n - a.n);
+// "Beverly Hills" vs "Beverly Hills Area" match the same thing, so an alias that
+// only restates the zone name is dropped — it can never widen what's findable.
+const searchKey = (s) => s.toLowerCase().replace(/\s+area\b/g, '').replace(/[^a-z0-9]+/g, '');
+const cityIndex = [...zones.values()]
+  .map((z) => {
+    const zoneKey = searchKey(z.label);
+    const alt = [...z.cities.entries()]
+      .filter(([label]) => searchKey(label) !== zoneKey)
+      .sort((a, b) => b[1] - a[1])
+      .map(([label]) => label);
+    return { label: z.label, href: z.href, n: z.n, alt };
+  })
+  .sort((a, b) => b.n - a.n);
 
 const total = primaries.length;
 ---
@@ -65,8 +77,8 @@ const total = primaries.length;
         </p>
 
         <div class="search">
-          <input id="q" type="text" placeholder="Search a city or ZIP — e.g. Providence or 02906"
-                 autocomplete="off" inputmode="text" aria-label="Search by city or ZIP" />
+          <input id="q" type="text" placeholder="Search a clinic, city, or ZIP — e.g. Providence or 02906"
+                 autocomplete="off" inputmode="text" aria-label="Search by clinic name, city, or ZIP" />
         </div>
         <ul id="results" class="tile-grid" style="margin-top:0.75rem"></ul>
       </div>
@@ -111,7 +123,8 @@ const total = primaries.length;
     <div class="wrap">
       <div class="grow">
         <h2>Run a pain practice? <span class="hl">You're already listed.</span></h2>
-        <p>Claim your free profile to verify your details, add services, and get patient leads.</p>
+        <p>Search the directory by clinic name to claim your free profile — or
+          <a href="/for-practices/#add">add your practice</a> if it isn't listed yet.</p>
       </div>
       <a class="btn" href="/for-practices/">Claim your listing — free</a>
     </div>
@@ -122,6 +135,18 @@ const total = primaries.length;
     #results .search-hint { grid-column: 1 / -1; list-style: none;
       padding: 0.7rem 0.15rem; color: #cfe0de; font-size: 0.92rem; }
     #results .search-hint a { color: #2fd4bf; }
+    /* Group label above a run of city or clinic tiles. */
+    #results .search-group { grid-column: 1 / -1; list-style: none; padding: 0.5rem 0.15rem 0;
+      color: #9fb4b8; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em;
+      text-transform: uppercase; }
+    /* Tiles carrying a second line (city/ST, or the alias a zone matched on). */
+    #results .tile.stacked { flex-direction: column; align-items: flex-start; gap: 0.15rem; }
+    /* The "add your clinic" row — always last, so a manager who can't find
+       their practice has somewhere to go instead of a dead end. */
+    #results .search-add { grid-column: 1 / -1; list-style: none; margin-top: 0.35rem;
+      padding: 0.7rem 0.85rem; border: 1px dashed rgba(47, 212, 191, 0.45);
+      border-radius: var(--radius, 10px); color: #cfe0de; font-size: 0.9rem; }
+    #results .search-add a { color: #2fd4bf; font-weight: 600; }
   </style>
   <script type="application/json" id="city-index" set:html={JSON.stringify(cityIndex)}></script>
   <script>
@@ -129,10 +154,41 @@ const total = primaries.length;
     const q = document.getElementById('q');
     const out = document.getElementById('results');
 
-    function render(list) {
-      out.innerHTML = list.slice(0, 8).map((c) =>
-        `<li><a class="tile" href="${c.href}"><span class="label">${c.label}</span><span class="n">${c.n}</span></a></li>`
-      ).join('');
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (ch) =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
+
+    // A city row that matched through an alias says so, so someone searching
+    // "Malibu" understands why they're being sent to the Beverly Hills Area page.
+    const cityTile = (c) => c.via
+      ? `<li><a class="tile stacked" href="${c.href}"><span class="label">${esc(c.label)}</span>` +
+        `<span class="n">includes ${esc(c.via)} · ${c.n}</span></a></li>`
+      : `<li><a class="tile" href="${c.href}"><span class="label">${esc(c.label)}</span><span class="n">${c.n}</span></a></li>`;
+    const clinicTile = (c) =>
+      `<li><a class="tile stacked" href="${esc(c.href)}"><span class="label">${esc(c.name)}</span>` +
+      `<span class="n">${esc(c.city)}, ${esc(c.state)}</span></a></li>`;
+    // Practice owners who can't find their clinic need a next step, not a dead
+    // end — this row is appended to every text search, match or no match.
+    const addRow = (v) =>
+      `<li class="search-add">Own or manage a pain clinic? ` +
+      `<a href="/for-practices/?add=1&practice=${encodeURIComponent(v)}#add">Add your clinic — it's free</a>` +
+      `</li>`;
+
+    // One paint for the whole result list: cities (instant, from the build-time
+    // index) then clinics (fetched live by name), then the add-your-clinic row.
+    function paint(v, cities, clinics, pending) {
+      const parts = [];
+      if (cities.length) {
+        parts.push('<li class="search-group">Cities &amp; areas</li>', ...cities.slice(0, 6).map(cityTile));
+      }
+      if (clinics.length) {
+        parts.push('<li class="search-group">Clinics</li>', ...clinics.slice(0, 6).map(clinicTile));
+      } else if (pending) {
+        parts.push('<li class="search-hint">Searching clinic names…</li>');
+      } else if (!cities.length) {
+        parts.push(`<li class="search-hint">No clinic, city, or area matches “${esc(v)}” yet.</li>`);
+      }
+      parts.push(addRow(v));
+      out.innerHTML = parts.join('');
     }
     function hint(html) { out.innerHTML = `<li class="search-hint">${html}</li>`; }
     // Site-wide search logger lives on window.pbTrack (defined by the chat
@@ -168,29 +224,88 @@ const total = primaries.length;
     // A search value is "ZIP-like" if it's only digits, spaces and dashes.
     const isZipLike = (v) => v.length > 0 && /^[\d\s-]+$/.test(v);
 
+    // Matching is done on a normalized key, not raw text, so that the zone label
+    // "Beverly Hills Area, CA" is still found by "Beverly Hills", "beverly hills,
+    // ca" and "beverly-hills" alike — the same normalization the build uses to
+    // decide an alias only restates its zone name.
+    const key = (s) => String(s || '').toLowerCase().replace(/\s+area\b/g, '').replace(/[^a-z0-9]+/g, '');
+    const keyed = idx.map((c) => ({ c, k: key(c.label), ak: (c.alt || []).map((a) => [a, key(a)]) }));
+
+    // Zone label first, then its city aliases. Whichever alias matched rides
+    // along as `via` so the tile can explain the hop. idx is pre-sorted by size
+    // and the sort below is stable, so ties keep the bigger area first.
+    function matchCities(v) {
+      const s = key(v);
+      if (!s) return [];
+      const hits = [];
+      for (const { c, k, ak } of keyed) {
+        let rank = -1, via = null;
+        if (k.startsWith(s)) rank = 0;
+        else if (k.includes(s)) rank = 1;
+        else {
+          const lead = ak.find((a) => a[1].startsWith(s));
+          if (lead) { rank = 2; via = lead[0]; }
+          else {
+            const any = ak.find((a) => a[1].includes(s));
+            if (any) { rank = 3; via = any[0]; }
+          }
+        }
+        if (rank >= 0) hits.push({ label: c.label, href: c.href, n: c.n, rank, via });
+      }
+      return hits.sort((a, b) => a.rank - b.rank);
+    }
+    // Clinic-name lookup lives on window.pbSearchClinics (defined by the chat
+    // widget, present on every page); no-op to "no clinics" if unavailable.
+    const findClinics = (v) => (window.pbSearchClinics || (() => Promise.resolve([])))(v);
+
+    // Live name search is debounced, and a sequence number drops any response
+    // that lands after the visitor has typed on.
+    let timer = null;
+    let seq = 0;
+    function textSearch(v, opts) {
+      const cities = matchCities(v);
+      const my = ++seq;
+      clearTimeout(timer);
+      if (v.length < 3) {
+        paint(v, cities, [], false);
+        if (opts && opts.track) {
+          track({ source: 'hero', query: v, kind: 'city', zip3: null,
+                  matched: cities.length > 0, zone: null });
+        }
+        return;
+      }
+      paint(v, cities, [], true);
+      const run = () => findClinics(v).then((clinics) => {
+        if (my !== seq) return;
+        paint(v, cities, clinics, false);
+        if (opts && opts.track) {
+          track({ source: 'hero', query: v, kind: clinics.length ? 'clinic' : 'city',
+                  zip3: null, matched: !!(cities.length || clinics.length), zone: null });
+        }
+      });
+      if (opts && opts.now) run(); else timer = setTimeout(run, 260);
+    }
+
     q.addEventListener('input', () => {
       const v = q.value.trim();
-      if (!v) { out.innerHTML = ''; return; }
+      if (!v) { seq++; clearTimeout(timer); out.innerHTML = ''; return; }
       if (isZipLike(v)) {
         const digits = v.replace(/\D/g, '');
         if (digits.length >= 5) goToZip(digits, 'hero');
         else hint('Enter all 5 digits of your ZIP…');
         return;
       }
-      render(idx.filter((c) => (c.label || '').toLowerCase().includes(v.toLowerCase())));
+      textSearch(v);
     });
 
-    // Enter: fire the ZIP lookup immediately (e.g. after a paste); for a city
-    // name, log the search intent (whether or not we have matches for it).
+    // Enter: fire the ZIP lookup immediately (e.g. after a paste); for text,
+    // skip the debounce and log the search intent (matched or not).
     q.addEventListener('keydown', (e) => {
       if (e.key !== 'Enter') return;
       const v = q.value.trim();
       const digits = v.replace(/\D/g, '');
       if (isZipLike(v) && digits.length >= 5) { e.preventDefault(); goToZip(digits, 'hero'); return; }
-      if (v) {
-        const matched = idx.some((c) => (c.label || '').toLowerCase().includes(v.toLowerCase()));
-        track({ source: 'hero', query: v, kind: 'city', zip3: null, matched, zone: null });
-      }
+      if (v) { e.preventDefault(); textSearch(v, { now: true, track: true }); }
     });
 
     // Deep link: /?zip=02906 (or ?zip=028) sends the visitor straight to the

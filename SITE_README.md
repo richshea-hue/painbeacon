@@ -45,7 +45,7 @@ production.
 
 | Route | Page |
 |---|---|
-| `/` | Home + client-side city search |
+| `/` | Home + search by clinic name, city, or ZIP |
 | `/pain-clinics/` | All states |
 | `/pain-clinics/[state]/` | State hub → cities |
 | `/pain-clinics/[state]/[city]/` | **Ranked clinic list** (the local-search workhorse) |
@@ -54,6 +54,23 @@ production.
 | `/how-we-rank/` | Published ranking methodology |
 | `/ownership-disclosure/` | Disclosure (neutral now, flips with the tripwire) |
 | `/sitemap.xml` | Self-generated, covers every route |
+
+## Search by clinic name (and the "add your clinic" path)
+
+Cities and zones are searched against a build-time index embedded in the home
+page. **Clinic names** are looked up live instead, because the full name index
+would be far too large to ship: `window.pbSearchClinics(q)` (defined in
+`src/components/LeadChat.astro`, which renders site-wide and already holds the
+anon creds) queries the read-only `clinics_public` view over PostgREST and
+returns primaries only. It resolves to `[]` whenever Supabase isn't configured —
+so with the fictional sample, name search silently returns nothing.
+
+Every text search ends with an **Add your clinic** row, and the chat widget has a
+practice branch (`data-open-leadchat="practice"`) that searches by name, links
+matches to `/clinic/<slug>/?claim=1`, and otherwise collects the practice.
+Both the chat form and `/for-practices/#add` write to the existing `claims`
+table with `interest = 'Add my clinic (not listed)'` and `npi`/`clinic_slug`
+null — the location details go in `message`, so no schema change was needed.
 
 ## SEO / E-E-A-T built in
 

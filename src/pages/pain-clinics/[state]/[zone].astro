@@ -29,6 +29,13 @@ const name = stateName(c0.state);
 const zoneLabel = c0.zoneLabel;
 const ranked = rankClinics(clinics);
 
+// Most zone names already end in "Area", so appending our own would read
+// "in the Beverly Hills Area, CA area". Only add it when the name doesn't
+// already carry one.
+const areaPhrase = /\barea$/i.test(zoneLabel)
+  ? `${zoneLabel}, ${c0.state}`
+  : `${zoneLabel}, ${c0.state} area`;
+
 // Featured = paid placement, capped at one per ZONE (exclusivity). Shown in a
 // labeled, clearly-sponsored slot ABOVE the ranked list and excluded from it,
 // so paid placement never mixes with the objective ranking.
@@ -60,7 +67,7 @@ const crumbs = [
 ];
 ---
 <Base title={`Pain clinics in ${zoneLabel}, ${c0.state}`}
-      description={`${clinics.length} pain medicine clinics in the ${zoneLabel}, ${c0.state} area, ranked by board certification, interventional capability, and verified reviews.`}
+      description={`${clinics.length} pain medicine clinics in the ${areaPhrase}, ranked by board certification, interventional capability, and verified reviews.`}
       jsonld={[breadcrumbLd(crumbs), itemListLd(ranked, `Pain clinics in ${zoneLabel}, ${c0.state}`)]}>
   <div class="wrap">
     <Breadcrumbs items={crumbs} />

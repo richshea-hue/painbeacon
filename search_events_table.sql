@@ -9,9 +9,9 @@
 create table if not exists public.search_events (
   id          bigint generated always as identity primary key,
   created_at  timestamptz not null default now(),
-  source      text,           -- 'hero' | 'chatbot' | 'deep_link'
+  source      text,           -- 'hero' | 'chatbot' | 'chatbot_practice' | 'deep_link'
   query       text,           -- raw text the visitor entered (trimmed)
-  kind        text,           -- 'zip' | 'city'
+  kind        text,           -- 'zip' | 'city' | 'clinic' (matched a clinic name)
   zip3        text,           -- 3-digit prefix, when kind = 'zip'
   matched     boolean,        -- did it resolve to a zone page?
   zone        text,           -- resolved "state/zone" segment, null if unmatched
@@ -43,6 +43,12 @@ grant insert on public.search_events to anon;
 --   from public.search_events
 --   where kind = 'zip' and matched = false
 --   group by zip3 order by searches desc limit 50;
+--
+--   -- Practices searching for themselves and finding nothing (add-listing demand):
+--   select query, count(*) as searches
+--   from public.search_events
+--   where source = 'chatbot_practice' and matched = false
+--   group by query order by searches desc limit 50;
 --
 --   -- Overall match rate by source:
 --   select source, count(*) filter (where matched) * 100.0 / count(*) as pct_matched,

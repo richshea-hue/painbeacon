@@ -26,14 +26,16 @@ const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || '';
     </p>
 
     <div class="fp-cta">
-      <a class="btn" href="/pain-clinics/">Find your practice</a>
-      <a class="btn ghost" href="#talk">Talk to us</a>
+      <button class="btn" type="button" data-open-leadchat="practice">Find your practice by name</button>
+      <a class="btn ghost" href="#add">Not listed? Add it</a>
     </div>
 
     <h2>How it works</h2>
     <ol class="fp-steps">
-      <li><strong>Find your practice.</strong> Search by state and city, or look up your
-        clinic by name — you’re almost certainly already listed.</li>
+      <li><strong>Find your practice.</strong>
+        <button class="fp-inline" type="button" data-open-leadchat="practice">Search by clinic name</button>
+        or browse by state and city — you’re almost certainly already listed. If not,
+        <a href="#add">add your practice</a> and we’ll build the listing.</li>
       <li><strong>Verify you represent it.</strong> We confirm you’re affiliated with the
         practice before any changes go live. No one can edit a profile they don’t own.</li>
       <li><strong>Enrich your profile.</strong> Add photos, services, accepted insurance,
@@ -112,6 +114,71 @@ const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || '';
       The directory is built on the public federal NPI registry, so your core listing
       is accurate from day one. See <a href="/ownership-disclosure/">who’s behind this</a>.
     </p>
+
+    <h2 id="add">Not listed? Add your practice</h2>
+    <p>
+      The directory is built from the federal NPI registry, so nearly every U.S. pain
+      practice is already here — <button class="fp-inline" type="button" data-open-leadchat="practice">search
+      by name first</button>. If yours is genuinely missing — a new location, a recent
+      name change, or a gap in the federal records — send the details below and we’ll
+      build your listing. Free, and no payment is ever required to appear.
+    </p>
+
+    <div class="pq pq-add" id="add-form" data-su={SUPABASE_URL} data-sk={SUPABASE_KEY}
+         data-interest="Add my clinic (not listed)">
+      <div class="pq-form">
+        <div class="pq-row">
+          <label>Practice name
+            <input class="pq-in" data-f="clinic_name" type="text" autocomplete="organization" />
+          </label>
+          <label>City, state
+            <input class="pq-in" data-f="city_state" type="text" placeholder="Austin, TX" autocomplete="address-level2" />
+          </label>
+        </div>
+        <div class="pq-row">
+          <label>Street address <span class="pq-muted">(optional)</span>
+            <input class="pq-in" data-f="street" type="text" autocomplete="street-address" />
+          </label>
+          <label>Website <span class="pq-muted">(optional)</span>
+            <input class="pq-in" data-f="website" type="url" inputmode="url" placeholder="https://yourclinic.com" autocomplete="url" />
+          </label>
+        </div>
+        <div class="pq-row">
+          <label>Your name
+            <input class="pq-in" data-f="contact_name" type="text" autocomplete="name" />
+          </label>
+          <label>Your role
+            <select class="pq-in" data-f="role">
+              <option value="">Select…</option>
+              <option>Owner</option>
+              <option>Physician / provider</option>
+              <option>Office manager</option>
+              <option>Marketing</option>
+              <option>Other</option>
+            </select>
+          </label>
+        </div>
+        <div class="pq-row">
+          <label>Work email
+            <input class="pq-in" data-f="work_email" type="email" placeholder="you@practice.com" autocomplete="email" />
+          </label>
+          <label>Phone <span class="pq-muted">(optional)</span>
+            <input class="pq-in" data-f="phone" type="tel" autocomplete="tel" />
+          </label>
+        </div>
+        <label>Anything else? <span class="pq-muted">(NPI number, providers, services…)</span>
+          <textarea class="pq-in" data-f="message" rows="3"></textarea>
+        </label>
+        <input class="pq-hp" data-f="_company" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" />
+        <button class="btn pq-submit" type="button">Add my practice</button>
+        <p class="pq-fine">We verify that you represent the practice before a listing goes live.
+          Submitting is free and doesn’t charge you anything.</p>
+      </div>
+      <div class="pq-done" hidden>
+        <strong>Thanks — we’ve got your practice details.</strong>
+        <p>We’ll verify you represent it, build the listing, and email you when it’s live.</p>
+      </div>
+    </div>
 
     <h2 id="talk">Talk to us</h2>
     <p>Can’t find your practice, or want to hear about Enhanced and Featured? Send a note
@@ -206,43 +273,98 @@ const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || '';
     .pq-muted { color:var(--ink-faint,#7c8a87); font-weight:400; }
     .pq-fine { font-size:.72rem; color:var(--ink-faint,#7c8a87); margin:.2rem 0 0; line-height:1.45; }
     .pq-hp { position:absolute; left:-9999px; width:1px; height:1px; opacity:0; }
+    .pq-add { border-color:color-mix(in srgb, var(--teal,#0e6e62) 45%, var(--line,#e3ddcf)); }
+    .pq-flash { animation: pqFlash 2.4s ease-out 1; }
+    @keyframes pqFlash {
+      0%, 100% { box-shadow:0 0 0 0 transparent; }
+      15% { box-shadow:0 0 0 4px color-mix(in srgb, var(--teal,#0e6e62) 22%, transparent); }
+    }
+    .fp-inline { background:none; border:none; padding:0; margin:0; font:inherit; cursor:pointer;
+      color:var(--teal-deep,#0a4f46); font-weight:600; text-decoration:underline; text-underline-offset:2px; }
+    .fp-inline:hover { text-decoration:none; }
   </style>
 
   <script is:inline>
+    // Drives both practice forms on this page — the general inquiry and the
+    // "add my practice" form. Both write one row to the same `claims` table via
+    // the PUBLIC anon key (RLS = anon INSERT only), so new practices land in the
+    // existing review queue. An add-listing row has npi/clinic_slug null and its
+    // location details folded into `message`.
     (function () {
-      var root = document.querySelector('.pq');
-      if (!root) return;
-      var SU = root.getAttribute('data-su'), SK = root.getAttribute('data-sk');
-      var form = root.querySelector('.pq-form'), done = root.querySelector('.pq-done');
-      function get(f) { var el = root.querySelector('[data-f="' + f + '"]'); return el ? el.value.trim() : ''; }
-      root.querySelector('.pq-submit').addEventListener('click', function () {
-        if (root.querySelector('.pq-hp').value) return; // honeypot
-        var name = get('contact_name'), email = get('work_email');
-        if (!name) { root.querySelector('[data-f="contact_name"]').focus(); return; }
-        if (!email || email.indexOf('@') < 1) { root.querySelector('[data-f="work_email"]').focus(); return; }
-        var payload = {
-          npi: null,
-          clinic_slug: null,
-          clinic_name: get('clinic_name'),
-          contact_name: name,
-          role: get('role'),
-          work_email: email,
-          phone: get('phone'),
-          interest: get('interest'),
-          message: get('message'),
-          source_page: location.pathname,
-          user_agent: navigator.userAgent,
-        };
-        if (SU && SK) {
-          fetch(SU.replace(/\/$/, '') + '/rest/v1/claims', {
-            method: 'POST',
-            headers: { apikey: SK, Authorization: 'Bearer ' + SK,
-              'Content-Type': 'application/json', Prefer: 'return=minimal' },
-            body: JSON.stringify(payload),
-          }).catch(function () {});
+      document.querySelectorAll('.pq').forEach(function (root) {
+        var SU = root.getAttribute('data-su'), SK = root.getAttribute('data-sk');
+        var form = root.querySelector('.pq-form'), done = root.querySelector('.pq-done');
+        var fixedInterest = root.getAttribute('data-interest');
+        function get(f) { var el = root.querySelector('[data-f="' + f + '"]'); return el ? el.value.trim() : ''; }
+        function normWebsite(v) {
+          if (!v) return '';
+          if (!/^https?:\/\//i.test(v)) v = 'https://' + v;
+          return /\.[a-z]{2,}/i.test(v) ? v : '';
         }
-        form.hidden = true; done.hidden = false;
+        root.querySelector('.pq-submit').addEventListener('click', function () {
+          if (root.querySelector('.pq-hp').value) return; // honeypot
+          var name = get('contact_name'), email = get('work_email');
+          if (fixedInterest && !get('clinic_name')) { root.querySelector('[data-f="clinic_name"]').focus(); return; }
+          if (!name) { root.querySelector('[data-f="contact_name"]').focus(); return; }
+          if (!email || email.indexOf('@') < 1) { root.querySelector('[data-f="work_email"]').focus(); return; }
+
+          // Location lives in `message` rather than new columns, so adding a
+          // practice needs no schema change to the claims table.
+          var message = get('message');
+          if (fixedInterest) {
+            message = 'NEW LISTING REQUEST\nPractice: ' + get('clinic_name') +
+              '\nCity/State: ' + (get('city_state') || '—') +
+              '\nStreet: ' + (get('street') || '—') +
+              (message ? '\n\n' + message : '');
+          }
+          var payload = {
+            npi: null,
+            clinic_slug: null,
+            clinic_name: get('clinic_name'),
+            contact_name: name,
+            role: get('role'),
+            work_email: email,
+            phone: get('phone'),
+            interest: fixedInterest || get('interest'),
+            website: normWebsite(get('website')),
+            message: message,
+            source_page: location.pathname + location.search,
+            user_agent: navigator.userAgent,
+          };
+          if (SU && SK) {
+            fetch(SU.replace(/\/$/, '') + '/rest/v1/claims', {
+              method: 'POST',
+              headers: { apikey: SK, Authorization: 'Bearer ' + SK,
+                'Content-Type': 'application/json', Prefer: 'return=minimal' },
+              body: JSON.stringify(payload),
+            }).catch(function () {});
+          }
+          form.hidden = true; done.hidden = false;
+        });
       });
+
+      // Deep link from the site search / chat: ?add=1&practice=Name#add scrolls
+      // to the add form, prefills what they searched for, and highlights it.
+      try {
+        var qp = new URLSearchParams(location.search);
+        var addForm = document.getElementById('add-form');
+        var practice = qp.get('practice');
+        if (!addForm) return;
+        if (practice) {
+          var el = addForm.querySelector('[data-f="clinic_name"]');
+          if (el && !el.value) el.value = practice.slice(0, 120);
+        }
+        if (qp.get('add') === '1' || location.hash === '#add') {
+          addForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          addForm.classList.add('pq-flash');
+          setTimeout(function () { addForm.classList.remove('pq-flash'); }, 2400);
+          var focusOn = practice ? 'city_state' : 'clinic_name';
+          setTimeout(function () {
+            var f = addForm.querySelector('[data-f="' + focusOn + '"]');
+            if (f) f.focus({ preventScroll: true });
+          }, 350);
+        }
+      } catch (e) {}
     })();
   </script>
 </Base>
