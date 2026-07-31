@@ -199,12 +199,26 @@ function squareCard() {
   </svg>`;
 }
 
+// 360×360 — the /research index thumbnail, which renders at 180px on desktop
+// and full-width on phones. Deliberately wordless: any caption sized to survive
+// 180px would crowd the map, and at that size the teaser beside it is already
+// carrying the numbers. The silhouette does the work — a US mostly lit up in
+// teal reads as "most of the country" before you read anything.
+function thumb() {
+  const S = 360;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${S}" height="${S}" viewBox="0 0 ${S} ${S}">
+    <rect width="${S}" height="${S}" fill="${C.bg}"/>
+    ${mapSvg(12, 12, S - 24, S - 24)}
+  </svg>`;
+}
+
 // ---------------------------------------------------------------- render
 
 mkdirSync(OUT_DIR, { recursive: true });
 for (const [name, svg, w, h] of [
   ['pain-care-deserts-og', ogCard(), 1200, 630],
   ['pain-care-deserts-square', squareCard(), 1200, 1200],
+  ['pain-care-deserts-thumb', thumb(), 720, 720], // 2x for retina
 ]) {
   // Rasterize at 2x so the type stays crisp, then downsample to the exact size.
   const out = path.join(OUT_DIR, `${name}.png`);
