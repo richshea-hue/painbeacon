@@ -7,6 +7,25 @@ import { getDesertStats } from '../../lib/deserts.js';
 const S = await getDesertStats();
 const fmt = (n) => n.toLocaleString('en-US');
 const crumbs = [{ name: 'Home', href: '/' }, { name: 'Research', href: '/research/' }];
+
+// One entry for now, but kept as a list so a second study is a push rather than
+// a rewrite — and so the markup matches /news, which already reads as a feed.
+const studies = [
+  {
+    href: '/research/pain-care-deserts/',
+    title: 'Pain care deserts: U.S. counties with no pain management clinic',
+    dek:
+      `${fmt(S.desertCount)} of ${fmt(S.totalCounties)} U.S. counties (${S.desertPct}%) have no ` +
+      `pain management clinic. County-by-county analysis of where ${S.desertPopPct}% of Americans ` +
+      `live without a local pain management option — with the full dataset as CSV.`,
+    updated: S.generatedAt,
+    thumb: '/social/pain-care-deserts-thumb.png',
+    thumbAlt:
+      `Map of the United States with the ${fmt(S.desertCount)} counties that have no pain ` +
+      `management clinic highlighted in teal — most of the map, densest across the rural West, ` +
+      `Great Plains, Appalachia and the South.`,
+  },
+];
 ---
 
 <Base
@@ -14,7 +33,7 @@ const crumbs = [{ name: 'Home', href: '/' }, { name: 'Research', href: '/researc
   description="Original data studies on pain management access in the United States, built from the federal NPI registry. Free to cite with attribution."
   jsonld={breadcrumbLd(crumbs)}
 >
-  <div class="wrap narrow prose">
+  <div class="wrap narrow">
     <Breadcrumbs items={crumbs} />
     <h1>Research &amp; data studies</h1>
     <p class="lede">
@@ -23,12 +42,23 @@ const crumbs = [{ name: 'Home', href: '/' }, { name: 'Research', href: '/researc
       attribution, and every study includes a downloadable dataset.
     </p>
 
-    <h2><a href="/research/pain-care-deserts/">Pain care deserts: U.S. counties with no pain management clinic</a></h2>
-    <p>
-      {fmt(S.desertCount)} of {fmt(S.totalCounties)} U.S. counties ({S.desertPct}%) have no
-      pain management clinic. County-by-county analysis of where {S.desertPopPct}% of
-      Americans live without a local pain management option — with the full dataset as CSV.
-    </p>
-    <p class="muted">Updated {S.generatedAt}</p>
+    <ol class="article-feed">
+      {studies.map((s) => (
+        <li>
+          <a class="article-card" href={s.href}>
+            <div class="article-card-body">
+              <p class="article-kicker">
+                Data study · <time datetime={s.updated}>Updated {s.updated}</time>
+              </p>
+              <h2>{s.title}</h2>
+              <p class="article-dek">{s.dek}</p>
+              <span class="article-more">Read the study →</span>
+            </div>
+            <img class="article-thumb" src={s.thumb} alt={s.thumbAlt}
+              width="180" height="180" loading="lazy" />
+          </a>
+        </li>
+      ))}
+    </ol>
   </div>
 </Base>
