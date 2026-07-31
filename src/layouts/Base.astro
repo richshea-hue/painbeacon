@@ -11,11 +11,16 @@ const {
   noindex = false,
   // Social share image. 1200×1200 (1:1 survives every platform uncropped).
   // Defaults to the site card; article pages pass their own generated card
-  // (see scripts/generate-social-cards.mjs).
+  // (see scripts/generate-social-cards.mjs). Pages with a wide card — a chart
+  // or map that would be unreadable in a square thumbnail — pass their own
+  // dimensions, which promotes the X card to summary_large_image.
   ogImage = '/social/painbeacon-card.png',
   ogImageAlt = `${SITE.name} — ${SITE.tagline}`,
+  ogImageWidth = 1200,
+  ogImageHeight = 1200,
 } = Astro.props;
 const ogImageUrl = new URL(ogImage, SITE.url).href;
+const twitterCard = ogImageWidth > ogImageHeight ? 'summary_large_image' : 'summary';
 
 const fullTitle = title ? `${title} — ${SITE.name}` : `${SITE.name} — ${SITE.tagline}`;
 const canonicalUrl = canonical || new URL(Astro.url.pathname, SITE.url).href;
@@ -38,10 +43,10 @@ const blocks = Array.isArray(jsonld) ? jsonld : [jsonld];
     <meta property="og:url" content={canonicalUrl} />
     <meta property="og:site_name" content={SITE.name} />
     <meta property="og:image" content={ogImageUrl} />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="1200" />
+    <meta property="og:image:width" content={String(ogImageWidth)} />
+    <meta property="og:image:height" content={String(ogImageHeight)} />
     <meta property="og:image:alt" content={ogImageAlt} />
-    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:card" content={twitterCard} />
     <meta name="twitter:image" content={ogImageUrl} />
     <meta name="twitter:image:alt" content={ogImageAlt} />
 

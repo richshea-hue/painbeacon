@@ -81,7 +81,15 @@ const datasetLd = {
 };
 ---
 
-<Base title={title} description={description} jsonld={[breadcrumbLd(crumbs), datasetLd, faqLd(faqs)]}>
+<Base
+  title={title}
+  description={description}
+  ogImage="/social/pain-care-deserts-og.png"
+  ogImageWidth={1200}
+  ogImageHeight={630}
+  ogImageAlt={`Map of the ${fmt(S.desertCount)} U.S. counties with no pain management clinic`}
+  jsonld={[breadcrumbLd(crumbs), datasetLd, faqLd(faqs)]}
+>
   <div class="wrap narrow prose">
     <Breadcrumbs items={crumbs} />
     <h1>Pain care deserts: the U.S. counties with no pain management clinic</h1>
