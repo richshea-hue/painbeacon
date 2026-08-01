@@ -1,7 +1,13 @@
 // Build the homepage hero photo set from one source image.
 //
-//   node scripts/prepare-hero-photo.mjs --src <source.jpg>
-//   node scripts/prepare-hero-photo.mjs --src <source.jpg> --position centre
+//   node scripts/prepare-hero-photo.mjs --src <source.jpg> --source <pexels-url-or-id>
+//   node scripts/prepare-hero-photo.mjs --src <source.jpg> --source <pexels-url-or-id> --position centre
+//
+// --source is REQUIRED (Pexels photo URL, numeric id, or "manual:<note>"): the
+// photo is checked against data/image-registry.json and refused if any article
+// already uses it — the previous home hero shipped as a re-crop of the
+// how-to-choose article's hero because nothing tracked photo sources. Commit
+// the registry with the new images.
 //
 // Outputs to public/brand/:
 //   hero-clinic-wide.jpg / .webp    1600×720  desktop background (photo sits
@@ -23,6 +29,9 @@ import { mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import sharp from 'sharp';
+import {
+  loadRegistry, saveRegistry, parseSource, assertUnused, registerSource, md5File,
+} from './lib/image-registry.mjs';
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const args = process.argv.slice(2);
@@ -32,10 +41,19 @@ const opt = (name) => {
 };
 
 const src = opt('src');
-if (!src) {
-  console.error('usage: node scripts/prepare-hero-photo.mjs --src <source.jpg> [--position attention|centre|north|…]');
+const sourceRef = opt('source');
+if (!src || !sourceRef) {
+  console.error(
+    'usage: node scripts/prepare-hero-photo.mjs --src <source.jpg> --source <pexels-url-or-id> [--position attention|centre|north|…]'
+  );
   process.exit(1);
 }
+
+// Refuse a photo any article already uses, before writing anything.
+const reg = loadRegistry();
+const srcInfo = parseSource(sourceRef);
+const sourceMd5 = md5File(src);
+assertUnused(reg, { pexelsId: srcInfo.pexelsId, sourceMd5, page: 'home-hero' });
 
 const positionArg = opt('position') || 'attention';
 const position = positionArg === 'attention' ? sharp.strategy.attention : positionArg;
@@ -53,6 +71,7 @@ const VARIANTS = [
 const meta = await sharp(src).metadata();
 console.log(`source ${path.basename(src)} — ${meta.width}×${meta.height}`);
 
+const files = [];
 for (const v of VARIANTS) {
   if (meta.width < v.w) {
     console.warn(
@@ -66,4 +85,10 @@ for (const v of VARIANTS) {
   const b = await base.clone().webp({ quality: 78 }).toFile(webp);
   console.log(`  ${v.name}.jpg   ${v.w}×${v.h}  ${(a.size / 1024).toFixed(0)}KB`);
   console.log(`  ${v.name}.webp  ${v.w}×${v.h}  ${(b.size / 1024).toFixed(0)}KB`);
+  files.push({ path: `/brand/${v.name}.jpg`, md5: md5File(jpg), bytes: a.size });
+  files.push({ path: `/brand/${v.name}.webp`, md5: md5File(webp), bytes: b.size });
 }
+
+registerSource(reg, { page: 'home-hero', role: 'hero', ...srcInfo, sourceMd5, files });
+saveRegistry(reg);
+console.log('recorded in data/image-registry.json — commit it with the new images.');

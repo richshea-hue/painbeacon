@@ -1,0 +1,246 @@
+{
+  "sources": [
+    {
+      "page": "home-hero",
+      "role": "hero",
+      "pexels_id": null,
+      "src_url": null,
+      "photographer": null,
+      "source_md5": null,
+      "files": [
+        {
+          "path": "/brand/hero-clinic-wide.jpg",
+          "md5": "ce2fff2e221f27e04ed811ea19f0426b",
+          "bytes": 69759
+        },
+        {
+          "path": "/brand/hero-clinic-wide.webp",
+          "md5": "ec6f03f48523197b0a785ba4a811b6e1",
+          "bytes": 35062
+        },
+        {
+          "path": "/brand/hero-clinic-band.jpg",
+          "md5": "14803ac466d5e3ce3772a675d0a35625",
+          "bytes": 39126
+        },
+        {
+          "path": "/brand/hero-clinic-band.webp",
+          "md5": "d8a87fa5020f80da22a81c3c17b067a4",
+          "bytes": 19630
+        }
+      ],
+      "waived": true,
+      "note": "KNOWN OVERLAP, waived: same shoot/source as news/how-to-choose-a-pain-clinic hero (different crop). Replace the home hero with a fresh photo to clear this. Backfilled 2026-08-01."
+    },
+    {
+      "page": "news/does-insurance-cover-pain-management",
+      "role": "hero",
+      "pexels_id": null,
+      "src_url": null,
+      "photographer": null,
+      "source_md5": null,
+      "files": [
+        {
+          "path": "/images/news/does-insurance-cover-pain-management/pain-clinic-front-desk-insurance-checkin-hero.jpg",
+          "md5": "3f9bc8c53532ad394fe28922e3f0b1b3",
+          "bytes": 85426
+        },
+        {
+          "path": "/images/news/does-insurance-cover-pain-management/pain-clinic-front-desk-insurance-checkin-thumb.jpg",
+          "md5": "b0a8bec2c6eb53eef3245ff9a7e31279",
+          "bytes": 31361
+        },
+        {
+          "path": "/images/news/does-insurance-cover-pain-management/pain-clinic-front-desk-insurance-checkin-share.jpg",
+          "md5": "30eb61402f247731ee8a1cc42c9da880",
+          "bytes": 86315
+        }
+      ],
+      "note": "backfilled 2026-08-01 — shipped before the registry existed, Pexels id unknown; only file hashes guard this one"
+    },
+    {
+      "page": "news/does-insurance-cover-pain-management",
+      "role": "inline",
+      "pexels_id": null,
+      "src_url": null,
+      "photographer": null,
+      "source_md5": null,
+      "files": [
+        {
+          "path": "/images/news/does-insurance-cover-pain-management/patient-calling-insurer-taking-notes.jpg",
+          "md5": "94c7d1177ae5b46aeebcdd361b35ab1d",
+          "bytes": 61662
+        }
+      ],
+      "note": "backfilled 2026-08-01 — shipped before the registry existed, Pexels id unknown; only file hashes guard this one"
+    },
+    {
+      "page": "news/first-pain-clinic-appointment",
+      "role": "hero",
+      "pexels_id": null,
+      "src_url": null,
+      "photographer": null,
+      "source_md5": null,
+      "files": [
+        {
+          "path": "/images/news/first-pain-clinic-appointment/patient-doctor-first-appointment-discussion-hero.jpg",
+          "md5": "fc94ec60425235bcc4e856ded6e4c87d",
+          "bytes": 78657
+        },
+        {
+          "path": "/images/news/first-pain-clinic-appointment/patient-doctor-first-appointment-discussion-thumb.jpg",
+          "md5": "3ab66f8af76ad5f45f2bf72aa050bef2",
+          "bytes": 23428
+        },
+        {
+          "path": "/images/news/first-pain-clinic-appointment/patient-doctor-first-appointment-discussion-share.jpg",
+          "md5": "97800a9ab04622f9c34c8f6dd46ffb2f",
+          "bytes": 71278
+        }
+      ],
+      "note": "backfilled 2026-08-01 — shipped before the registry existed, Pexels id unknown; only file hashes guard this one"
+    },
+    {
+      "page": "news/first-pain-clinic-appointment",
+      "role": "inline",
+      "pexels_id": null,
+      "src_url": null,
+      "photographer": null,
+      "source_md5": null,
+      "files": [
+        {
+          "path": "/images/news/first-pain-clinic-appointment/doctor-reviewing-medical-records-with-patient.jpg",
+          "md5": "1437e41807cd77e8439122c5aaab6863",
+          "bytes": 61148
+        }
+      ],
+      "note": "backfilled 2026-08-01 — shipped before the registry existed, Pexels id unknown; only file hashes guard this one"
+    },
+    {
+      "page": "news/how-to-choose-a-pain-clinic",
+      "role": "hero",
+      "pexels_id": null,
+      "src_url": null,
+      "photographer": null,
+      "source_md5": null,
+      "files": [
+        {
+          "path": "/images/news/how-to-choose-a-pain-clinic/pain-clinic-doctor-patient-consultation-hero.jpg",
+          "md5": "07edc7e41a3df3da1655fe8b5a41e9f7",
+          "bytes": 93891
+        },
+        {
+          "path": "/images/news/how-to-choose-a-pain-clinic/pain-clinic-doctor-patient-consultation-thumb.jpg",
+          "md5": "ef878e8fa4d35ad9eb86d52d2f44477b",
+          "bytes": 32101
+        },
+        {
+          "path": "/images/news/how-to-choose-a-pain-clinic/pain-clinic-doctor-patient-consultation-share.jpg",
+          "md5": "c2bd1a803a31419f5788ac262b393994",
+          "bytes": 89429
+        }
+      ],
+      "note": "backfilled 2026-08-01 — shipped before the registry existed, Pexels id unknown; only file hashes guard this one"
+    },
+    {
+      "page": "news/how-to-choose-a-pain-clinic",
+      "role": "inline",
+      "pexels_id": null,
+      "src_url": null,
+      "photographer": null,
+      "source_md5": null,
+      "files": [
+        {
+          "path": "/images/news/how-to-choose-a-pain-clinic/physical-therapist-back-examination.jpg",
+          "md5": "7dd9b910d4ec4cf4875b1a853cc7793b",
+          "bytes": 54703
+        }
+      ],
+      "note": "backfilled 2026-08-01 — shipped before the registry existed, Pexels id unknown; only file hashes guard this one"
+    },
+    {
+      "page": "news/spot-a-pill-mill-red-flags",
+      "role": "hero",
+      "pexels_id": null,
+      "src_url": null,
+      "photographer": null,
+      "source_md5": null,
+      "files": [
+        {
+          "path": "/images/news/spot-a-pill-mill-red-flags/pain-clinic-waiting-room-patient-consultation-hero.jpg",
+          "md5": "e4d274ba48646d8b71a7530fb229db07",
+          "bytes": 76113
+        },
+        {
+          "path": "/images/news/spot-a-pill-mill-red-flags/pain-clinic-waiting-room-patient-consultation-thumb.jpg",
+          "md5": "bfe51a9283438e95e569109dbbc23d2f",
+          "bytes": 24992
+        },
+        {
+          "path": "/images/news/spot-a-pill-mill-red-flags/pain-clinic-waiting-room-patient-consultation-share.jpg",
+          "md5": "ec6c9716f5c64583181099e44472099c",
+          "bytes": 72156
+        }
+      ],
+      "note": "backfilled 2026-08-01 — shipped before the registry existed, Pexels id unknown; only file hashes guard this one"
+    },
+    {
+      "page": "news/spot-a-pill-mill-red-flags",
+      "role": "inline",
+      "pexels_id": null,
+      "src_url": null,
+      "photographer": null,
+      "source_md5": null,
+      "files": [
+        {
+          "path": "/images/news/spot-a-pill-mill-red-flags/pain-doctor-reviewing-spine-xray.jpg",
+          "md5": "60ec19364ff3eaead8d60fbddb1c7065",
+          "bytes": 47365
+        }
+      ],
+      "note": "backfilled 2026-08-01 — shipped before the registry existed, Pexels id unknown; only file hashes guard this one"
+    },
+    {
+      "page": "news/what-interventional-pain-clinics-do",
+      "role": "hero",
+      "pexels_id": null,
+      "src_url": null,
+      "photographer": null,
+      "source_md5": null,
+      "files": [
+        {
+          "path": "/images/news/what-interventional-pain-clinics-do/interventional-pain-injection-procedure-hero.jpg",
+          "md5": "3e03c68a94903f900617f00443d4f266",
+          "bytes": 92387
+        },
+        {
+          "path": "/images/news/what-interventional-pain-clinics-do/interventional-pain-injection-procedure-thumb.jpg",
+          "md5": "9ce2f7efab84b08b9694908fafa06ba3",
+          "bytes": 26709
+        },
+        {
+          "path": "/images/news/what-interventional-pain-clinics-do/interventional-pain-injection-procedure-share.jpg",
+          "md5": "ae5771f66757a3f197a75d587ed44bf3",
+          "bytes": 88485
+        }
+      ],
+      "note": "backfilled 2026-08-01 — shipped before the registry existed, Pexels id unknown; only file hashes guard this one"
+    },
+    {
+      "page": "news/what-interventional-pain-clinics-do",
+      "role": "inline",
+      "pexels_id": null,
+      "src_url": null,
+      "photographer": null,
+      "source_md5": null,
+      "files": [
+        {
+          "path": "/images/news/what-interventional-pain-clinics-do/doctor-reviewing-spinal-x-ray.jpg",
+          "md5": "a4c600708ac18575b57ad37460f1457e",
+          "bytes": 72662
+        }
+      ],
+      "note": "backfilled 2026-08-01 — shipped before the registry existed, Pexels id unknown; only file hashes guard this one"
+    }
+  ]
+}
