@@ -3,7 +3,7 @@
 backfill_websites.py — PainBeacon Google Places website backfill
 
 Fetches websiteUri (+ businessStatus) from Google Places API (New) for clinics
-that have a place_id but no website yet, and writes results back to Supabase.
+that have a google_place_id but no website yet, and writes results back to Supabase.
 
 Why Places and not NPPES: NPPES has no website field, and the original
 registry-era website data was scrubbed after expired/hijacked domains got the
@@ -134,8 +134,8 @@ def clean_website(raw):
 def sb_count_candidates():
     url = f"{SUPABASE_URL}/rest/v1/clinics"
     params = {
-        "select": "id",
-        "place_id": "not.is.null",
+        "select": "npi",
+        "google_place_id": "not.is.null",
         "website": "is.null",
         "primary_npi": "is.null",
         "limit": "1",
@@ -147,23 +147,23 @@ def sb_count_candidates():
     return int(content_range.split("/")[-1])
 
 def sb_get_candidates(limit):
-    """Clinics with a place_id but no website yet, skipping folded duplicates."""
+    """Clinics with a google_place_id but no website yet, skipping folded duplicates."""
     url = f"{SUPABASE_URL}/rest/v1/clinics"
     params = {
-        "select": "id,place_id",
-        "place_id": "not.is.null",
+        "select": "npi,google_place_id",
+        "google_place_id": "not.is.null",
         "website": "is.null",
         "primary_npi": "is.null",
         "limit": str(limit),
-        "order": "id.asc",
+        "order": "npi.asc",
     }
     r = requests.get(url, headers=SB_HEADERS, params=params, timeout=SUPABASE_TIMEOUT)
     r.raise_for_status()
     return r.json()
 
-def sb_write_website(clinic_id, website):
+def sb_write_website(npi, website):
     url = f"{SUPABASE_URL}/rest/v1/clinics"
-    params = {"id": f"eq.{clinic_id}"}
+    params = {"npi": f"eq.{npi}"}
     r = requests.patch(url, headers=SB_HEADERS, params=params,
                        json={"website": website}, timeout=SUPABASE_TIMEOUT)
     r.raise_for_status()
@@ -207,7 +207,7 @@ def main():
     started = datetime.now(timezone.utc).isoformat()
     total = sb_count_candidates()
     print(f"[{started}] backfill_websites: start  LIMIT={LIMIT}  DRY_RUN={DRY_RUN}")
-    print(f"  candidates (place_id set, website null, primary only): {total}")
+    print(f"  candidates (google_place_id set, website null, primary only): {total}")
 
     if DRY_RUN:
         print(f"[dry-run] would fetch up to {min(LIMIT, total)} places. "
@@ -223,7 +223,7 @@ def main():
     while calls_made < LIMIT:
         remaining = LIMIT - calls_made
         candidates = sb_get_candidates(min(BATCH_SIZE, remaining))
-        candidates = [r for r in candidates if r["id"] not in seen]
+        candidates = [r for r in candidates if r["npi"] not in seen]
         if not candidates:
             print("  no more candidates.")
             break
@@ -231,10 +231,10 @@ def main():
         for row in candidates:
             if calls_made >= LIMIT:
                 break
-            seen.add(row["id"])
+            seen.add(row["npi"])
 
             try:
-                result = google_fetch_website(row["place_id"])
+                result = google_fetch_website(row["google_place_id"])
             except RuntimeError as e:
                 print(f"[abort] {e}")
                 print(f"[abort] calls={calls_made} written={written} emptied={emptied}")
@@ -245,12 +245,12 @@ def main():
             if result is None:
                 # Place removed from Google (or invalid id) — permanent.
                 # Write '' so it is never re-fetched / re-billed.
-                sb_write_website(row["id"], "")
+                sb_write_website(row["npi"], "")
                 emptied += 1
             else:
                 website_uri, status = result
                 site = "" if status == "CLOSED_PERMANENTLY" else clean_website(website_uri)
-                sb_write_website(row["id"], site)
+                sb_write_website(row["npi"], site)
                 if site:
                     written += 1
                 else:

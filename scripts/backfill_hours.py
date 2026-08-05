@@ -3,7 +3,7 @@
 backfill_hours.py — PainBeacon Google Places hours backfill
 
 Fetches regularOpeningHours from Google Places API (New) for clinics that
-have a place_id but no hours yet, and writes results back to Supabase.
+have a google_place_id but no hours yet, and writes results back to Supabase.
 
 Guardrails vs. the previous version:
 - Default limit 200/run. NOTE: regularOpeningHours itself bills as the
@@ -29,11 +29,12 @@ Env vars (set as GitHub Actions secrets):
   DRY_RUN               "1" = count candidates only, no Google calls/writes
   MAX_CALLS             OPTIONAL legacy override for manual shell runs
 
-Schema assumptions in the `clinics` table (verify column names before commit):
-  id             bigint / uuid    primary key
-  place_id       text             Google Place ID (nullable)
-  hours          jsonb            null when not backfilled yet
-  primary_npi    bigint           IS NOT NULL => folded duplicate; skip
+Schema (verified against fix_errant_locations.py / dashboard.astro):
+  npi              bigint/text    primary key
+  google_place_id  text           Google Place ID (nullable)
+  hours            text           "; "-joined weekdayDescriptions; site does
+                                  c.hours.split(';') — NOT jsonb
+  primary_npi      bigint         IS NOT NULL => folded duplicate; skip
 """
 
 import os
@@ -83,25 +84,25 @@ SB_HEADERS = {
 # Supabase
 # ---------------------------------------------------------------------------
 def sb_get_candidates(limit):
-    """Clinics with a place_id but no hours yet, skipping folded duplicates."""
+    """Clinics with a google_place_id but no hours yet, skipping folded duplicates."""
     url = f"{SUPABASE_URL}/rest/v1/clinics"
     params = {
-        "select": "id,place_id",
-        "place_id": "not.is.null",
+        "select": "npi,google_place_id",
+        "google_place_id": "not.is.null",
         "hours": "is.null",
         "primary_npi": "is.null",
         "limit": str(limit),
-        "order": "id.asc",
+        "order": "npi.asc",
     }
     r = requests.get(url, headers=SB_HEADERS, params=params, timeout=SUPABASE_TIMEOUT)
     r.raise_for_status()
     return r.json()
 
-def sb_write_hours(clinic_id, hours_obj):
-    """Write regularOpeningHours JSON back to clinics.hours."""
+def sb_write_hours(npi, hours_str):
+    """Write the "; "-joined weekdayDescriptions string back to clinics.hours."""
     url = f"{SUPABASE_URL}/rest/v1/clinics"
-    params = {"id": f"eq.{clinic_id}"}
-    body = {"hours": hours_obj}
+    params = {"npi": f"eq.{npi}"}
+    body = {"hours": hours_str}
     r = requests.patch(url, headers=SB_HEADERS, params=params, json=body, timeout=SUPABASE_TIMEOUT)
     r.raise_for_status()
 
@@ -111,7 +112,8 @@ def sb_write_hours(clinic_id, hours_obj):
 def google_fetch_hours(place_id):
     """
     Returns:
-      dict  the regularOpeningHours object, or {} if the place has none
+      str   "; "-joined weekdayDescriptions (the format the site parses),
+            or "" if the place has no published hours
       None  place not found / non-quota 4xx (skip and move on)
     Raises RuntimeError on quota exhaustion or 5xx — caller aborts the run.
     """
@@ -135,7 +137,9 @@ def google_fetch_hours(place_id):
         return None
 
     data = r.json()
-    return data.get("regularOpeningHours") or {}
+    desc = ((data.get("regularOpeningHours") or {}).get("weekdayDescriptions") or [])
+    desc = [d for d in desc if d and d.strip()]
+    return "; ".join(desc)
 
 # ---------------------------------------------------------------------------
 # Main
@@ -169,8 +173,8 @@ def main():
             if calls_made >= MAX_CALLS:
                 break
 
-            place_id = row["place_id"]
-            clinic_id = row["id"]
+            place_id = row["google_place_id"]
+            npi = row["npi"]
 
             try:
                 hours = google_fetch_hours(place_id)
@@ -183,13 +187,13 @@ def main():
 
             if hours is None:
                 skipped += 1
-            elif hours == {}:
-                # Place exists but has no published hours. Write {} so we don't
+            elif hours == "":
+                # Place exists but has no published hours. Write '' so we don't
                 # burn quota re-fetching this clinic next month.
-                sb_write_hours(clinic_id, {})
+                sb_write_hours(npi, "")
                 empty += 1
             else:
-                sb_write_hours(clinic_id, hours)
+                sb_write_hours(npi, hours)
                 written += 1
 
             if calls_made % 100 == 0:
