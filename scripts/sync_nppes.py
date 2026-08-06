@@ -39,6 +39,7 @@ import json
 import os
 import re
 import sys
+import time
 import zipfile
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
@@ -355,13 +356,30 @@ def fetch_existing():
 
 
 def patch_clinic(npi, fields):
+    """One clinic UPDATE, retried on transient network errors.
+
+    Without the retry a single Supabase read timeout raised straight out of
+    here and killed the whole sync partway through — leaving the run half
+    applied (that's what happened to the 2026-07-10 run). An individual
+    clinic that still fails after retries is logged and skipped, matching how
+    HTTP errors were already tolerated below.
+    """
     if DRY_RUN:
         return
-    r = S.patch(f"{SUPABASE_URL}/rest/v1/clinics", params={"npi": f"eq.{npi}"},
-                headers={"Content-Type": "application/json", "Prefer": "return=minimal"},
-                data=json.dumps(fields), timeout=60)
-    if r.status_code >= 300:
-        log(f"  !! PATCH {npi} failed {r.status_code}: {r.text[:200]}")
+    for attempt in range(3):
+        try:
+            r = S.patch(f"{SUPABASE_URL}/rest/v1/clinics", params={"npi": f"eq.{npi}"},
+                        headers={"Content-Type": "application/json", "Prefer": "return=minimal"},
+                        data=json.dumps(fields), timeout=60)
+        except requests.RequestException as e:
+            if attempt == 2:
+                log(f"  !! PATCH {npi} gave up after 3 tries: {type(e).__name__}")
+                return
+            time.sleep(2 ** attempt)
+            continue
+        if r.status_code >= 300:
+            log(f"  !! PATCH {npi} failed {r.status_code}: {r.text[:200]}")
+        return
 
 
 def insert_clinics(rows):

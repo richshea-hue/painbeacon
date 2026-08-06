@@ -114,25 +114,58 @@ PainBeacon — painbeacon.com"""
 
     elif variant == "confirm-update":
         fields = [f.strip() for f in (row.get("updated_fields") or "").split(",") if f.strip()]
-        found_bits = []
-        if "hours" in fields and (row.get("hours") or "").strip():
-            first_day = row["hours"].split(";")[0].strip()
-            found_bits.append(f"your hours ({first_day}, and the rest of the week)")
-        if "website" in fields and site_host:
-            found_bits.append(f"your website ({site_host})")
-        found_str = " and ".join(found_bits) if found_bits else "new details for your practice"
-        what = "your hours" if fields == ["hours"] else \
-               "your website" if fields == ["website"] else "new info"
-        subject = f"We just added {what} for {clinic} — mind confirming?"
-        body = f"""Hi {clinic} team,
+        moved = "moved" in fields
+        brand_new = "new-listing" in fields
 
-PainBeacon is an independent national directory of pain clinics. We just
-pulled {found_str} from Google and added it to your profile so patients in
-{market} see accurate info:
+        # Lead with the most contactable change. A relocation is the strongest
+        # hook (and the likeliest thing to be stale elsewhere online); a
+        # brand-new listing is really a "we just added you" note.
+        if moved:
+            headline = "your practice address changed"
+            subject = f"Did {clinic} move? Confirming our listing"
+        elif brand_new:
+            headline = "we just added your practice"
+            subject = f"{clinic} is now listed on PainBeacon"
+        else:
+            pretty = {"phone-new": "a phone number", "phone-changed": "a new phone number",
+                      "hours-new": "your hours", "hours-changed": "updated hours",
+                      "website-new": "your website", "website-changed": "a new website",
+                      "name-changed": "a name change", "name-new": "your name"}
+            named = [pretty[f] for f in fields if f in pretty]
+            headline = " and ".join(named) if named else "new details for your practice"
+            subject = f"Quick check on {clinic}'s listing details"
+
+        # change_detail is written by build_confirm_targets.py as
+        # "field: old -> new" segments — the specific thing to confirm. For a
+        # brand-new listing there is no before/after worth quoting, so it is
+        # left out rather than restating the headline.
+        detail = (row.get("change_detail") or "").strip()
+        detail_block = ("" if brand_new or not detail
+                        else f"\nWhat changed on our end:\n  {detail}\n")
+
+        if brand_new:
+            body = f"""Hi {clinic} team,
+
+PainBeacon is an independent national directory of pain clinics, built from
+federal NPI registry records. We just added your practice, so patients
+searching for pain care in {market} now find you here:
 {profile}
+{detail_block}
+Everything there comes from public records, so it's worth a look to make
+sure it's right. Claiming your listing is free and lets you correct it:
+{claim}
 
-Could you take two minutes to confirm it's right (or fix it if not)?
-Claiming your listing is free and does that:
+{from_name}
+PainBeacon — painbeacon.com"""
+        else:
+            body = f"""Hi {clinic} team,
+
+PainBeacon is an independent national directory of pain clinics. Our records
+show {headline}, and we've updated what patients in {market} see here:
+{profile}
+{detail_block}
+Could you take two minutes to confirm that's right — or correct it if we got
+it wrong? Claiming your listing is free and does both:
 {claim}
 
 {from_name}
