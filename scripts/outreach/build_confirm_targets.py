@@ -98,6 +98,13 @@ def val(c, field):
     return str(c.get(field) or "").strip()
 
 
+def key(c):
+    """Snapshot key for a clinic. Supabase returns npi as a JSON number while
+    the snapshot CSV round-trips it as text — compare as text on both sides or
+    every lookup misses and every clinic reads as brand-new."""
+    return str(c["npi"]).strip()
+
+
 def load_snapshot():
     """Returns (rows_by_npi, columns_present). columns_present is empty when
     there is no snapshot — the caller treats that as 'baseline only'."""
@@ -106,7 +113,7 @@ def load_snapshot():
     with open(SNAPSHOT_PATH, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         cols = set(reader.fieldnames or [])
-        prev = {row["npi"]: row for row in reader}
+        prev = {str(row["npi"]).strip(): row for row in reader}
     return prev, cols
 
 
@@ -116,7 +123,7 @@ def save_snapshot(clinics):
         w = csv.writer(f)
         w.writerow(["npi"] + TRACKED)
         for c in clinics:
-            w.writerow([c["npi"]] + [val(c, k) for k in TRACKED])
+            w.writerow([key(c)] + [val(c, k) for k in TRACKED])
 
 
 def norm_phone(v):
@@ -170,7 +177,7 @@ def diff_clinic(c, before, cols):
 def find_changed(clinics, prev, cols):
     changed = []
     for c in clinics:
-        before = prev.get(c["npi"])
+        before = prev.get(key(c))
         if before is None:
             # Genuinely new to the directory since the last snapshot.
             changed.append((c, ["new-listing"],
