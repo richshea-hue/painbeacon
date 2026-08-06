@@ -83,6 +83,23 @@ SB_HEADERS = {
 # ---------------------------------------------------------------------------
 # Supabase
 # ---------------------------------------------------------------------------
+def sb_count_candidates():
+    """Exact remaining backlog. A page of rows can't answer this — it caps at
+    BATCH_SIZE and reports "500+", which is useless for deciding whether the
+    Enterprise pool has room for another site's backfill."""
+    url = f"{SUPABASE_URL}/rest/v1/clinics"
+    params = {
+        "select": "npi",
+        "google_place_id": "not.is.null",
+        "hours": "is.null",
+        "primary_npi": "is.null",
+        "limit": "1",
+    }
+    headers = dict(SB_HEADERS, Prefer="count=exact", Range="0-0")
+    r = requests.get(url, headers=headers, params=params, timeout=SUPABASE_TIMEOUT)
+    r.raise_for_status()
+    return int(r.headers.get("Content-Range", "/0").split("/")[-1])
+
 def sb_get_candidates(limit):
     """Clinics with a google_place_id but no hours yet, skipping folded duplicates."""
     url = f"{SUPABASE_URL}/rest/v1/clinics"
@@ -149,10 +166,13 @@ def main():
     print(f"[{started}] backfill_hours: start  MAX_CALLS={MAX_CALLS}  DRY_RUN={DRY_RUN}")
 
     if DRY_RUN:
-        candidates = sb_get_candidates(BATCH_SIZE)
-        more = "+" if len(candidates) == BATCH_SIZE else ""
-        print(f"[dry-run] {len(candidates)}{more} candidates still missing hours "
-              f"(first page). No Google calls made, nothing written.")
+        backlog = sb_count_candidates()
+        print(f"[dry-run] {backlog} clinics still missing hours. "
+              "No Google calls made, nothing written.")
+        if backlog and MAX_CALLS > 0:
+            runs = (backlog + MAX_CALLS - 1) // MAX_CALLS
+            print(f"[dry-run] at {MAX_CALLS}/run this backlog clears in {runs} run(s) "
+                  f"— {runs} month(s) on the monthly schedule.")
         return
 
     calls_made = 0
