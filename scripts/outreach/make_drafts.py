@@ -246,14 +246,22 @@ def main():
 
     if call_rows:
         sheet = os.path.join(args.outdir, f"call_sheet_{args.variant}.csv")
+        # confirm-update rows carry the specific change to confirm. Without it
+        # on the sheet the caller has nothing concrete to ask about, which is
+        # the entire premise of that variant.
+        extra = [c for c in ("updated_fields", "change_detail")
+                 if any(r.get(c) for r in call_rows)]
         with open(sheet, "w", newline="", encoding="utf-8") as f:
             w = csv.writer(f)
-            w.writerow(["name", "city", "phone", "profile_url", "claim_url", "pitch"])
+            w.writerow(["name", "city", "phone"] + extra
+                       + ["profile_url", "claim_url", "pitch"])
             for r in call_rows:
                 w.writerow([title_name(r["name"]), r.get("city") or "",
-                            r.get("phone") or "", r["profile_url"],
-                            f"{r['claim_url']}&src=call-{args.variant}",
-                            args.variant])
+                            r.get("phone") or ""]
+                           + [r.get(c) or "" for c in extra]
+                           + [r["profile_url"],
+                              f"{r['claim_url']}&src=call-{args.variant}",
+                              args.variant])
         print(f"[call sheet] {len(call_rows)} clinics with phone but no email -> {sheet}")
 
     print(f"[done] {drafted} drafts -> {outdir}")
