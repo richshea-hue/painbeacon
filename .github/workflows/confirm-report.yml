@@ -2,11 +2,14 @@ name: Confirm-update outreach report
 
 on:
   schedule:
-    # 15:00 UTC on the 5th — an hour after hours-backfill.yml (14:00 UTC) so
-    # this month's hours writes are already in Supabase before this runs.
-    # website-backfill.yml runs the 6th, so a website added this month shows
-    # up in *next* month's report, one cycle behind.
-    - cron: "0 15 5 * *"
+    # 15:00 UTC on the 11th — deliberately LAST of the monthly data jobs so a
+    # single report covers everything that changed that month:
+    #   hours-backfill.yml    5th 14:00
+    #   website-backfill.yml  6th 15:00
+    #   nppes-sync.yml       10th 13:17  (moves, renames, new clinics)
+    # Running earlier (this was on the 5th) meant new websites and every
+    # moved/new clinic were always reported a full cycle late.
+    - cron: "0 15 11 * *"
   workflow_dispatch: {}
 
 permissions:
