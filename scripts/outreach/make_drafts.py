@@ -13,6 +13,10 @@ so the dashboard shows which pitch produced each claim):
   badge-backlink     free Verified badge + followed link to their site
   founding-featured  ONE clinic per market: 4 months Featured for the price
                      of one ($299), recycled into local Google ads
+  confirm-update     "we just found your hours/website via Google" — input is
+                     scripts/outreach/build_confirm_targets.py's output
+                     (rows carry an updated_fields column: hours, website,
+                     or both), NOT build_targets.py's
 
 Rows without a discovered email go to a call sheet CSV instead (front-desk
 phone numbers + the same talking points).
@@ -37,7 +41,7 @@ import re
 import sys
 from urllib.parse import urlsplit
 
-VARIANTS = ("fix-info", "badge-backlink", "founding-featured")
+VARIANTS = ("fix-info", "badge-backlink", "founding-featured", "confirm-update")
 
 
 def host_of(url):
@@ -104,6 +108,32 @@ Takes about two minutes:
 {claim}
 
 No charge, no catch — verified listings simply make the directory better.
+
+{from_name}
+PainBeacon — painbeacon.com"""
+
+    elif variant == "confirm-update":
+        fields = [f.strip() for f in (row.get("updated_fields") or "").split(",") if f.strip()]
+        found_bits = []
+        if "hours" in fields and (row.get("hours") or "").strip():
+            first_day = row["hours"].split(";")[0].strip()
+            found_bits.append(f"your hours ({first_day}, and the rest of the week)")
+        if "website" in fields and site_host:
+            found_bits.append(f"your website ({site_host})")
+        found_str = " and ".join(found_bits) if found_bits else "new details for your practice"
+        what = "your hours" if fields == ["hours"] else \
+               "your website" if fields == ["website"] else "new info"
+        subject = f"We just added {what} for {clinic} — mind confirming?"
+        body = f"""Hi {clinic} team,
+
+PainBeacon is an independent national directory of pain clinics. We just
+pulled {found_str} from Google and added it to your profile so patients in
+{market} see accurate info:
+{profile}
+
+Could you take two minutes to confirm it's right (or fix it if not)?
+Claiming your listing is free and does that:
+{claim}
 
 {from_name}
 PainBeacon — painbeacon.com"""

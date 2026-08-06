@@ -1,0 +1,72 @@
+name: Confirm-update outreach report
+
+on:
+  schedule:
+    # 15:00 UTC on the 5th — an hour after hours-backfill.yml (14:00 UTC) so
+    # this month's hours writes are already in Supabase before this runs.
+    # website-backfill.yml runs the 6th, so a website added this month shows
+    # up in *next* month's report, one cycle behind.
+    - cron: "0 15 5 * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - run: pip install requests
+
+      # Rolling snapshot of every clinic's hours/website, so next month's run
+      # can tell what's genuinely new. Never committed (scripts/outreach/out/
+      # is gitignored — outreach data, including discovered emails, stays out
+      # of the repo) — same cache-not-git pattern as the Places hours cache
+      # in hours-backfill.yml.
+      - name: Restore confirm-report snapshot
+        uses: actions/cache@v4
+        with:
+          path: scripts/outreach/out/confirm_snapshot.csv
+          key: confirm-snapshot-${{ github.run_id }}
+          restore-keys: |
+            confirm-snapshot-
+
+      - name: Build confirm-update target list
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: python scripts/outreach/build_confirm_targets.py --out scripts/outreach/out/confirm_targets.csv
+
+      - name: Discover contact emails
+        run: |
+          if [ "$(tail -n +2 scripts/outreach/out/confirm_targets.csv | wc -l)" -gt 0 ]; then
+            python scripts/outreach/discover_emails.py \
+              --in scripts/outreach/out/confirm_targets.csv \
+              --out scripts/outreach/out/confirm_targets_with_emails.csv
+          else
+            cp scripts/outreach/out/confirm_targets.csv scripts/outreach/out/confirm_targets_with_emails.csv
+          fi
+
+      - name: Upload report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: confirm-targets-${{ github.run_id }}
+          path: scripts/outreach/out/confirm_targets_with_emails.csv
+          retention-days: 90
+
+      - name: Open report issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python scripts/outreach/build_report_issue.py scripts/outreach/out/confirm_targets_with_emails.csv > body.md
+          gh issue create \
+            --title "Confirm-update outreach report — $(date -u +%Y-%m-%d)" \
+            --body-file body.md
