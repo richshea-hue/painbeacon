@@ -1,7 +1,13 @@
 # PainBeacon outreach pipeline
 
-Three steps, nothing auto-sends, every claim traces back to the pitch that
+Two ways in: pick a market and work it cold (below), or let the monthly
+**confirm-update report** tell you which clinics just changed (further down).
+Either way nothing auto-sends, and every claim traces back to the pitch that
 produced it.
+
+## Cold outreach: pick a market
+
+Three steps.
 
 ```bash
 export SUPABASE_URL=...  SUPABASE_ANON_KEY=...   # public values, same as site build
@@ -22,10 +28,46 @@ python scripts/outreach/make_drafts.py --in scripts/outreach/out/targets_with_em
 
 `out/` is gitignored — it contains harvested emails. Keep it local.
 
-## The three pitches (A/B/C test)
+## Warm outreach: the monthly confirm-update report
+
+`.github/workflows/confirm-report.yml` runs on the **11th** — last of the
+monthly data jobs (hours 5th, websites 6th, NPPES sync 10th) so one report
+covers everything that changed that month. It opens a GitHub issue with the
+summary and attaches the full CSV as a workflow artifact (never committed).
+
+`build_confirm_targets.py` diffs current Supabase state against a snapshot of
+the previous run and reports per-field changes:
+
+| reason | the hook |
+|---|---|
+| `moved` | practice relocated — the strongest one, and likely stale elsewhere online too |
+| `new-listing` | brand-new to the directory: "we just added you" |
+| `phone-changed` / `phone-new` | new front-desk number |
+| `hours-changed` / `hours-new` | hours differ from what we had |
+| `website-changed` / `website-new` | site found or changed |
+| `name-changed` | rebrand or possible ownership change |
+
+Each row carries `change_detail` ("address: old -> new") — the specific thing
+to read off on the call. Two guards worth knowing: a **missing snapshot**
+(first run, or the Actions cache was evicted) records a baseline and reports
+zero rather than dumping the whole directory, and fields absent from an older
+snapshot are skipped rather than read as blank.
+
+To work a report: download the artifact, then
+
+```bash
+python scripts/outreach/make_drafts.py --in <artifact.csv> \
+  --variant confirm-update --from-name "Rich" --postal "<your mailing address>"
+```
+
+Clinics already `verified` are skipped — they control their own info, so
+there's nothing to confirm.
+
+## The pitches
 
 | variant | hook | src tag |
 |---|---|---|
+| `confirm-update` | "our records show X changed — can you confirm?" (warm; needs a confirm report) | `em-confirm-update` |
 | `fix-info` | "here's what patients see for you — is it right?" | `em-fix-info` |
 | `badge-backlink` | free Verified badge + followed link to your site | `em-badge-backlink` |
 | `founding-featured` | 4 months Featured for the price of 1, ad-funded | `em-founding-featured` |
