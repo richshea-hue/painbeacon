@@ -1,0 +1,59 @@
+name: Geocode addresses (coordinates only)
+
+# NO cron, on purpose. This job spends the Geocoding SKU, whose free allowance
+# has not yet been verified for this billing account — and two SKU assumptions in
+# this repo have already been wrong, one of them for $51.96. Confirm usage in
+# Billing → Reports (group by SKU) after the first small run, then raise `limit`
+# deliberately. Add a schedule only once the allowance is known.
+#
+# This replaces the disabled schedule in geocode-backfill.yml, which asked Text
+# Search to identify the BUSINESS and would have written ~2,889 matches that
+# enrich_places.py had already scored below its confidence floor. Geocoding an
+# address needs no name match and writes no place_id, so it cannot contaminate
+# the hours/website queues.
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "Max Geocoding calls this run (start small — free allowance unverified)"
+        type: string
+        default: "500"
+      dry_run:
+        description: "Dry run (count backlog + show sample addresses — no calls, no writes)"
+        type: boolean
+        default: true
+
+jobs:
+  geocode:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - run: pip install requests
+
+      - name: Geocode addresses
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+          CLOUDFLARE_DEPLOY_HOOK: ${{ secrets.CLOUDFLARE_DEPLOY_HOOK }}
+          LIMIT: ${{ inputs.limit || '500' }}
+          # dry_run defaults to true above, so an accidental dispatch costs nothing.
+          DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
+        run: python scripts/geocode_addresses.py
+
+      # Addresses that would not geocode are a data-quality signal (usually a bad
+      # federal record), so keep them even though out/ is gitignored.
+      - name: Upload unpinnable addresses
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: geocode-failures-${{ github.run_id }}
+          path: scripts/outreach/out/geocode_failures.csv
+          if-no-files-found: ignore
+          retention-days: 90

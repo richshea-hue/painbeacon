@@ -1,20 +1,33 @@
 name: Geocode backfill (Google Places)
 
+# SCHEDULE DISABLED 2026-08-06 — this job is unsafe on the current backlog.
+#
+# It was `cron: "0 15 8 * *"` (15:00 UTC on the 8th). Quota was never the
+# problem: Text Search Pro has 5,000 free/month and nothing else uses that pool.
+# Data quality is. Every one of the 3,032 clinics now in its queue was already
+# tried by candor-nppes/enrich_places.py with a BYTE-IDENTICAL query string
+# ("{name}, {address_1}, {city}, {STATE} {zip5}") against the same endpoint:
+#
+#   low_confidence (Google returned a place, name overlap too weak)  2,879
+#   no_result      (Google returned nothing)                           143
+#   matched but pinned outside the clinic's state                       10
+#
+# `places_lookup()` in backfill_geocodes.py does NO name scoring — it takes the
+# FIRST result and validates only in_state(). So a scheduled run would write
+# ~2,889 matches a scorer had already rejected, including a place_id, which then
+# feeds backfill_hours.py and backfill_websites.py → another practice's hours and
+# website published on that clinic's public profile. The Safe Browsing gate does
+# not catch a wrong-but-legitimate site. This is plausibly what produced the
+# errant locations fix_errant_locations.py exists to clean up.
+#
+# Use geocode-addresses.yml instead: map pins need an address geocoded, not a
+# business matched, and that path writes no place_id so it cannot contaminate the
+# enrichment queues. Before re-enabling this schedule, port enrich_places.py's
+# confidence scorer into places_lookup() — on today's backlog a correct scorer
+# would write almost nothing, because the same query already scored these <0.50.
+#
+# Manual dispatch is still available for a deliberate, reviewed run.
 on:
-  schedule:
-    # 15:00 UTC on the 8th of every month — after Google's free-tier reset (the
-    # 1st), the hours backfill (the 5th) and the website backfill (the 6th),
-    # and before the NPPES sync (the 10th). Kept on its own day so a long run
-    # never overlaps the other two.
-    #
-    # This job bills as Text Search PRO: $32/1,000 with 5,000 free per month.
-    # That is a SEPARATE free pool from the Place Details ENTERPRISE one the
-    # hours and website backfills share (~1,000 free/month between them, which
-    # is why they run at 200 + 700). Nothing else here uses Text Search Pro, so
-    # this job has the whole 5,000 to itself, and 4,000 leaves a 20% margin so
-    # a re-run or a manual dispatch in the same month still lands inside the
-    # free tier.
-    - cron: "0 15 8 * *"
   workflow_dispatch:
     inputs:
       limit:
