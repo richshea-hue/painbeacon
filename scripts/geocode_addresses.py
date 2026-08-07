@@ -297,13 +297,15 @@ def main():
     backlog = count_candidates()
     log(f"Clinics with no coordinates that have a street address: {backlog}")
     log(f"LIMIT={LIMIT}  DRY_RUN={DRY_RUN}")
-    log("SKU: Geocoding (NOT one of the three Places pools) — verify the free "
-        "allowance in Billing → Reports before a large run.\n")
+    # ASCII only in printed output: Windows consoles default to cp1252 and an
+    # em dash or arrow raises UnicodeEncodeError mid-run.
+    log("SKU: Geocoding (NOT one of the three Places pools) - verify the free "
+        "allowance in Billing > Reports before a large run.\n")
 
     clinics = get_candidates(LIMIT)
 
     if DRY_RUN:
-        log("Dry run — no Geocoding calls, no writes. Sample addresses that "
+        log("Dry run - no Geocoding calls, no writes. Sample addresses that "
             "would be sent (note: no clinic name):")
         for c in clinics[:10]:
             log(f"  {c['npi']}  {address_for(c)}")
@@ -365,7 +367,7 @@ def main():
     if wrote and hook:
         try:
             requests.post(hook, timeout=30).raise_for_status()
-            log("[deploy] Cloudflare deploy hook triggered — new pins go live on rebuild.")
+            log("[deploy] Cloudflare deploy hook triggered - new pins go live on rebuild.")
         except requests.RequestException as e:
             log(f"[warn] deploy hook failed: {e}")
 
