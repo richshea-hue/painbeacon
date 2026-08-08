@@ -1,16 +1,39 @@
 name: Hours backfill (Google Places)
 
+# SCHEDULE DISABLED 2026-08-08 — this job published hours from the wrong
+# businesses, and would keep doing so.
+#
+# It was `cron: "0 14 5 * *"` (14:00 UTC on the 5th).
+#
+# The defect is the interaction with the place ids, not this script's own logic.
+# candor-nppes/enrich_places.py scores each Text Search match and below its 0.50
+# accept floor withholds the coordinates, rating and review count — but still
+# records the candidate `google_place_id`, which was loaded into Supabase. This
+# job selects on `google_place_id IS NOT NULL`, which silently readmitted every
+# match enrich_places had rejected, fetched Place Details for the wrong business
+# and wrote its opening hours onto the clinic's public profile.
+#
+# Measured 2026-08-08: 2,094 clinics (31% of all published hours) were affected,
+# e.g. BUCK HEALTHCARE LLC showing hours from "MIND 24-7", and ANESTHESIA
+# MANAGEMENT GROUP OF NORTH ALABAMA showing hours from "Anesthesia Associates of
+# East Alabama". 858 more were queued for the same treatment on the next run.
+#
+# scripts/clear_low_confidence_matches.py removes those hours and the place ids
+# that caused them. Once it has run, the affected clinics drop out of this
+# queue by construction, because their place id is NULL.
+#
+# BEFORE RE-ENABLING: this job trusts `google_place_id` implicitly. Either be
+# certain every stored place id came from a match scored >= 0.50, or have this
+# script verify provenance itself. Restoring the cron without that check will
+# re-publish wrong hours for any sub-threshold place id that gets written later.
+#
+# BILLING, unchanged and still true (confirmed by the July 2026 $47.68 charge):
+# regularOpeningHours bills as Place Details ENTERPRISE, not Pro — ~1,000 free
+# calls/month, SHARED with the website backfill. 200 here + 700 there keeps both
+# free. Raise deliberately: ~$20/1,000 beyond free.
+#
+# Manual dispatch stays available for a deliberate, reviewed run.
 on:
-  schedule:
-    # 14:00 UTC on the 5th of every month. After Google's monthly free-tier
-    # reset (the 1st) and before the NPPES sync (the 10th).
-    #
-    # BILLING (confirmed in the July 2026 billing report — the $47.68 charge):
-    # regularOpeningHours bills as Place Details ENTERPRISE, not Pro. The
-    # Enterprise free tier is only ~1,000 calls/month, SHARED with the website
-    # backfill that runs on the 6th. Defaults are 200 here + 700 in the website run so the
-    # two runs together stay free. Raise deliberately: ~$20/1,000 beyond free.
-    - cron: "0 14 5 * *"
   workflow_dispatch:
     # Adds a "Run workflow" button in the Actions tab. Use it to run the first
     # batch now, on demand.
