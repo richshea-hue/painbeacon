@@ -159,6 +159,46 @@
       "note": "backfilled 2026-08-01 — shipped before the registry existed, Pexels id unknown; only file hashes guard this one"
     },
     {
+      "page": "news/how-we-rank-pain-clinics",
+      "role": "hero",
+      "pexels_id": 9869384,
+      "src_url": "https://www.pexels.com/photo/9869384/",
+      "photographer": null,
+      "source_md5": "83b94ee96856dba34e701b8c99c6ce4f",
+      "files": [
+        {
+          "path": "/images/news/how-we-rank-pain-clinics/couple-comparing-pain-clinic-options-at-home-hero.jpg",
+          "md5": "cc46ee3f0204458d2005b9d5691b73d6",
+          "bytes": 116652
+        },
+        {
+          "path": "/images/news/how-we-rank-pain-clinics/couple-comparing-pain-clinic-options-at-home-thumb.jpg",
+          "md5": "e096cfed7372528b2d2e65daaf6f4fb5",
+          "bytes": 38285
+        },
+        {
+          "path": "/images/news/how-we-rank-pain-clinics/couple-comparing-pain-clinic-options-at-home-share.jpg",
+          "md5": "895ef2bedd5d9771a8074ede6176b797",
+          "bytes": 117097
+        }
+      ]
+    },
+    {
+      "page": "news/how-we-rank-pain-clinics",
+      "role": "inline",
+      "pexels_id": 19921278,
+      "src_url": "https://www.pexels.com/photo/19921278/",
+      "photographer": null,
+      "source_md5": "c00770ebca81df753c1f44a4b6b486be",
+      "files": [
+        {
+          "path": "/images/news/how-we-rank-pain-clinics/empty-clinic-waiting-area-chairs.jpg",
+          "md5": "26c966ece9c1eb83532b66909ece99c7",
+          "bytes": 44558
+        }
+      ]
+    },
+    {
       "page": "news/spot-a-pill-mill-red-flags",
       "role": "hero",
       "pexels_id": null,
