@@ -151,6 +151,7 @@ export const STATE_NAMES = {
   RI: 'Rhode Island', SC: 'South Carolina', SD: 'South Dakota', TN: 'Tennessee',
   TX: 'Texas', UT: 'Utah', VT: 'Vermont', VA: 'Virginia', WA: 'Washington',
   WV: 'West Virginia', WI: 'Wisconsin', WY: 'Wyoming', DC: 'Washington, D.C.',
-  PR: 'Puerto Rico',
+  PR: 'Puerto Rico', GU: 'Guam', VI: 'U.S. Virgin Islands', AS: 'American Samoa',
+  MP: 'Northern Mariana Islands',
 };
 export const stateName = (abbr) => STATE_NAMES[abbr] || abbr;

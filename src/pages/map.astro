@@ -1,0 +1,487 @@
+---
+// The national clinic map: every clinic in the directory on one zoomable map.
+// Pins come from /map-clinics.json (built from the same getClinics() call, so
+// slugs always match the clinic pages). Same free stack as the zone maps —
+// Leaflet + OpenStreetMap tiles, no API key — plus Leaflet.markercluster so
+// thousands of pins stay legible at national zoom and break apart into real
+// locations as you zoom in.
+//
+// The search box works entirely from the loaded points: clinic names, cities,
+// states, and ZIPs (full or prefix) all match without any geocoding service.
+import Base from '../layouts/Base.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { getClinics, STATE_NAMES } from '../lib/data.js';
+import { breadcrumbLd } from '../lib/schema.js';
+
+const clinics = await getClinics();
+const mappable = clinics.filter(
+  (c) =>
+    c.isPrimary &&
+    c.latitude != null &&
+    c.longitude != null &&
+    (Number(c.latitude) !== 0 || Number(c.longitude) !== 0)
+);
+const fmt = (n) => n.toLocaleString('en-US');
+
+const title = 'Pain Clinic Map';
+const description =
+  `Explore ${fmt(mappable.length)} pain management clinics across the U.S. on an interactive map. ` +
+  `Search a city, state, or ZIP and zoom in to see the clinics near you.`;
+
+const crumbs = [
+  { name: 'Home', href: '/' },
+  { name: 'Map', href: '/map/' },
+];
+---
+
+<Base title={title} description={description} jsonld={[breadcrumbLd(crumbs)]}>
+  <section class="wrap" style="padding-block:1.25rem 0;">
+    <Breadcrumbs items={crumbs} />
+    <h1 style="margin:0.5rem 0 0.35rem;">Every pain clinic, on one map</h1>
+    <p class="lede" style="margin:0 0 1rem; max-width:44rem;">
+      {fmt(mappable.length)} pain management clinics from the federal NPI registry. Search a city,
+      state, or ZIP — or zoom straight in — and click any pin for the clinic's profile.
+    </p>
+  </section>
+
+  <div class="natmap-shell">
+    <div id="natmap" role="application" aria-label="Interactive map of U.S. pain clinics"></div>
+
+    <div class="natmap-search">
+      <div class="natmap-search-row">
+        <input
+          id="natmap-q"
+          type="text"
+          placeholder="Search a clinic, city, state, or ZIP"
+          autocomplete="off"
+          aria-label="Search the map by clinic, city, state, or ZIP"
+        />
+        <button id="natmap-locate" type="button" title="Zoom to my location" aria-label="Zoom to my location">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3.5"></circle>
+            <path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path>
+          </svg>
+        </button>
+      </div>
+      <ul id="natmap-suggest" hidden></ul>
+      <p id="natmap-status" role="status" aria-live="polite"></p>
+    </div>
+  </div>
+
+  <section class="wrap narrow" style="padding-block:1.5rem 2.5rem;">
+    <p style="margin:0; color:var(--ink-soft); font-size:0.95rem;">
+      Pins show clinics with a verified street location; a small share of clinics without usable
+      coordinates appear in the <a href="/pain-clinics/">state listings</a> but not on the map.
+      Rankings on each area page are <a href="/how-we-rank/">independent — no pay-to-rank</a>.
+    </p>
+  </section>
+
+  <script type="application/json" id="natmap-states" set:html={JSON.stringify(STATE_NAMES)}></script>
+
+  <style is:global>
+    .natmap-shell {
+      position: relative;
+      width: 100%;
+    }
+    #natmap {
+      width: 100%;
+      height: min(74vh, 46rem);
+      min-height: 26rem;
+      background: #e9eef2;
+      border-block: 1px solid var(--line, #e3ddcf);
+      z-index: 0;
+    }
+
+    /* Search card floated over the map. Leaflet's own controls sit at z 1000;
+       the card sits above them and yields the top-left corner (Leaflet zoom
+       buttons move to the right via the page's map options). */
+    .natmap-search {
+      position: absolute;
+      top: 0.9rem;
+      left: 0.9rem;
+      z-index: 1100;
+      width: min(21rem, calc(100vw - 2.2rem));
+      font-family: var(--sans);
+    }
+    .natmap-search-row {
+      display: flex;
+      gap: 0.4rem;
+    }
+    #natmap-q {
+      flex: 1;
+      padding: 0.6rem 0.75rem;
+      border: 1px solid var(--line, #e3ddcf);
+      border-radius: var(--radius, 6px);
+      background: var(--card, #fffefb);
+      box-shadow: var(--shadow, 0 1px 4px rgba(15, 46, 58, 0.18));
+      font: inherit;
+      font-size: 0.95rem;
+      color: var(--ink, #1c2b2a);
+    }
+    #natmap-locate {
+      flex: 0 0 auto;
+      display: grid;
+      place-items: center;
+      width: 2.6rem;
+      border: 1px solid var(--line, #e3ddcf);
+      border-radius: var(--radius, 6px);
+      background: var(--card, #fffefb);
+      box-shadow: var(--shadow, 0 1px 4px rgba(15, 46, 58, 0.18));
+      color: var(--ink, #1c2b2a);
+      cursor: pointer;
+    }
+    #natmap-locate:hover { background: var(--paper, #f7f4ed); }
+    #natmap-suggest {
+      margin: 0.35rem 0 0;
+      padding: 0.25rem;
+      list-style: none;
+      max-height: 17rem;
+      overflow-y: auto;
+      border: 1px solid var(--line, #e3ddcf);
+      border-radius: var(--radius, 6px);
+      background: var(--card, #fffefb);
+      box-shadow: var(--shadow, 0 2px 10px rgba(15, 46, 58, 0.2));
+    }
+    #natmap-suggest li { margin: 0; }
+    #natmap-suggest .nm-group {
+      padding: 0.35rem 0.6rem 0.15rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--ink-faint, #7c8a87);
+    }
+    #natmap-suggest button {
+      display: block;
+      width: 100%;
+      padding: 0.45rem 0.6rem;
+      border: 0;
+      border-radius: 4px;
+      background: none;
+      font: inherit;
+      font-size: 0.9rem;
+      text-align: left;
+      color: var(--ink, #1c2b2a);
+      cursor: pointer;
+    }
+    #natmap-suggest button:hover,
+    #natmap-suggest button.nm-active { background: var(--paper, #f7f4ed); }
+    #natmap-suggest .nm-n { color: var(--ink-faint, #7c8a87); font-size: 0.8rem; }
+    #natmap-status {
+      margin: 0.35rem 0 0;
+      padding: 0 0.15rem;
+      font-size: 0.8rem;
+      color: var(--ink, #1c2b2a);
+      text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+    }
+    #natmap-status:empty { display: none; }
+
+    /* Cluster bubbles in the site's amber, sized by tier like the stock
+       markercluster styles but on brand. */
+    .nm-cluster {
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: rgba(150, 94, 31, 0.92);
+      color: #fff;
+      font-family: var(--sans);
+      font-weight: 600;
+      box-shadow: 0 0 0 5px rgba(150, 94, 31, 0.3), 0 1px 4px rgba(15, 46, 58, 0.3);
+    }
+    .nm-cluster span { line-height: 1; }
+    .nm-cluster-lg { background: rgba(92, 48, 9, 0.94); box-shadow: 0 0 0 6px rgba(92, 48, 9, 0.28), 0 1px 4px rgba(15, 46, 58, 0.3); }
+
+    @media (max-width: 40rem) {
+      #natmap { height: 68vh; }
+    }
+  </style>
+
+  <script is:inline>
+    // Self-contained loader for the national map. Leaflet 1.9.4 +
+    // Leaflet.markercluster 1.5.3 are vendored under /vendor/leaflet/ (copied
+    // from the npm dist files) so the site's flagship map has no third-party
+    // script dependency. The container here is NOT .clinic-map on purpose —
+    // Base's per-page CDN loader must not also initialise it.
+    (function () {
+      var el = document.getElementById('natmap');
+      if (!el) return;
+
+      function css(href) {
+        var l = document.createElement('link');
+        l.rel = 'stylesheet';
+        l.href = href;
+        document.head.appendChild(l);
+      }
+      function js(src) {
+        return new Promise(function (res, rej) {
+          var s = document.createElement('script');
+          s.src = src;
+          s.onload = res;
+          s.onerror = rej;
+          document.body.appendChild(s);
+        });
+      }
+
+      css('/vendor/leaflet/leaflet.css');
+      css('/vendor/leaflet/MarkerCluster.css');
+
+      var pointsReq = fetch('/map-clinics.json').then(function (r) {
+        if (!r.ok) throw new Error('points ' + r.status);
+        return r.json();
+      });
+
+      js('/vendor/leaflet/leaflet.js')
+        .then(function () { return js('/vendor/leaflet/leaflet.markercluster.js'); })
+        .then(function () { return pointsReq; })
+        .then(function (rows) { init(rows); })
+        .catch(function (err) {
+          console.error('natmap failed:', err);
+          el.innerHTML =
+            '<p style="padding:2rem;text-align:center;font-family:var(--sans)">' +
+            'The map failed to load. <a href="/pain-clinics/">Browse clinics by state</a> instead.</p>';
+        });
+
+      function esc(s) {
+        return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+        });
+      }
+
+      function init(rows) {
+        // rows: [lat, lng, name, slug, "City, ST", zip]
+        var map = L.map(el, {
+          zoomControl: false,
+          // Scroll zoom is the point of a dedicated map page, but ctrl-less
+          // trackpad users still get pinch + buttons.
+          scrollWheelZoom: true,
+          worldCopyJump: true,
+        });
+        L.control.zoom({ position: 'topright' }).addTo(map);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution:
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        }).addTo(map);
+
+        // Continental U.S. to start; Alaska, Hawaii and the territories are a
+        // search or a zoom-out away.
+        map.setView([39.5, -97.5], 4);
+
+        var pin = L.divIcon({
+          className: 'pb-pin',
+          html: '<img src="/brand/painbeacon-pin.svg" width="38" height="43" alt="" />',
+          iconSize: [38, 43],
+          iconAnchor: [19, 43],
+          popupAnchor: [0, -40],
+        });
+
+        var clusters = L.markerClusterGroup({
+          chunkedLoading: true,
+          maxClusterRadius: 46,
+          showCoverageOnHover: false,
+          spiderfyOnMaxZoom: true,
+          iconCreateFunction: function (cluster) {
+            var n = cluster.getChildCount();
+            var size = n >= 1000 ? 52 : n >= 100 ? 44 : n >= 10 ? 38 : 32;
+            var label = n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1) + 'k' : String(n);
+            return L.divIcon({
+              html: '<span>' + label + '</span>',
+              className: 'nm-cluster' + (n >= 100 ? ' nm-cluster-lg' : ''),
+              iconSize: [size, size],
+            });
+          },
+        });
+
+        var markers = [];
+        rows.forEach(function (r) {
+          var mk = L.marker([r[0], r[1]], { icon: pin, title: r[2] });
+          var head = r[3]
+            ? '<a href="/clinic/' + encodeURIComponent(r[3]) + '/"><strong>' + esc(r[2]) + '</strong></a>'
+            : '<strong>' + esc(r[2]) + '</strong>';
+          mk.bindPopup(head + '<br>' + esc(r[4]));
+          markers.push(mk);
+        });
+        clusters.addLayers(markers);
+        map.addLayer(clusters);
+
+        // ---- Search -------------------------------------------------------
+        var STATES = {};
+        try {
+          STATES = JSON.parse(document.getElementById('natmap-states').textContent || '{}');
+        } catch (e) {}
+        var NAME_TO_ABBR = {};
+        Object.keys(STATES).forEach(function (ab) {
+          NAME_TO_ABBR[STATES[ab].toLowerCase()] = ab;
+        });
+
+        // City index: "City, ST" -> row indexes; state index: "ST" -> indexes.
+        var byCity = {};
+        var byState = {};
+        rows.forEach(function (r, i) {
+          var city = r[4];
+          (byCity[city] || (byCity[city] = [])).push(i);
+          var st = city.slice(-2);
+          (byState[st] || (byState[st] = [])).push(i);
+        });
+        var cityList = Object.keys(byCity).sort(function (a, b) {
+          return byCity[b].length - byCity[a].length;
+        });
+
+        var q = document.getElementById('natmap-q');
+        var out = document.getElementById('natmap-suggest');
+        var status = document.getElementById('natmap-status');
+        var locate = document.getElementById('natmap-locate');
+
+        function fitRows(idxs, maxZoom, label) {
+          if (!idxs.length) return;
+          var bounds = L.latLngBounds(idxs.map(function (i) { return [rows[i][0], rows[i][1]]; }));
+          map.fitBounds(bounds, { padding: [46, 46], maxZoom: maxZoom || 12 });
+          status.textContent = label || '';
+        }
+
+        function goClinic(i) {
+          var r = rows[i];
+          map.setView([r[0], r[1]], 15);
+          // Open the popup once clustering has resolved the marker at this zoom.
+          setTimeout(function () {
+            clusters.zoomToShowLayer(markers[i], function () { markers[i].openPopup(); });
+          }, 150);
+          status.textContent = '';
+        }
+
+        function matches(query) {
+          var s = query.trim().toLowerCase();
+          if (!s) return { cities: [], clinics: [], zip: null, state: null };
+
+          // ZIP or ZIP prefix (3-5 digits).
+          if (/^\d{3,5}$/.test(s)) {
+            var hit = [];
+            rows.forEach(function (r, i) { if (r[5] && r[5].indexOf(s) === 0) hit.push(i); });
+            return { cities: [], clinics: [], zip: { q: s, idxs: hit }, state: null };
+          }
+
+          // State by abbreviation or full name.
+          var ab = null;
+          if (/^[a-z]{2}$/.test(s) && byState[s.toUpperCase()]) ab = s.toUpperCase();
+          if (!ab && NAME_TO_ABBR[s]) ab = NAME_TO_ABBR[s];
+          if (ab) return { cities: [], clinics: [], zip: null, state: ab };
+
+          var cities = [];
+          for (var ci = 0; ci < cityList.length && cities.length < 5; ci++) {
+            if (cityList[ci].toLowerCase().indexOf(s) !== -1) cities.push(cityList[ci]);
+          }
+          var clinics = [];
+          for (var i = 0; i < rows.length && clinics.length < 6; i++) {
+            if (rows[i][2].toLowerCase().indexOf(s) !== -1) clinics.push(i);
+          }
+          return { cities: cities, clinics: clinics, zip: null, state: null };
+        }
+
+        function render(m) {
+          out.innerHTML = '';
+          var any = false;
+
+          function add(kind, label, sub, fn) {
+            var li = document.createElement('li');
+            var b = document.createElement('button');
+            b.type = 'button';
+            b.innerHTML = esc(label) + (sub ? ' <span class="nm-n">' + esc(sub) + '</span>' : '');
+            b.addEventListener('click', function () {
+              out.hidden = true;
+              q.blur();
+              fn();
+            });
+            li.appendChild(b);
+            out.appendChild(li);
+            any = true;
+          }
+          function group(t) {
+            var li = document.createElement('li');
+            li.className = 'nm-group';
+            li.textContent = t;
+            out.appendChild(li);
+          }
+
+          if (m.state) {
+            group('State');
+            var sidx = byState[m.state];
+            add('state', STATES[m.state] || m.state, sidx.length + ' clinics', function () {
+              fitRows(sidx, 7, (STATES[m.state] || m.state) + ' — ' + sidx.length + ' clinics on map');
+            });
+          }
+          if (m.zip) {
+            group('ZIP');
+            if (m.zip.idxs.length) {
+              add('zip', 'ZIP ' + m.zip.q + (m.zip.q.length < 5 ? '…' : ''), m.zip.idxs.length + ' clinics', function () {
+                fitRows(m.zip.idxs, 12, m.zip.idxs.length + ' clinics near ' + m.zip.q);
+              });
+            } else {
+              group('No clinics with that ZIP on the map');
+            }
+          }
+          if (m.cities.length) {
+            group('Places');
+            m.cities.forEach(function (c) {
+              add('city', c, byCity[c].length + (byCity[c].length === 1 ? ' clinic' : ' clinics'), function () {
+                fitRows(byCity[c], 12, c + ' — ' + byCity[c].length + ' on map');
+              });
+            });
+          }
+          if (m.clinics.length) {
+            group('Clinics');
+            m.clinics.forEach(function (i) {
+              add('clinic', rows[i][2], rows[i][4], function () { goClinic(i); });
+            });
+          }
+          out.hidden = !any;
+        }
+
+        var t;
+        q.addEventListener('input', function () {
+          clearTimeout(t);
+          t = setTimeout(function () { render(matches(q.value)); }, 120);
+        });
+        q.addEventListener('keydown', function (e) {
+          if (e.key === 'Escape') { out.hidden = true; return; }
+          if (e.key === 'Enter') {
+            var first = out.querySelector('button');
+            if (first && !out.hidden) first.click();
+            else {
+              render(matches(q.value));
+              var b = out.querySelector('button');
+              if (b) b.click();
+            }
+          }
+        });
+        document.addEventListener('pointerdown', function (e) {
+          if (!e.target.closest('.natmap-search')) out.hidden = true;
+        });
+
+        locate.addEventListener('click', function () {
+          if (!navigator.geolocation) { status.textContent = 'Location is not available in this browser.'; return; }
+          status.textContent = 'Finding your location…';
+          navigator.geolocation.getCurrentPosition(
+            function (pos) {
+              map.setView([pos.coords.latitude, pos.coords.longitude], 11);
+              status.textContent = 'Showing clinics near you.';
+            },
+            function () { status.textContent = 'Could not get your location.'; },
+            { timeout: 8000 }
+          );
+        });
+
+        // Deep-link support: /map/?q=las+vegas runs the search on arrival.
+        var qs = new URLSearchParams(location.search).get('q');
+        if (qs) {
+          q.value = qs;
+          var m = matches(qs);
+          if (m.state) fitRows(byState[m.state], 7, (STATES[m.state] || m.state));
+          else if (m.zip && m.zip.idxs.length) fitRows(m.zip.idxs, 12);
+          else if (m.cities.length) fitRows(byCity[m.cities[0]], 12, m.cities[0]);
+          else if (m.clinics.length) goClinic(m.clinics[0]);
+        }
+      }
+    })();
+  </script>
+</Base>
