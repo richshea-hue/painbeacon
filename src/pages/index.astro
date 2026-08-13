@@ -509,9 +509,14 @@ const total = primaries.length;
     const q = document.getElementById('q');
     const out = document.getElementById('results');
 
+    // Suggestions land on the interactive map with the place pre-searched
+    // (the map's search matches these "City, ST" labels exactly), so every
+    // search starts with geographic context. The zone pages remain the SEO
+    // landing pages; the map links onward to them.
+    const mapHref = (query) => `/map/?q=${encodeURIComponent(query)}`;
     function render(list) {
       out.innerHTML = list.slice(0, 8).map((c) =>
-        `<li><a class="tile" href="${c.href}"><span class="label">${c.label}</span><span class="n">${c.n}</span></a></li>`
+        `<li><a class="tile" href="${mapHref(c.label)}"><span class="label">${c.label}</span><span class="n">${c.n}</span></a></li>`
       ).join('');
     }
     function hint(html) { out.innerHTML = `<li class="search-hint">${html}</li>`; }
@@ -519,8 +524,12 @@ const total = primaries.length;
     // widget, present on every page); fall back to a no-op if unavailable.
     const track = (e) => (window.pbTrack || (() => {}))(e);
 
-    // ZIP -> zone lookup. Fetches the build-time /zip3-zones.json (cached), maps
-    // the 3-digit prefix to a "state/zone" segment and navigates there.
+    // ZIP -> zone lookup. Fetches the build-time /zip3-zones.json (cached) and
+    // maps the 3-digit prefix to a "state/zone" segment. The lookup stays the
+    // validity check either way: a covered ZIP typed in the hero goes to the
+    // MAP centered on it; the ?zip= deep link (ads/email) keeps landing on the
+    // zone page directly; an uncovered ZIP gets the inline hint instead of a
+    // dead-end navigation.
     let zoneMap = null;
     function loadZoneMap() {
       if (zoneMap) return Promise.resolve(zoneMap);
@@ -530,7 +539,7 @@ const total = primaries.length;
         .catch(() => (zoneMap = {}));
     }
     let zipBusy = false;
-    function goToZip(digits, source) {
+    function goToZip(digits, source, dest) {
       if (zipBusy) return;
       zipBusy = true;
       hint('Finding clinics near that ZIP…');
@@ -540,7 +549,10 @@ const total = primaries.length;
         const seg = m[z3];
         track({ source: source || 'hero', query: digits, kind: 'zip', zip3: z3,
                 matched: !!seg, zone: seg || null });
-        if (seg) { window.location.href = `/pain-clinics/${seg}/`; return; }
+        if (seg) {
+          window.location.href = dest === 'zone' ? `/pain-clinics/${seg}/` : mapHref(digits);
+          return;
+        }
         hint('We don\'t list clinics for that ZIP yet. <a href="/pain-clinics/">Browse by state</a>.');
       });
     }
@@ -560,16 +572,19 @@ const total = primaries.length;
       render(idx.filter((c) => (c.label || '').toLowerCase().includes(v.toLowerCase())));
     });
 
-    // Enter: fire the ZIP lookup immediately (e.g. after a paste); for a city
-    // name, log the search intent (whether or not we have matches for it).
+    // Enter: fire the ZIP lookup immediately (e.g. after a paste); any other
+    // text goes to the map with the query pre-searched — the map matches
+    // cities, states, and clinic names, so it handles whatever was typed.
     q.addEventListener('keydown', (e) => {
       if (e.key !== 'Enter') return;
       const v = q.value.trim();
       const digits = v.replace(/\D/g, '');
       if (isZipLike(v) && digits.length >= 5) { e.preventDefault(); goToZip(digits, 'hero'); return; }
       if (v) {
+        e.preventDefault();
         const matched = idx.some((c) => (c.label || '').toLowerCase().includes(v.toLowerCase()));
         track({ source: 'hero', query: v, kind: 'city', zip3: null, matched, zone: null });
+        window.location.href = mapHref(v);
       }
     });
 
@@ -581,7 +596,7 @@ const total = primaries.length;
       const digits = p.replace(/\D/g, '');
       if (digits.length < 5) return;
       q.value = digits;
-      goToZip(digits, 'deep_link');
+      goToZip(digits, 'deep_link', 'zone');
     })();
   </script>
 </Base>

@@ -477,8 +477,8 @@ const crumbs = [
           q.value = qs;
           var m = matches(qs);
           if (m.state) fitRows(byState[m.state], 7, (STATES[m.state] || m.state));
-          else if (m.zip && m.zip.idxs.length) fitRows(m.zip.idxs, 12);
-          else if (m.cities.length) fitRows(byCity[m.cities[0]], 12, m.cities[0]);
+          else if (m.zip && m.zip.idxs.length) fitRows(m.zip.idxs, 12, m.zip.idxs.length + ' clinics near ' + m.zip.q);
+          else if (m.cities.length) fitRows(byCity[m.cities[0]], 12, m.cities[0] + ' — ' + byCity[m.cities[0]].length + ' on map');
           else if (m.clinics.length) goClinic(m.clinics[0]);
         }
       }
