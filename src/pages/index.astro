@@ -1,8 +1,11 @@
 ---
 import Base from '../layouts/Base.astro';
 import { SITE } from '../lib/site.js';
-import { getClinics, groupBy, stateName } from '../lib/data.js';
+import { getClinics, groupBy, stateName, titleCase } from '../lib/data.js';
+import { rankClinics } from '../lib/ranking.js';
+import { getDesertStats } from '../lib/deserts.js';
 import { websiteLd } from '../lib/schema.js';
+import { getCollection } from 'astro:content';
 
 const clinics = await getClinics();
 // Count and group PRIMARY practices only, so duplicates folded by dedup never
@@ -12,6 +15,41 @@ const byState = groupBy(primaries, (c) => c.state);
 const states = [...byState.keys()].sort().map((s) => ({
   abbr: s, name: stateName(s), count: byState.get(s).length,
 }));
+
+// Mapped clinic count for the map invitation — must agree with what the
+// national map actually shows (same filter as /map-clinics.json).
+const mapped = primaries.filter(
+  (c) =>
+    c.latitude != null &&
+    c.longitude != null &&
+    (Number(c.latitude) !== 0 || Number(c.longitude) !== 0)
+).length;
+
+// Top areas: the biggest zones by clinic count. These are what most visitors
+// are actually looking for; the full state wall lives on /pain-clinics/.
+const topZones = [...groupBy(primaries.filter((c) => c.zoneUrlSlug), (c) => c.zoneSlug).values()]
+  .map((list) => ({
+    label: `${list[0].zoneLabel}, ${list[0].state}`,
+    href: `/pain-clinics/${list[0].stateSlug}/${list[0].zoneUrlSlug}/`,
+    n: list.length,
+  }))
+  .sort((a, b) => b.n - a.n)
+  // 8 + the All-states tile lines the rail up with the map card's height.
+  .slice(0, 8);
+
+// Research & guides row: the deserts study plus the two most recent articles.
+const articles = (await getCollection('articles'))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+  .slice(0, 2);
+const desertStats = await getDesertStats();
+const fmtDate = (d) =>
+  d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+
+// Homepage sponsor slot: at most ONE clearly-labeled featured clinic,
+// deterministic (the top-ranked of the featured tier) so builds are stable.
+// When none is sold the slot simply doesn't render — the claim-your-listing
+// band below it is the pitch.
+const sponsored = rankClinics(primaries.filter((c) => c.listing_tier === 'featured'))[0] || null;
 
 // Search index: every CITY stays searchable (that's what people type), but
 // each entry links to the ZONE page that contains it — city pages no longer
@@ -82,32 +120,140 @@ const total = primaries.length;
     </div>
   </section>
 
-  <section class="wrap narrow" style="padding-block:2rem 0.5rem;">
-    <p class="lede" style="margin:0 0 .7rem;">Not sure where to start? Answer two quick questions and we’ll point you to top-rated clinics near you.</p>
-    <button class="btn" type="button" data-open-leadchat>Find a pain clinic for me</button>
+  <section class="wrap" style="padding-block:2rem 0.5rem;">
+    <div class="lead-callout">
+      <p>Not sure where to start? Answer two quick questions and we’ll point you to top-rated clinics near you.</p>
+      <button class="btn" type="button" data-open-leadchat>Find a pain clinic for me</button>
+    </div>
   </section>
 
-  <section class="wrap" style="padding-block:2.5rem;">
-    <p class="eyebrow">Browse by state</p>
-    <ul class="tile-grid">
-      {states.map((s) => (
-        <li><a class="tile" href={`/pain-clinics/${s.abbr.toLowerCase()}/`}>
-          <span class="label">{s.name}</span><span class="n">{s.count}</span>
+  <section class="wrap home-grid" style="padding-block:2.25rem 1rem;">
+    {/* Row 1 — map on the left, top areas on the right. Row 2 — research on
+        the left, trust (plus the sponsor slot) on the right. On narrow
+        screens the grid collapses to one column in this same order. */}
+    <div class="hg-map">
+      <p class="eyebrow">The whole directory at a glance</p>
+      <a class="home-map" href="/map/">
+        <img
+          src="/home-map.svg"
+          width="975"
+          height="610"
+          alt={`Map of the United States with a dot marking each of the ${mapped.toLocaleString('en-US')} pain clinics in the directory`}
+          loading="lazy"
+          decoding="async"
+        />
+        <span class="home-map-cta">
+          <strong>{mapped.toLocaleString('en-US')} clinics on the interactive map</strong>
+          <span>Search a city or ZIP, zoom to your area, tap any pin →</span>
+        </span>
+      </a>
+    </div>
+
+    <div class="hg-areas">
+      <p class="eyebrow">Top areas</p>
+      <ul class="tile-grid area-tiles">
+        {topZones.map((z) => (
+          <li><a class="tile" href={z.href}>
+            <span class="label">{z.label}</span><span class="n">{z.n}</span>
+          </a></li>
+        ))}
+        <li><a class="tile" href="/pain-clinics/">
+          <span class="label">All states →</span><span class="n">{states.length}</span>
         </a></li>
-      ))}
-    </ul>
-  </section>
+      </ul>
+    </div>
 
-  <section class="wrap narrow prose" style="padding-block:1rem 2rem;">
-    <hr class="rule" />
-    <h2>How this directory works</h2>
-    <p>
-      Every listing is built from public federal provider data and enriched with
-      verified location and review information. We don't accept payment to rank a
-      clinic higher. Our <a href="/how-we-rank/">ranking methodology</a> is published
-      in full, and our <a href="/ownership-disclosure/">ownership disclosure</a>
-      explains exactly who is behind this directory.
-    </p>
+    <div class="hg-divider" role="presentation"></div>
+
+    <div class="hg-research">
+      <p class="eyebrow">Research &amp; guides</p>
+      <ol class="article-feed" style="margin-top:1rem;">
+        <li>
+          <a class="article-card" href="/research/pain-care-deserts/">
+            <div class="article-card-body">
+              <p class="article-kicker">Original research</p>
+              <h2>Pain Care Deserts: {desertStats.desertCount.toLocaleString('en-US')} U.S. counties have no pain clinic</h2>
+              <p class="article-dek">
+                {desertStats.desertPct}% of U.S. counties have no pain management clinic at all.
+                Our county-by-county analysis of federal registry data — with the full dataset
+                free to download and cite.
+              </p>
+              <span class="article-more">Read the study →</span>
+            </div>
+            <img class="article-thumb" src="/social/pain-care-deserts-thumb.png"
+              alt="County map of pain care deserts in the United States"
+              width="180" height="180" loading="lazy" decoding="async" />
+          </a>
+        </li>
+        {articles.map((a) => (
+          <li>
+            <a class="article-card" href={`/news/${a.slug}/`}>
+              <div class="article-card-body">
+                <p class="article-kicker">
+                  {a.data.category} · <time datetime={a.data.date.toISOString().slice(0, 10)}>{fmtDate(a.data.date)}</time>
+                </p>
+                <h2>{a.data.title}</h2>
+                <p class="article-dek">{a.data.dek}</p>
+                <span class="article-more">Read →</span>
+              </div>
+              <img class="article-thumb" src={a.data.thumb || a.data.image || `/social/${a.slug}.png`}
+                alt={a.data.thumb ? (a.data.heroAlt || '') : (a.data.imageAlt || '')}
+                width="180" height="180" loading="lazy" decoding="async" />
+            </a>
+          </li>
+        ))}
+      </ol>
+    </div>
+
+    <div class="hg-trust">
+      <div class="hg-trust-inner">
+      <p class="eyebrow">Why patients trust PainBeacon</p>
+      <ul class="trust-grid">
+        <li>
+          <h3><a href="/how-we-rank/">Rankings you can read</a></h3>
+          <p>
+            Every clinic is scored on published, objective criteria — board certification,
+            interventional capability, verified reviews. No clinic can pay to rank higher.
+          </p>
+        </li>
+        <li>
+          <h3>Built on federal data</h3>
+          <p>
+            Listings come from the U.S. federal NPI registry and are enriched with verified
+            location, hours, and review information — not self-submitted marketing.
+          </p>
+        </li>
+        <li>
+          <h3><a href="/ownership-disclosure/">Nothing hidden</a></h3>
+          <p>
+            Our ownership disclosure says exactly who runs this directory, and every paid
+            placement on the site is labeled as such.
+          </p>
+        </li>
+      </ul>
+
+      {sponsored && (
+        <div class="sponsor-card">
+          <p class="sponsor-label">Sponsored</p>
+          <div class="sponsor-body">
+            <h3><a href={`/clinic/${sponsored.slug}/`}>{titleCase(sponsored.name)}</a></h3>
+            <p>
+              {sponsored.cityLabel}, {sponsored.state}
+              {sponsored.aggregate_rating != null && sponsored.review_count > 0 && (
+                <span class="sponsor-rating">
+                  {' '}· ★ {Number(sponsored.aggregate_rating).toFixed(1)} ({sponsored.review_count} reviews)
+                </span>
+              )}
+            </p>
+            {sponsored.enhanced_description && (
+              <p class="sponsor-desc">{sponsored.enhanced_description.slice(0, 140)}{sponsored.enhanced_description.length > 140 ? '…' : ''}</p>
+            )}
+          </div>
+          <a class="btn" href={`/clinic/${sponsored.slug}/`}>View profile</a>
+        </div>
+      )}
+      </div>
+    </div>
   </section>
 
   <section class="cta-band">
@@ -119,6 +265,237 @@ const total = primaries.length;
       <a class="btn" href="/for-practices/">Claim your listing — free</a>
     </div>
   </section>
+
+  <section class="wrap" style="padding-block:1.75rem 2.25rem;">
+    <p class="all-states">
+      <span>Browse by state:</span>
+      {states.map((s) => (
+        <a href={`/pain-clinics/${s.abbr.toLowerCase()}/`}>{s.name}</a>
+      ))}
+    </p>
+  </section>
+
+  <style>
+    /* Two-column layout: map | top areas, then research | trust. The right
+       column is the narrower rail; both rows share the same split so the
+       page reads as one grid. Collapses to a single column under 900px. */
+    .home-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+      grid-template-areas:
+        'map areas'
+        'divider divider'
+        'research trust';
+      gap: 1.5rem 1.75rem;
+      align-items: start;
+    }
+    .hg-map { grid-area: map; }
+    .hg-areas { grid-area: areas; }
+    .hg-divider {
+      grid-area: divider;
+      border-top: 1px solid var(--line);
+      margin: 0.25rem 0;
+    }
+    .hg-research { grid-area: research; }
+    .hg-trust { grid-area: trust; }
+    @media (max-width: 900px) {
+      .home-grid {
+        grid-template-columns: 1fr;
+        grid-template-areas: 'map' 'areas' 'divider' 'research' 'trust';
+      }
+    }
+
+    /* The right rail matches the map card's height exactly: the row's height
+       comes from the map, and the rail divides that height into equal-height
+       tiles (their minimum is well under the map's height, so they never
+       push the row taller). */
+    .hg-areas {
+      align-self: stretch;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .area-tiles {
+      grid-template-columns: 1fr;
+      grid-auto-rows: minmax(0, 1fr);
+      gap: 0.5rem;
+      margin: 1rem 0 0;
+      flex: 1;
+      min-height: 0;
+    }
+    .area-tiles .tile {
+      height: 100%;
+      box-sizing: border-box;
+      align-items: center;
+      padding-block: 0.3rem;
+    }
+    @media (max-width: 900px) {
+      .hg-areas { display: block; }
+      .area-tiles {
+        grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+        grid-auto-rows: auto;
+      }
+      .area-tiles .tile { padding-block: 0.6rem; }
+    }
+
+    .home-map {
+      position: relative;
+      display: block;
+      margin-top: 1rem;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--card);
+      overflow: hidden;
+      text-decoration: none;
+    }
+    .home-map:hover { border-color: color-mix(in srgb, var(--teal) 40%, var(--line)); }
+    .home-map img { display: block; width: 100%; height: auto; padding: 1rem 1rem 0; box-sizing: border-box; }
+    .home-map-cta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.35rem 0.75rem;
+      padding: 0.9rem 1.15rem 1rem;
+      font-family: var(--sans);
+    }
+    .home-map-cta strong { color: var(--ink); font-size: 1.05rem; }
+    .home-map-cta span { color: var(--ink-soft); font-size: 0.92rem; }
+    .home-map:hover .home-map-cta strong { color: var(--teal-ink, #0f6f62); }
+
+    .trust-grid {
+      list-style: none;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+      gap: 1rem;
+      margin: 1rem 0 0;
+      padding: 0;
+    }
+    .trust-grid li {
+      margin: 0;
+      padding: 1.1rem 1.2rem;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--card);
+    }
+    .trust-grid h3 { margin: 0 0 0.4rem; font-size: 1.02rem; }
+    .trust-grid p { margin: 0; font-size: 0.92rem; color: var(--ink-soft); line-height: 1.5; }
+
+    /* Tighter article cards in the left column. The feed's stock bottom
+       margin would stretch this column 2.5rem past its last card and drag
+       the trust rail's bottom edge with it — zero it so both columns end
+       on the last card. */
+    .hg-research .article-feed { margin-bottom: 0; }
+    .hg-research .article-thumb { width: 150px; height: 150px; }
+    .hg-research :global(.article-card h2) { font-size: 1.15rem; }
+
+    /* The lead-chat callout: button left of the copy on desktop, boxed so it
+       reads as its own unit between the hero and the map grid. */
+    .lead-callout {
+      display: flex;
+      flex-direction: row-reverse;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 1.5rem;
+      padding: 1.1rem 1.4rem;
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--teal, #17a08c);
+      border-radius: var(--radius);
+      background: var(--card);
+    }
+    .lead-callout p {
+      margin: 0;
+      font-size: 1.05rem;
+      color: var(--ink-soft);
+      line-height: 1.5;
+    }
+    .lead-callout .btn { flex-shrink: 0; }
+    @media (max-width: 640px) {
+      .lead-callout { flex-direction: column; align-items: flex-start; gap: 0.9rem; }
+    }
+
+    /* The trust rail matches the research column's height the same way: the
+       three cards grow equally to fill it (content centered inside, so
+       they read as deliberate blocks, not scattered ones) and the sponsor
+       slot sits flush at the bottom. */
+    /* The research column alone sets this row's height: the rail's content
+       lives in an absolutely-positioned inner box, so it contributes nothing
+       to the row and simply conforms to it, cards dividing the height
+       equally with the sponsor slot flush at the bottom. */
+    .hg-trust {
+      align-self: stretch;
+      position: relative;
+      min-height: 0;
+    }
+    .hg-trust-inner {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .hg-trust .trust-grid {
+      grid-template-columns: 1fr;
+      grid-auto-rows: minmax(0, 1fr);
+      gap: 0.75rem;
+      flex: 1;
+      min-height: 0;
+    }
+    .hg-trust .trust-grid li { padding: 0.9rem 1.1rem; }
+    .hg-trust .trust-grid li {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .hg-trust .sponsor-card { margin-top: 1rem; }
+    @media (max-width: 900px) {
+      .hg-trust { position: static; }
+      .hg-trust-inner { position: static; overflow: visible; }
+      .hg-trust .trust-grid { grid-auto-rows: auto; }
+    }
+
+    .sponsor-card {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.75rem 1.25rem;
+      padding: 1.25rem 1.4rem;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--card);
+    }
+    .sponsor-rating { color: var(--ink-soft); white-space: nowrap; }
+    .sponsor-desc {
+      margin: 0.45rem 0 0 !important;
+      font-size: 0.88rem;
+      color: var(--ink-soft);
+      line-height: 1.45;
+    }
+    .sponsor-label {
+      margin: 0;
+      font-family: var(--sans);
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--ink-faint);
+      border: 1px solid var(--line);
+      border-radius: 3px;
+      padding: 0.15rem 0.45rem;
+    }
+    .sponsor-body { flex: 1; min-width: 12rem; }
+    .sponsor-body h3 { margin: 0; font-size: 1.05rem; }
+    .sponsor-body p { margin: 0.15rem 0 0; font-size: 0.9rem; color: var(--ink-soft); }
+
+    .all-states {
+      margin: 0;
+      font-family: var(--sans);
+      font-size: 0.85rem;
+      line-height: 1.9;
+      color: var(--ink-faint);
+    }
+    .all-states span { font-weight: 600; color: var(--ink-soft); margin-right: 0.4rem; }
+    .all-states a { color: var(--ink-soft); margin-right: 0.75rem; white-space: nowrap; }
+  </style>
 
   <style is:global>
     /* Full-width status/hint row inside the hero search results grid. */
