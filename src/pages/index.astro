@@ -124,117 +124,120 @@ const total = primaries.length;
     <button class="btn" type="button" data-open-leadchat>Find a pain clinic for me</button>
   </section>
 
-  <section class="wrap" style="padding-block:2.5rem 1rem;">
-    <p class="eyebrow">The whole directory at a glance</p>
-    <a class="home-map" href="/map/">
-      <img
-        src="/home-map.svg"
-        width="975"
-        height="610"
-        alt={`Map of the United States with a dot marking each of the ${mapped.toLocaleString('en-US')} pain clinics in the directory`}
-        loading="lazy"
-        decoding="async"
-      />
-      <span class="home-map-cta">
-        <strong>{mapped.toLocaleString('en-US')} clinics on the interactive map</strong>
-        <span>Search a city or ZIP, zoom to your area, tap any pin →</span>
-      </span>
-    </a>
-  </section>
+  <section class="wrap home-grid" style="padding-block:2.25rem 1rem;">
+    {/* Row 1 — map on the left, top areas on the right. Row 2 — research on
+        the left, trust (plus the sponsor slot) on the right. On narrow
+        screens the grid collapses to one column in this same order. */}
+    <div class="hg-map">
+      <p class="eyebrow">The whole directory at a glance</p>
+      <a class="home-map" href="/map/">
+        <img
+          src="/home-map.svg"
+          width="975"
+          height="610"
+          alt={`Map of the United States with a dot marking each of the ${mapped.toLocaleString('en-US')} pain clinics in the directory`}
+          loading="lazy"
+          decoding="async"
+        />
+        <span class="home-map-cta">
+          <strong>{mapped.toLocaleString('en-US')} clinics on the interactive map</strong>
+          <span>Search a city or ZIP, zoom to your area, tap any pin →</span>
+        </span>
+      </a>
+    </div>
 
-  <section class="wrap" style="padding-block:1.5rem;">
-    <p class="eyebrow">Top areas</p>
-    <ul class="tile-grid">
-      {topZones.map((z) => (
-        <li><a class="tile" href={z.href}>
-          <span class="label">{z.label}</span><span class="n">{z.n}</span>
+    <div class="hg-areas">
+      <p class="eyebrow">Top areas</p>
+      <ul class="tile-grid area-tiles">
+        {topZones.map((z) => (
+          <li><a class="tile" href={z.href}>
+            <span class="label">{z.label}</span><span class="n">{z.n}</span>
+          </a></li>
+        ))}
+        <li><a class="tile" href="/pain-clinics/">
+          <span class="label">All states →</span><span class="n">{states.length}</span>
         </a></li>
-      ))}
-      <li><a class="tile" href="/pain-clinics/">
-        <span class="label">All states →</span><span class="n">{states.length}</span>
-      </a></li>
-    </ul>
-  </section>
+      </ul>
+    </div>
 
-  <section class="wrap" style="padding-block:1.5rem;">
-    <p class="eyebrow">Why patients trust PainBeacon</p>
-    <ul class="trust-grid">
-      <li>
-        <h3><a href="/how-we-rank/">Rankings you can read</a></h3>
-        <p>
-          Every clinic is scored on published, objective criteria — board certification,
-          interventional capability, verified reviews. No clinic can pay to rank higher.
-        </p>
-      </li>
-      <li>
-        <h3>Built on federal data</h3>
-        <p>
-          Listings come from the U.S. federal NPI registry and are enriched with verified
-          location, hours, and review information — not self-submitted marketing.
-        </p>
-      </li>
-      <li>
-        <h3><a href="/ownership-disclosure/">Nothing hidden</a></h3>
-        <p>
-          Our ownership disclosure says exactly who runs this directory, and every paid
-          placement on the site is labeled as such.
-        </p>
-      </li>
-    </ul>
-  </section>
-
-  <section class="wrap" style="padding-block:1.5rem;">
-    <p class="eyebrow">Research &amp; guides</p>
-    <ol class="article-feed" style="margin-top:1rem;">
-      <li>
-        <a class="article-card" href="/research/pain-care-deserts/">
-          <div class="article-card-body">
-            <p class="article-kicker">Original research</p>
-            <h2>Pain Care Deserts: {desertStats.desertCount.toLocaleString('en-US')} U.S. counties have no pain clinic</h2>
-            <p class="article-dek">
-              {desertStats.desertPct}% of U.S. counties have no pain management clinic at all.
-              Our county-by-county analysis of federal registry data — with the full dataset
-              free to download and cite.
-            </p>
-            <span class="article-more">Read the study →</span>
-          </div>
-          <img class="article-thumb" src="/social/pain-care-deserts-thumb.png"
-            alt="County map of pain care deserts in the United States"
-            width="180" height="180" loading="lazy" decoding="async" />
-        </a>
-      </li>
-      {articles.map((a) => (
+    <div class="hg-research">
+      <p class="eyebrow">Research &amp; guides</p>
+      <ol class="article-feed" style="margin-top:1rem;">
         <li>
-          <a class="article-card" href={`/news/${a.slug}/`}>
+          <a class="article-card" href="/research/pain-care-deserts/">
             <div class="article-card-body">
-              <p class="article-kicker">
-                {a.data.category} · <time datetime={a.data.date.toISOString().slice(0, 10)}>{fmtDate(a.data.date)}</time>
+              <p class="article-kicker">Original research</p>
+              <h2>Pain Care Deserts: {desertStats.desertCount.toLocaleString('en-US')} U.S. counties have no pain clinic</h2>
+              <p class="article-dek">
+                {desertStats.desertPct}% of U.S. counties have no pain management clinic at all.
+                Our county-by-county analysis of federal registry data — with the full dataset
+                free to download and cite.
               </p>
-              <h2>{a.data.title}</h2>
-              <p class="article-dek">{a.data.dek}</p>
-              <span class="article-more">Read →</span>
+              <span class="article-more">Read the study →</span>
             </div>
-            <img class="article-thumb" src={a.data.thumb || a.data.image || `/social/${a.slug}.png`}
-              alt={a.data.thumb ? (a.data.heroAlt || '') : (a.data.imageAlt || '')}
+            <img class="article-thumb" src="/social/pain-care-deserts-thumb.png"
+              alt="County map of pain care deserts in the United States"
               width="180" height="180" loading="lazy" decoding="async" />
           </a>
         </li>
-      ))}
-    </ol>
-  </section>
+        {articles.map((a) => (
+          <li>
+            <a class="article-card" href={`/news/${a.slug}/`}>
+              <div class="article-card-body">
+                <p class="article-kicker">
+                  {a.data.category} · <time datetime={a.data.date.toISOString().slice(0, 10)}>{fmtDate(a.data.date)}</time>
+                </p>
+                <h2>{a.data.title}</h2>
+                <p class="article-dek">{a.data.dek}</p>
+                <span class="article-more">Read →</span>
+              </div>
+              <img class="article-thumb" src={a.data.thumb || a.data.image || `/social/${a.slug}.png`}
+                alt={a.data.thumb ? (a.data.heroAlt || '') : (a.data.imageAlt || '')}
+                width="180" height="180" loading="lazy" decoding="async" />
+            </a>
+          </li>
+        ))}
+      </ol>
+    </div>
 
-  {sponsored && (
-    <section class="wrap" style="padding-block:0.5rem;">
-      <div class="sponsor-card">
-        <p class="sponsor-label">Sponsored</p>
-        <div class="sponsor-body">
-          <h3><a href={`/clinic/${sponsored.slug}/`}>{titleCase(sponsored.name)}</a></h3>
-          <p>{sponsored.cityLabel}, {sponsored.state}</p>
+    <div class="hg-trust">
+      <p class="eyebrow">Why patients trust PainBeacon</p>
+      <ul class="trust-grid">
+        <li>
+          <h3><a href="/how-we-rank/">Rankings you can read</a></h3>
+          <p>
+            Every clinic is scored on published, objective criteria — board certification,
+            interventional capability, verified reviews. No clinic can pay to rank higher.
+          </p>
+        </li>
+        <li>
+          <h3>Built on federal data</h3>
+          <p>
+            Listings come from the U.S. federal NPI registry and are enriched with verified
+            location, hours, and review information — not self-submitted marketing.
+          </p>
+        </li>
+        <li>
+          <h3><a href="/ownership-disclosure/">Nothing hidden</a></h3>
+          <p>
+            Our ownership disclosure says exactly who runs this directory, and every paid
+            placement on the site is labeled as such.
+          </p>
+        </li>
+      </ul>
+
+      {sponsored && (
+        <div class="sponsor-card">
+          <p class="sponsor-label">Sponsored</p>
+          <div class="sponsor-body">
+            <h3><a href={`/clinic/${sponsored.slug}/`}>{titleCase(sponsored.name)}</a></h3>
+            <p>{sponsored.cityLabel}, {sponsored.state}</p>
+          </div>
+          <a class="btn" href={`/clinic/${sponsored.slug}/`}>View profile</a>
         </div>
-        <a class="btn" href={`/clinic/${sponsored.slug}/`}>View profile</a>
-      </div>
-    </section>
-  )}
+      )}
+    </div>
+  </section>
 
   <section class="cta-band">
     <div class="wrap">
@@ -256,6 +259,40 @@ const total = primaries.length;
   </section>
 
   <style>
+    /* Two-column layout: map | top areas, then research | trust. The right
+       column is the narrower rail; both rows share the same split so the
+       page reads as one grid. Collapses to a single column under 900px. */
+    .home-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+      grid-template-areas:
+        'map areas'
+        'research trust';
+      gap: 2rem 1.75rem;
+      align-items: start;
+    }
+    .hg-map { grid-area: map; }
+    .hg-areas { grid-area: areas; }
+    .hg-research { grid-area: research; }
+    .hg-trust { grid-area: trust; }
+    @media (max-width: 900px) {
+      .home-grid {
+        grid-template-columns: 1fr;
+        grid-template-areas: 'map' 'areas' 'research' 'trust';
+      }
+    }
+
+    /* Compact single-column tiles for the right rail. */
+    .area-tiles {
+      grid-template-columns: 1fr;
+      gap: 0.5rem;
+      margin: 1rem 0 0;
+    }
+    .area-tiles .tile { padding: 0.6rem 0.85rem; }
+    @media (max-width: 900px) {
+      .area-tiles { grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); }
+    }
+
     .home-map {
       position: relative;
       display: block;
@@ -297,6 +334,14 @@ const total = primaries.length;
     }
     .trust-grid h3 { margin: 0 0 0.4rem; font-size: 1.02rem; }
     .trust-grid p { margin: 0; font-size: 0.92rem; color: var(--ink-soft); line-height: 1.5; }
+
+    /* Tighter article cards in the left column. */
+    .hg-research .article-thumb { width: 150px; height: 150px; }
+    .hg-research :global(.article-card h2) { font-size: 1.15rem; }
+
+    /* Trust cards stack in the rail; the sponsor slot rides underneath. */
+    .hg-trust .trust-grid { grid-template-columns: 1fr; }
+    .hg-trust .sponsor-card { margin-top: 1rem; }
 
     .sponsor-card {
       display: flex;
