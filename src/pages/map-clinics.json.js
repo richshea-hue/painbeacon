@@ -15,6 +15,17 @@ import { getClinics, titleCase } from '../lib/data.js';
 
 const round5 = (n) => Math.round(n * 1e5) / 1e5;
 
+// Normalize a raw postal value to a 5-digit ZIP. Handles ZIP+4 and the
+// dropped-leading-zero case (a common New England artifact of ZIPs stored as
+// numbers: "2906" -> "02906", "29061234" -> "02906") — same rule as the zip3()
+// helper behind /zip3-zones.json. A naive \d{5} grab gets both cases wrong,
+// which broke ZIP search on the map for every clinic with such a ZIP.
+const zip5 = (raw) => {
+  let d = String(raw ?? '').replace(/\D/g, '');
+  if (d.length === 4 || d.length === 8) d = '0' + d;
+  return d.length >= 5 ? d.slice(0, 5) : '';
+};
+
 export async function GET() {
   const clinics = await getClinics();
 
@@ -33,7 +44,7 @@ export async function GET() {
       titleCase(c.name),
       c.slug || '',
       `${c.cityLabel}, ${c.state}`,
-      ((c.postal_code || '').match(/\d{5}/) || [''])[0],
+      zip5(c.postal_code),
     ])
     .filter((r) => Number.isFinite(r[0]) && Number.isFinite(r[1]));
 

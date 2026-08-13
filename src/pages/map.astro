@@ -354,11 +354,14 @@ const crumbs = [
           var s = query.trim().toLowerCase();
           if (!s) return { cities: [], clinics: [], zip: null, state: null };
 
-          // ZIP or ZIP prefix (3-5 digits).
-          if (/^\d{3,5}$/.test(s)) {
+          // ZIP or ZIP prefix (3-5 digits), tolerating spaces, dashes, and a
+          // ZIP+4 tail ("02906-1234" searches as 02906).
+          var zdigits = s.replace(/[\s-]/g, '');
+          if (/^\d{3,9}$/.test(zdigits)) {
+            var zq = zdigits.slice(0, 5);
             var hit = [];
-            rows.forEach(function (r, i) { if (r[5] && r[5].indexOf(s) === 0) hit.push(i); });
-            return { cities: [], clinics: [], zip: { q: s, idxs: hit }, state: null };
+            rows.forEach(function (r, i) { if (r[5] && r[5].indexOf(zq) === 0) hit.push(i); });
+            return { cities: [], clinics: [], zip: { q: zq, idxs: hit }, state: null };
           }
 
           // State by abbreviation or full name.
