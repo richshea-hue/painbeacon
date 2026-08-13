@@ -163,6 +163,8 @@ const total = primaries.length;
       </ul>
     </div>
 
+    <div class="hg-divider" role="presentation"></div>
+
     <div class="hg-research">
       <p class="eyebrow">Research &amp; guides</p>
       <ol class="article-feed" style="margin-top:1rem;">
@@ -204,6 +206,7 @@ const total = primaries.length;
     </div>
 
     <div class="hg-trust">
+      <div class="hg-trust-inner">
       <p class="eyebrow">Why patients trust PainBeacon</p>
       <ul class="trust-grid">
         <li>
@@ -249,6 +252,7 @@ const total = primaries.length;
           <a class="btn" href={`/clinic/${sponsored.slug}/`}>View profile</a>
         </div>
       )}
+      </div>
     </div>
   </section>
 
@@ -280,38 +284,58 @@ const total = primaries.length;
       grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
       grid-template-areas:
         'map areas'
+        'divider divider'
         'research trust';
-      gap: 2rem 1.75rem;
+      gap: 1.5rem 1.75rem;
       align-items: start;
     }
     .hg-map { grid-area: map; }
     .hg-areas { grid-area: areas; }
+    .hg-divider {
+      grid-area: divider;
+      border-top: 1px solid var(--line);
+      margin: 0.25rem 0;
+    }
     .hg-research { grid-area: research; }
     .hg-trust { grid-area: trust; }
     @media (max-width: 900px) {
       .home-grid {
         grid-template-columns: 1fr;
-        grid-template-areas: 'map' 'areas' 'research' 'trust';
+        grid-template-areas: 'map' 'areas' 'divider' 'research' 'trust';
       }
     }
 
-    /* Compact single-column tiles for the right rail, stretched so the last
-       tile bottom-aligns with the map card whatever the exact heights. */
+    /* The right rail matches the map card's height exactly: the row's height
+       comes from the map, and the rail divides that height into equal-height
+       tiles (their minimum is well under the map's height, so they never
+       push the row taller). */
     .hg-areas {
       align-self: stretch;
       display: flex;
       flex-direction: column;
+      min-height: 0;
     }
     .area-tiles {
       grid-template-columns: 1fr;
+      grid-auto-rows: minmax(0, 1fr);
       gap: 0.5rem;
       margin: 1rem 0 0;
       flex: 1;
-      align-content: space-between;
+      min-height: 0;
     }
-    .area-tiles .tile { padding: 0.6rem 0.85rem; }
+    .area-tiles .tile {
+      height: 100%;
+      box-sizing: border-box;
+      align-items: center;
+      padding-block: 0.3rem;
+    }
     @media (max-width: 900px) {
-      .area-tiles { grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); }
+      .hg-areas { display: block; }
+      .area-tiles {
+        grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+        grid-auto-rows: auto;
+      }
+      .area-tiles .tile { padding-block: 0.6rem; }
     }
 
     .home-map {
@@ -356,7 +380,11 @@ const total = primaries.length;
     .trust-grid h3 { margin: 0 0 0.4rem; font-size: 1.02rem; }
     .trust-grid p { margin: 0; font-size: 0.92rem; color: var(--ink-soft); line-height: 1.5; }
 
-    /* Tighter article cards in the left column. */
+    /* Tighter article cards in the left column. The feed's stock bottom
+       margin would stretch this column 2.5rem past its last card and drag
+       the trust rail's bottom edge with it — zero it so both columns end
+       on the last card. */
+    .hg-research .article-feed { margin-bottom: 0; }
     .hg-research .article-thumb { width: 150px; height: 150px; }
     .hg-research :global(.article-card h2) { font-size: 1.15rem; }
 
@@ -385,20 +413,45 @@ const total = primaries.length;
       .lead-callout { flex-direction: column; align-items: flex-start; gap: 0.9rem; }
     }
 
-    /* Trust cards stack in the rail and stretch to the research column's
-       height, sponsor slot pinned at the bottom — the rows stay balanced
-       whatever the data. */
+    /* The trust rail matches the research column's height the same way: the
+       three cards grow equally to fill it (content centered inside, so
+       they read as deliberate blocks, not scattered ones) and the sponsor
+       slot sits flush at the bottom. */
+    /* The research column alone sets this row's height: the rail's content
+       lives in an absolutely-positioned inner box, so it contributes nothing
+       to the row and simply conforms to it, cards dividing the height
+       equally with the sponsor slot flush at the bottom. */
     .hg-trust {
       align-self: stretch;
+      position: relative;
+      min-height: 0;
+    }
+    .hg-trust-inner {
+      position: absolute;
+      inset: 0;
       display: flex;
       flex-direction: column;
+      overflow: hidden;
     }
     .hg-trust .trust-grid {
       grid-template-columns: 1fr;
+      grid-auto-rows: minmax(0, 1fr);
+      gap: 0.75rem;
       flex: 1;
-      align-content: space-between;
+      min-height: 0;
+    }
+    .hg-trust .trust-grid li { padding: 0.9rem 1.1rem; }
+    .hg-trust .trust-grid li {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
     }
     .hg-trust .sponsor-card { margin-top: 1rem; }
+    @media (max-width: 900px) {
+      .hg-trust { position: static; }
+      .hg-trust-inner { position: static; overflow: visible; }
+      .hg-trust .trust-grid { grid-auto-rows: auto; }
+    }
 
     .sponsor-card {
       display: flex;
