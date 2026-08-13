@@ -355,13 +355,21 @@ const crumbs = [
           if (!s) return { cities: [], clinics: [], zip: null, state: null };
 
           // ZIP or ZIP prefix (3-5 digits), tolerating spaces, dashes, and a
-          // ZIP+4 tail ("02906-1234" searches as 02906).
+          // ZIP+4 tail ("02906-1234" searches as 02906). Many residential
+          // ZIPs contain no clinic at all, so when the exact ZIP has no
+          // match, fall back to the surrounding 3-digit area — the searcher
+          // wants clinics near that ZIP, not a dead end.
           var zdigits = s.replace(/[\s-]/g, '');
           if (/^\d{3,9}$/.test(zdigits)) {
             var zq = zdigits.slice(0, 5);
             var hit = [];
             rows.forEach(function (r, i) { if (r[5] && r[5].indexOf(zq) === 0) hit.push(i); });
-            return { cities: [], clinics: [], zip: { q: zq, idxs: hit }, state: null };
+            var near = [];
+            if (!hit.length && zq.length > 3) {
+              var z3 = zq.slice(0, 3);
+              rows.forEach(function (r, i) { if (r[5] && r[5].indexOf(z3) === 0) near.push(i); });
+            }
+            return { cities: [], clinics: [], zip: { q: zq, idxs: hit, near: near }, state: null };
           }
 
           // State by abbreviation or full name.
@@ -419,8 +427,13 @@ const crumbs = [
               add('zip', 'ZIP ' + m.zip.q + (m.zip.q.length < 5 ? '…' : ''), m.zip.idxs.length + ' clinics', function () {
                 fitRows(m.zip.idxs, 12, m.zip.idxs.length + ' clinics near ' + m.zip.q);
               });
+            } else if (m.zip.near.length) {
+              add('zip', 'Near ' + m.zip.q, m.zip.near.length + ' clinics in the ' + m.zip.q.slice(0, 3) + 'xx area', function () {
+                fitRows(m.zip.near, 11, 'No clinic right in ' + m.zip.q + ' — showing ' + m.zip.near.length + ' nearby');
+              });
             } else {
-              group('No clinics with that ZIP on the map');
+              group('No clinics on the map near that ZIP');
+              any = true;
             }
           }
           if (m.cities.length) {
@@ -481,6 +494,8 @@ const crumbs = [
           var m = matches(qs);
           if (m.state) fitRows(byState[m.state], 7, (STATES[m.state] || m.state));
           else if (m.zip && m.zip.idxs.length) fitRows(m.zip.idxs, 12, m.zip.idxs.length + ' clinics near ' + m.zip.q);
+          else if (m.zip && m.zip.near.length) fitRows(m.zip.near, 11, 'No clinic right in ' + m.zip.q + ' — showing ' + m.zip.near.length + ' nearby');
+          else if (m.zip) status.textContent = 'No clinics on the map near ' + m.zip.q + '.';
           else if (m.cities.length) fitRows(byCity[m.cities[0]], 12, m.cities[0] + ' — ' + byCity[m.cities[0]].length + ' on map');
           else if (m.clinics.length) goClinic(m.clinics[0]);
         }
