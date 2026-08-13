@@ -34,7 +34,8 @@ const topZones = [...groupBy(primaries.filter((c) => c.zoneUrlSlug), (c) => c.zo
     n: list.length,
   }))
   .sort((a, b) => b.n - a.n)
-  .slice(0, 10);
+  // 8 + the All-states tile lines the rail up with the map card's height.
+  .slice(0, 8);
 
 // Research & guides row: the deserts study plus the two most recent articles.
 const articles = (await getCollection('articles'))
@@ -119,9 +120,11 @@ const total = primaries.length;
     </div>
   </section>
 
-  <section class="wrap narrow" style="padding-block:2rem 0.5rem;">
-    <p class="lede" style="margin:0 0 .7rem;">Not sure where to start? Answer two quick questions and we’ll point you to top-rated clinics near you.</p>
-    <button class="btn" type="button" data-open-leadchat>Find a pain clinic for me</button>
+  <section class="wrap" style="padding-block:2rem 0.5rem;">
+    <div class="lead-callout">
+      <p>Not sure where to start? Answer two quick questions and we’ll point you to top-rated clinics near you.</p>
+      <button class="btn" type="button" data-open-leadchat>Find a pain clinic for me</button>
+    </div>
   </section>
 
   <section class="wrap home-grid" style="padding-block:2.25rem 1rem;">
@@ -231,7 +234,17 @@ const total = primaries.length;
           <p class="sponsor-label">Sponsored</p>
           <div class="sponsor-body">
             <h3><a href={`/clinic/${sponsored.slug}/`}>{titleCase(sponsored.name)}</a></h3>
-            <p>{sponsored.cityLabel}, {sponsored.state}</p>
+            <p>
+              {sponsored.cityLabel}, {sponsored.state}
+              {sponsored.aggregate_rating != null && sponsored.review_count > 0 && (
+                <span class="sponsor-rating">
+                  {' '}· ★ {Number(sponsored.aggregate_rating).toFixed(1)} ({sponsored.review_count} reviews)
+                </span>
+              )}
+            </p>
+            {sponsored.enhanced_description && (
+              <p class="sponsor-desc">{sponsored.enhanced_description.slice(0, 140)}{sponsored.enhanced_description.length > 140 ? '…' : ''}</p>
+            )}
           </div>
           <a class="btn" href={`/clinic/${sponsored.slug}/`}>View profile</a>
         </div>
@@ -282,11 +295,19 @@ const total = primaries.length;
       }
     }
 
-    /* Compact single-column tiles for the right rail. */
+    /* Compact single-column tiles for the right rail, stretched so the last
+       tile bottom-aligns with the map card whatever the exact heights. */
+    .hg-areas {
+      align-self: stretch;
+      display: flex;
+      flex-direction: column;
+    }
     .area-tiles {
       grid-template-columns: 1fr;
       gap: 0.5rem;
       margin: 1rem 0 0;
+      flex: 1;
+      align-content: space-between;
     }
     .area-tiles .tile { padding: 0.6rem 0.85rem; }
     @media (max-width: 900px) {
@@ -339,8 +360,44 @@ const total = primaries.length;
     .hg-research .article-thumb { width: 150px; height: 150px; }
     .hg-research :global(.article-card h2) { font-size: 1.15rem; }
 
-    /* Trust cards stack in the rail; the sponsor slot rides underneath. */
-    .hg-trust .trust-grid { grid-template-columns: 1fr; }
+    /* The lead-chat callout: button left of the copy on desktop, boxed so it
+       reads as its own unit between the hero and the map grid. */
+    .lead-callout {
+      display: flex;
+      flex-direction: row-reverse;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 1.5rem;
+      padding: 1.1rem 1.4rem;
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--teal, #17a08c);
+      border-radius: var(--radius);
+      background: var(--card);
+    }
+    .lead-callout p {
+      margin: 0;
+      font-size: 1.05rem;
+      color: var(--ink-soft);
+      line-height: 1.5;
+    }
+    .lead-callout .btn { flex-shrink: 0; }
+    @media (max-width: 640px) {
+      .lead-callout { flex-direction: column; align-items: flex-start; gap: 0.9rem; }
+    }
+
+    /* Trust cards stack in the rail and stretch to the research column's
+       height, sponsor slot pinned at the bottom — the rows stay balanced
+       whatever the data. */
+    .hg-trust {
+      align-self: stretch;
+      display: flex;
+      flex-direction: column;
+    }
+    .hg-trust .trust-grid {
+      grid-template-columns: 1fr;
+      flex: 1;
+      align-content: space-between;
+    }
     .hg-trust .sponsor-card { margin-top: 1rem; }
 
     .sponsor-card {
@@ -348,10 +405,17 @@ const total = primaries.length;
       flex-wrap: wrap;
       align-items: center;
       gap: 0.75rem 1.25rem;
-      padding: 1rem 1.2rem;
+      padding: 1.25rem 1.4rem;
       border: 1px solid var(--line);
       border-radius: var(--radius);
       background: var(--card);
+    }
+    .sponsor-rating { color: var(--ink-soft); white-space: nowrap; }
+    .sponsor-desc {
+      margin: 0.45rem 0 0 !important;
+      font-size: 0.88rem;
+      color: var(--ink-soft);
+      line-height: 1.45;
     }
     .sponsor-label {
       margin: 0;
