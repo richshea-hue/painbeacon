@@ -286,6 +286,22 @@ const crumbs = [
       cursor: pointer;
     }
     .nm-card-show:hover { border-color: var(--teal, #17a08c); color: var(--teal-ink, #0f6f62); }
+    .nm-card.nm-sponsored {
+      border-color: color-mix(in srgb, #965e1f 35%, var(--line, #e3ddcf));
+      background: color-mix(in srgb, #965e1f 4%, var(--card, #fffefb));
+    }
+    .nm-sponsor-chip {
+      display: inline-block;
+      margin-bottom: 0.35rem;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--ink-faint, #7c8a87);
+      border: 1px solid var(--line, #e3ddcf);
+      border-radius: 3px;
+      padding: 0.12rem 0.4rem;
+    }
     .nm-empty {
       padding: 1.5rem 1rem;
       border: 1px dashed var(--line, #e3ddcf);
@@ -650,20 +666,32 @@ const crumbs = [
             });
           }
 
+          // Sponsored slot: at most ONE clearly-labeled Featured-tier clinic
+          // (r[7] === 2) above the results — same exclusivity and labeling
+          // rules as zone pages, and excluded from the ranked list below so
+          // paid placement never mixes with the objective ordering. It goes
+          // through the same filters as everything else, and the pins stay
+          // strictly rank-neutral.
+          var sponsorIdx = -1;
+          inView.forEach(function (i) {
+            if (rows[i][7] === 2 && (sponsorIdx === -1 || rows[i][6] > rows[sponsorIdx][6])) sponsorIdx = i;
+          });
+          if (sponsorIdx !== -1) inView = inView.filter(function (i) { return i !== sponsorIdx; });
+
           var shown = inView.slice(0, LIST_CAP);
           countEl.textContent = inView.length
             ? inView.length.toLocaleString('en-US') + ' clinics in view' +
               (inView.length > LIST_CAP ? ' — showing top ' + LIST_CAP : '')
             : '';
 
-          if (!shown.length) {
+          if (!shown.length && sponsorIdx === -1) {
             listEl.innerHTML = '<li class="nm-empty">No clinics in this view' +
               ((filters.verified || filters.open) ? ' matching the filters' : '') +
               ' — zoom out, pan, or search above.</li>';
             return;
           }
 
-          listEl.innerHTML = shown.map(function (i) {
+          function cardHtml(i, sponsored) {
             var r = rows[i];
             var d = distMiles(center.lat, center.lng, r[0], r[1]);
             var tags = [];
@@ -673,8 +701,9 @@ const crumbs = [
                 r[8].toFixed(1) + ' (' + r[9].toLocaleString('en-US') + ')');
             }
             if (isOpenNow(r[10])) tags.push('Open now');
-            return '<li class="nm-card" data-i="' + i + '">' +
+            return '<li class="nm-card' + (sponsored ? ' nm-sponsored' : '') + '" data-i="' + i + '">' +
               '<div class="nm-card-main">' +
+              (sponsored ? '<span class="nm-sponsor-chip">Sponsored</span>' : '') +
               '<h3>' + (r[3] ? '<a href="/clinic/' + encodeURIComponent(r[3]) + '/">' + esc(r[2]) + '</a>' : esc(r[2])) + '</h3>' +
               '<p class="nm-card-meta">' + esc(r[4]) + (r[5] ? ' ' + r[5] : '') + ' · ' +
               (d < 10 ? d.toFixed(1) : Math.round(d)) + ' mi from map center</p>' +
@@ -682,7 +711,11 @@ const crumbs = [
               '</div>' +
               '<button type="button" class="nm-card-show" data-show="' + i + '">Show on map</button>' +
               '</li>';
-          }).join('');
+          }
+
+          listEl.innerHTML =
+            (sponsorIdx !== -1 ? cardHtml(sponsorIdx, true) : '') +
+            shown.map(function (i) { return cardHtml(i, false); }).join('');
           if (activeIdx >= 0) {
             var act = listEl.querySelector('[data-i="' + activeIdx + '"]');
             if (act) act.classList.add('nm-active');

@@ -30,7 +30,7 @@ on-map search over clinic names, cities, states, and ZIPs. Build on it:
    *open now* (hours are already published for matched clinics). Keep the
    toggle row to 3–4 controls — every control beyond that costs mobile users.
 
-4. **Sponsored slot in the list, never on the map.** If a zone's Featured
+4. ✅ *(shipped)* **Sponsored slot in the list, never on the map.** If a zone's Featured
    clinic falls inside the current view, it may occupy one clearly-labeled
    "Sponsored" card above the results list — same exclusivity and labeling
    rules as zone pages. Pins and clusters stay strictly rank-neutral so the
