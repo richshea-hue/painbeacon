@@ -9,7 +9,7 @@ visitors see and how the site earns.
 The national map at `/map/` already supports `?q=` deep links, clustering, and
 on-map search over clinic names, cities, states, and ZIPs. Build on it:
 
-1. **Home search routes to the map.** The hero search box on `/` keeps its
+1. ✅ *(shipped)* **Home search routes to the map.** The hero search box on `/` keeps its
    suggestion dropdown, but submitting (or choosing a suggestion) lands on
    `/map/?q=<query>` instead of a zone page, so every search starts with
    geographic context. Zone pages stay as the SEO landing pages; the map
@@ -17,14 +17,14 @@ on-map search over clinic names, cities, states, and ZIPs. Build on it:
    8% lift in inquiries after pairing search results with a map — geographic
    context drives contact.)
 
-2. **Results list under the map.** Below the map viewport, render the
+2. ✅ *(shipped)* **Results list under the map.** Below the map viewport, render the
    top-ranked clinics for the current search/viewport as ClinicCard-style rows
    (the zone pages' card, reused). The list re-populates as the map moves
    ("results update as you explore"); clicking a pin highlights its card and
    vice versa. Needs `/map-clinics.json` to carry each clinic's rank score and
    listing tier so the client can order the list without another request.
 
-3. **Sort and filter toggles.** Above the list: sort by *best match* (the
+3. ✅ *(shipped)* **Sort and filter toggles.** Above the list: sort by *best match* (the
    site's independent ranking — default) or *distance* (from the searched
    point or the visitor's geolocation); filters for *verified profiles* and
    *open now* (hours are already published for matched clinics). Keep the
