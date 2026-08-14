@@ -69,11 +69,29 @@ const crumbs = [
     </div>
   </div>
 
-  <section class="wrap narrow" style="padding-block:1.5rem 2.5rem;">
+  <section class="wrap" id="natmap-results" style="padding-block:1.25rem 0.5rem;">
+    <div class="nm-controls">
+      <div class="nm-control-group" role="group" aria-label="Sort results">
+        <span class="nm-control-label">Sort</span>
+        <button type="button" class="nm-toggle nm-sort" data-sort="match" aria-pressed="true">Best match</button>
+        <button type="button" class="nm-toggle nm-sort" data-sort="distance" aria-pressed="false">Distance</button>
+      </div>
+      <div class="nm-control-group" role="group" aria-label="Filter results">
+        <span class="nm-control-label">Show only</span>
+        <button type="button" class="nm-toggle nm-filter" data-filter="verified" aria-pressed="false">✓ Verified</button>
+        <button type="button" class="nm-toggle nm-filter" data-filter="open" aria-pressed="false">Open now</button>
+      </div>
+      <p class="nm-count" id="natmap-count" role="status" aria-live="polite"></p>
+    </div>
+    <ol id="natmap-list" aria-label="Clinics in the current map view"></ol>
+  </section>
+
+  <section class="wrap narrow" style="padding-block:1rem 2.5rem;">
     <p style="margin:0; color:var(--ink-soft); font-size:0.95rem;">
-      Pins show clinics with a verified street location; a small share of clinics without usable
-      coordinates appear in the <a href="/pain-clinics/">state listings</a> but not on the map.
-      Rankings on each area page are <a href="/how-we-rank/">independent — no pay-to-rank</a>.
+      The list follows the map: search or pan, and it re-ranks the clinics in view by our
+      <a href="/how-we-rank/">published, independent criteria — no pay-to-rank</a>. "Open now" uses
+      each clinic's published hours. Clinics without usable coordinates appear in the
+      <a href="/pain-clinics/">state listings</a> but not on the map.
     </p>
   </section>
 
@@ -194,6 +212,88 @@ const crumbs = [
 
     @media (max-width: 40rem) {
       #natmap { height: 68vh; }
+    }
+
+    /* Results list under the map. */
+    .nm-controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.75rem 1.5rem;
+      font-family: var(--sans);
+    }
+    .nm-control-group { display: flex; align-items: center; gap: 0.4rem; }
+    .nm-control-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--ink-faint, #7c8a87);
+      margin-right: 0.15rem;
+    }
+    .nm-toggle {
+      padding: 0.4rem 0.8rem;
+      border: 1px solid var(--line, #e3ddcf);
+      border-radius: 999px;
+      background: var(--card, #fffefb);
+      font: inherit;
+      font-size: 0.88rem;
+      color: var(--ink, #1c2b2a);
+      cursor: pointer;
+    }
+    .nm-toggle:hover { border-color: color-mix(in srgb, var(--teal, #17a08c) 40%, var(--line, #e3ddcf)); }
+    .nm-toggle[aria-pressed='true'] {
+      background: var(--ink, #0f2e3a);
+      border-color: var(--ink, #0f2e3a);
+      color: #fff;
+    }
+    .nm-count { margin: 0; margin-left: auto; font-size: 0.88rem; color: var(--ink-soft, #51605d); }
+
+    #natmap-list {
+      list-style: none;
+      margin: 1rem 0 0;
+      padding: 0;
+      display: grid;
+      gap: 0.75rem;
+    }
+    .nm-card {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem 1.25rem;
+      padding: 0.9rem 1.1rem;
+      border: 1px solid var(--line, #e3ddcf);
+      border-radius: var(--radius, 6px);
+      background: var(--card, #fffefb);
+      font-family: var(--sans);
+    }
+    .nm-card.nm-active { border-color: var(--teal, #17a08c); box-shadow: 0 0 0 2px color-mix(in srgb, var(--teal, #17a08c) 30%, transparent); }
+    .nm-card-main { flex: 1; min-width: 14rem; }
+    .nm-card-main h3 { margin: 0; font-size: 1.02rem; }
+    .nm-card-meta { margin: 0.2rem 0 0; font-size: 0.86rem; color: var(--ink-soft, #51605d); }
+    .nm-card-tags { margin: 0.3rem 0 0; font-size: 0.82rem; color: var(--ink-soft, #51605d); display: flex; flex-wrap: wrap; gap: 0.35rem 0.8rem; }
+    .nm-card-tags .nm-verified { color: var(--teal-ink, #0f6f62); font-weight: 600; }
+    .nm-card-tags .nm-stars { color: #b8860b; }
+    .nm-card-show {
+      flex-shrink: 0;
+      padding: 0.45rem 0.85rem;
+      border: 1px solid var(--line, #e3ddcf);
+      border-radius: var(--radius, 6px);
+      background: none;
+      font: inherit;
+      font-size: 0.85rem;
+      color: var(--ink, #1c2b2a);
+      cursor: pointer;
+    }
+    .nm-card-show:hover { border-color: var(--teal, #17a08c); color: var(--teal-ink, #0f6f62); }
+    .nm-empty {
+      padding: 1.5rem 1rem;
+      border: 1px dashed var(--line, #e3ddcf);
+      border-radius: var(--radius, 6px);
+      color: var(--ink-soft, #51605d);
+      font-family: var(--sans);
+      font-size: 0.95rem;
+      text-align: center;
     }
   </style>
 
@@ -485,6 +585,162 @@ const crumbs = [
             function () { status.textContent = 'Could not get your location.'; },
             { timeout: 8000 }
           );
+        });
+
+        // ---- Results list ------------------------------------------------
+        // The list mirrors the map: every clinic inside the current view,
+        // re-ranked on each pan/zoom. Sorting and filtering happen entirely
+        // client-side from the loaded rows (r[6] score, r[7] tier, r[8]
+        // rating, r[9] reviews, r[10] hours).
+        var listEl = document.getElementById('natmap-list');
+        var countEl = document.getElementById('natmap-count');
+        var LIST_CAP = 30;
+        var sortMode = 'match';
+        var filters = { verified: false, open: false };
+        var activeIdx = -1;
+
+        // "Open now" evaluated against the visitor's clock — searches are
+        // overwhelmingly near the searcher, so clinic-local time and visitor
+        // time agree in practice. Clinics with no published hours simply
+        // never match the filter.
+        function isOpenNow(enc) {
+          if (!enc) return false;
+          var day = (new Date().getDay() + 6) % 7; // Mon=0..Sun=6
+          var part = enc.split('|')[day];
+          if (!part) return false;
+          var oc = part.split('-');
+          var o = +oc[0], c = +oc[1];
+          var now = new Date().getHours() * 60 + new Date().getMinutes();
+          return c > o ? now >= o && now < c : now >= o || now < c; // overnight-safe
+        }
+
+        function distMiles(lat1, lng1, lat2, lng2) {
+          var R = 3958.8, d2r = Math.PI / 180;
+          var dLat = (lat2 - lat1) * d2r, dLng = (lng2 - lng1) * d2r;
+          var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * d2r) * Math.cos(lat2 * d2r) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+          return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        }
+
+        function starsFor(rating) {
+          var n = Math.round(rating);
+          return '★★★★★'.slice(0, n) || '';
+        }
+
+        function updateList() {
+          var bounds = map.getBounds();
+          var center = map.getCenter();
+          var inView = [];
+          rows.forEach(function (r, i) {
+            if (!bounds.contains([r[0], r[1]])) return;
+            if (filters.verified && !(r[7] > 0)) return;
+            if (filters.open && !isOpenNow(r[10])) return;
+            inView.push(i);
+          });
+
+          if (sortMode === 'distance') {
+            inView.sort(function (a, b) {
+              return distMiles(center.lat, center.lng, rows[a][0], rows[a][1]) -
+                distMiles(center.lat, center.lng, rows[b][0], rows[b][1]);
+            });
+          } else {
+            inView.sort(function (a, b) {
+              return rows[b][6] - rows[a][6] || rows[b][9] - rows[a][9] ||
+                rows[a][2].localeCompare(rows[b][2]);
+            });
+          }
+
+          var shown = inView.slice(0, LIST_CAP);
+          countEl.textContent = inView.length
+            ? inView.length.toLocaleString('en-US') + ' clinics in view' +
+              (inView.length > LIST_CAP ? ' — showing top ' + LIST_CAP : '')
+            : '';
+
+          if (!shown.length) {
+            listEl.innerHTML = '<li class="nm-empty">No clinics in this view' +
+              ((filters.verified || filters.open) ? ' matching the filters' : '') +
+              ' — zoom out, pan, or search above.</li>';
+            return;
+          }
+
+          listEl.innerHTML = shown.map(function (i) {
+            var r = rows[i];
+            var d = distMiles(center.lat, center.lng, r[0], r[1]);
+            var tags = [];
+            if (r[7] > 0) tags.push('<span class="nm-verified">✓ Verified</span>');
+            if (r[8] > 0) {
+              tags.push('<span class="nm-stars" title="' + r[8] + ' out of 5">' + starsFor(r[8]) + '</span> ' +
+                r[8].toFixed(1) + ' (' + r[9].toLocaleString('en-US') + ')');
+            }
+            if (isOpenNow(r[10])) tags.push('Open now');
+            return '<li class="nm-card" data-i="' + i + '">' +
+              '<div class="nm-card-main">' +
+              '<h3>' + (r[3] ? '<a href="/clinic/' + encodeURIComponent(r[3]) + '/">' + esc(r[2]) + '</a>' : esc(r[2])) + '</h3>' +
+              '<p class="nm-card-meta">' + esc(r[4]) + (r[5] ? ' ' + r[5] : '') + ' · ' +
+              (d < 10 ? d.toFixed(1) : Math.round(d)) + ' mi from map center</p>' +
+              (tags.length ? '<p class="nm-card-tags">' + tags.join(' ') + '</p>' : '') +
+              '</div>' +
+              '<button type="button" class="nm-card-show" data-show="' + i + '">Show on map</button>' +
+              '</li>';
+          }).join('');
+          if (activeIdx >= 0) {
+            var act = listEl.querySelector('[data-i="' + activeIdx + '"]');
+            if (act) act.classList.add('nm-active');
+          }
+        }
+
+        var listTimer;
+        map.on('moveend', function () {
+          clearTimeout(listTimer);
+          listTimer = setTimeout(updateList, 200);
+        });
+        updateList();
+
+        // Card -> map: "Show on map" zooms to the pin and opens its popup.
+        listEl.addEventListener('click', function (e) {
+          var btn = e.target.closest('[data-show]');
+          if (!btn) return;
+          var i = +btn.getAttribute('data-show');
+          activeIdx = i;
+          // Highlight immediately — if the pin is already visible at this
+          // zoom, no map movement (and so no re-render) will follow.
+          listEl.querySelectorAll('.nm-active').forEach(function (el) { el.classList.remove('nm-active'); });
+          var card = listEl.querySelector('[data-i="' + i + '"]');
+          if (card) card.classList.add('nm-active');
+          clusters.zoomToShowLayer(markers[i], function () { markers[i].openPopup(); });
+        });
+
+        // Map -> card: clicking a pin highlights its card (and scrolls it
+        // into view if the list currently contains it).
+        markers.forEach(function (mk, i) {
+          mk.on('click', function () {
+            activeIdx = i;
+            listEl.querySelectorAll('.nm-active').forEach(function (el) { el.classList.remove('nm-active'); });
+            var card = listEl.querySelector('[data-i="' + i + '"]');
+            if (card) {
+              card.classList.add('nm-active');
+              card.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }
+          });
+        });
+
+        // Toggles.
+        document.querySelectorAll('.nm-sort').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            sortMode = btn.getAttribute('data-sort');
+            document.querySelectorAll('.nm-sort').forEach(function (b) {
+              b.setAttribute('aria-pressed', String(b === btn));
+            });
+            updateList();
+          });
+        });
+        document.querySelectorAll('.nm-filter').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            var key = btn.getAttribute('data-filter');
+            filters[key] = !filters[key];
+            btn.setAttribute('aria-pressed', String(filters[key]));
+            updateList();
+          });
         });
 
         // Deep-link support: /map/?q=las+vegas runs the search on arrival.
