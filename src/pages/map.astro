@@ -717,10 +717,27 @@ const crumbs = [
             inView = inView.filter(function (i) { return sponsorIdxs.indexOf(i) === -1; });
           }
 
+          // When every clinic left in view sits in the "Basic listing" band
+          // (score < 30 — ranking.js scoreBand's data-completeness floor, a
+          // statement about how much verified data we hold, not about the
+          // practice), "best match" ordering is noise. Show nearest-first and
+          // say so, mirroring the band's own honesty rule.
+          var baselineOnly = inView.length > 0 &&
+            inView.every(function (i) { return rows[i][6] < 30; });
+          if (baselineOnly && sortMode === 'match') {
+            inView.sort(function (a, b) {
+              return distMiles(center.lat, center.lng, rows[a][0], rows[a][1]) -
+                distMiles(center.lat, center.lng, rows[b][0], rows[b][1]);
+            });
+          }
+
           var shown = inView.slice(0, LIST_CAP);
           countEl.textContent = inView.length
             ? inView.length.toLocaleString('en-US') + ' clinics in view' +
-              (inView.length > LIST_CAP ? ' — showing top ' + LIST_CAP : '')
+              (inView.length > LIST_CAP ? ' — showing top ' + LIST_CAP : '') +
+              (baselineOnly && sortMode === 'match'
+                ? ' — all basic listings so far, shown nearest first'
+                : '')
             : '';
 
           if (!shown.length && !sponsorIdxs.length) {
