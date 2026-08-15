@@ -34,6 +34,10 @@ on:
         description: "Max Google calls this run (Text Search Pro — 5,000 free/month, separate from the hours/websites pool, then $32/1,000)"
         type: string
         default: "4000"
+      monthly_budget:
+        description: "Hard cap on TOTAL Text Search Pro calls this month, across all runs (ledger: google_api_usage table — run google_usage_table.sql once first)"
+        type: string
+        default: "4500"
       dry_run:
         description: "Dry run (count the backlog only — no Google calls, no writes)"
         type: boolean
@@ -60,5 +64,10 @@ jobs:
           CLOUDFLARE_DEPLOY_HOOK: ${{ secrets.CLOUDFLARE_DEPLOY_HOOK }}
           # On a scheduled run inputs.limit is empty, so it falls back to 4000.
           LIMIT: ${{ inputs.limit || '4000' }}
+          # Cross-run cap: the script reads this month's spend from the
+          # google_api_usage ledger, clamps LIMIT to what's left of this
+          # budget, and refuses to start once it's gone — so dispatches can
+          # never stack past the 5,000-call free tier within a month.
+          MONTHLY_BUDGET: ${{ inputs.monthly_budget || '4500' }}
           DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
         run: python scripts/backfill_geocodes.py

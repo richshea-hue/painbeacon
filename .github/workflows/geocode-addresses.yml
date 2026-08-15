@@ -18,6 +18,10 @@ on:
         description: "Max Geocoding calls this run (start small — free allowance unverified)"
         type: string
         default: "500"
+      monthly_budget:
+        description: "Hard cap on TOTAL Geocoding calls this month, across all runs (ledger: google_api_usage table — run google_usage_table.sql once first). Raise only after verifying the SKU's free allowance in Billing → Reports."
+        type: string
+        default: "9000"
       dry_run:
         description: "Dry run (count backlog + show sample addresses — no calls, no writes)"
         type: boolean
@@ -43,6 +47,11 @@ jobs:
           GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
           CLOUDFLARE_DEPLOY_HOOK: ${{ secrets.CLOUDFLARE_DEPLOY_HOOK }}
           LIMIT: ${{ inputs.limit || '500' }}
+          # Cross-run cap: the script reads this month's spend from the
+          # google_api_usage ledger, clamps LIMIT to what's left of this
+          # budget, and refuses to start once it's gone — so dispatches can
+          # never stack past the free allowance within a month.
+          MONTHLY_BUDGET: ${{ inputs.monthly_budget || '9000' }}
           # dry_run defaults to true above, so an accidental dispatch costs nothing.
           DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
         run: python scripts/geocode_addresses.py
