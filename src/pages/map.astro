@@ -83,7 +83,14 @@ const crumbs = [
       </div>
       <p class="nm-count" id="natmap-count" role="status" aria-live="polite"></p>
     </div>
-    <ol id="natmap-list" aria-label="Clinics in the current map view"></ol>
+    <!-- Two columns when a Featured-tier clinic is in view: the ranked list on
+         the left, the labeled sponsored rail on the right (up to two cards,
+         spread through the list's height). Paid placement stays out of the
+         ranked ordering either way. -->
+    <div class="nm-grid" id="natmap-grid">
+      <ol id="natmap-list" aria-label="Clinics in the current map view"></ol>
+      <ol class="nm-rail" id="natmap-rail" hidden aria-label="Sponsored clinics in this view"></ol>
+    </div>
   </section>
 
   <section class="wrap narrow" style="padding-block:1rem 2.5rem;">
@@ -249,6 +256,31 @@ const crumbs = [
     }
     .nm-count { margin: 0; margin-left: auto; font-size: 0.88rem; color: var(--ink-soft, #51605d); }
 
+    /* One column until a sponsored card is in view, then list | rail. Both
+       columns stretch to the row height and the rail distributes its cards
+       through it — one card centers against the list, two spread. */
+    .nm-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0 2rem;
+      align-items: stretch;
+    }
+    .nm-grid.nm-has-rail { grid-template-columns: minmax(0, 2fr) minmax(16rem, 1fr); }
+    .nm-rail {
+      list-style: none;
+      margin: 1rem 0 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-around;
+      gap: 0.75rem;
+    }
+    .nm-rail[hidden] { display: none; }
+    .nm-rail .nm-card { align-items: flex-start; }
+    @media (max-width: 800px) {
+      .nm-grid.nm-has-rail { grid-template-columns: 1fr; }
+      .nm-rail { justify-content: flex-start; }
+    }
     #natmap-list {
       list-style: none;
       margin: 1rem 0 0;
@@ -613,6 +645,8 @@ const crumbs = [
         // client-side from the loaded rows (r[6] score, r[7] tier, r[8]
         // rating, r[9] reviews, r[10] hours).
         var listEl = document.getElementById('natmap-list');
+        var railEl = document.getElementById('natmap-rail');
+        var gridEl = document.getElementById('natmap-grid');
         var countEl = document.getElementById('natmap-count');
         var LIST_CAP = 30;
         var sortMode = 'match';
@@ -670,17 +704,18 @@ const crumbs = [
             });
           }
 
-          // Sponsored slot: at most ONE clearly-labeled Featured-tier clinic
-          // (r[7] === 2) above the results — same exclusivity and labeling
-          // rules as zone pages, and excluded from the ranked list below so
-          // paid placement never mixes with the objective ordering. It goes
-          // through the same filters as everything else, and the pins stay
-          // strictly rank-neutral.
-          var sponsorIdx = -1;
-          inView.forEach(function (i) {
-            if (rows[i][7] === 2 && (sponsorIdx === -1 || rows[i][6] > rows[sponsorIdx][6])) sponsorIdx = i;
-          });
-          if (sponsorIdx !== -1) inView = inView.filter(function (i) { return i !== sponsorIdx; });
+          // Sponsored rail: up to TWO clearly-labeled Featured-tier clinics
+          // (r[7] === 2) in their own right-hand column, best score first —
+          // excluded from the ranked list so paid placement never mixes with
+          // the objective ordering. They go through the same filters as
+          // everything else, and the pins stay strictly rank-neutral.
+          var sponsorIdxs = inView
+            .filter(function (i) { return rows[i][7] === 2; })
+            .sort(function (a, b) { return rows[b][6] - rows[a][6]; })
+            .slice(0, 2);
+          if (sponsorIdxs.length) {
+            inView = inView.filter(function (i) { return sponsorIdxs.indexOf(i) === -1; });
+          }
 
           var shown = inView.slice(0, LIST_CAP);
           countEl.textContent = inView.length
@@ -688,7 +723,9 @@ const crumbs = [
               (inView.length > LIST_CAP ? ' — showing top ' + LIST_CAP : '')
             : '';
 
-          if (!shown.length && sponsorIdx === -1) {
+          if (!shown.length && !sponsorIdxs.length) {
+            railEl.hidden = true;
+            gridEl.classList.remove('nm-has-rail');
             listEl.innerHTML = '<li class="nm-empty">No clinics in this view' +
               ((filters.verified || filters.open) ? ' matching the filters' : '') +
               ' — zoom out, pan, or search above.</li>';
@@ -717,11 +754,12 @@ const crumbs = [
               '</li>';
           }
 
-          listEl.innerHTML =
-            (sponsorIdx !== -1 ? cardHtml(sponsorIdx, true) : '') +
-            shown.map(function (i) { return cardHtml(i, false); }).join('');
+          railEl.innerHTML = sponsorIdxs.map(function (i) { return cardHtml(i, true); }).join('');
+          railEl.hidden = !sponsorIdxs.length;
+          gridEl.classList.toggle('nm-has-rail', sponsorIdxs.length > 0);
+          listEl.innerHTML = shown.map(function (i) { return cardHtml(i, false); }).join('');
           if (activeIdx >= 0) {
-            var act = listEl.querySelector('[data-i="' + activeIdx + '"]');
+            var act = gridEl.querySelector('[data-i="' + activeIdx + '"]');
             if (act) act.classList.add('nm-active');
           }
         }
@@ -734,15 +772,16 @@ const crumbs = [
         updateList();
 
         // Card -> map: "Show on map" zooms to the pin and opens its popup.
-        listEl.addEventListener('click', function (e) {
+        // Delegated on the grid so the rail's cards get the same behavior.
+        gridEl.addEventListener('click', function (e) {
           var btn = e.target.closest('[data-show]');
           if (!btn) return;
           var i = +btn.getAttribute('data-show');
           activeIdx = i;
           // Highlight immediately — if the pin is already visible at this
           // zoom, no map movement (and so no re-render) will follow.
-          listEl.querySelectorAll('.nm-active').forEach(function (el) { el.classList.remove('nm-active'); });
-          var card = listEl.querySelector('[data-i="' + i + '"]');
+          gridEl.querySelectorAll('.nm-active').forEach(function (el) { el.classList.remove('nm-active'); });
+          var card = gridEl.querySelector('[data-i="' + i + '"]');
           if (card) card.classList.add('nm-active');
           clusters.zoomToShowLayer(markers[i], function () { markers[i].openPopup(); });
         });
@@ -752,8 +791,8 @@ const crumbs = [
         markers.forEach(function (mk, i) {
           mk.on('click', function () {
             activeIdx = i;
-            listEl.querySelectorAll('.nm-active').forEach(function (el) { el.classList.remove('nm-active'); });
-            var card = listEl.querySelector('[data-i="' + i + '"]');
+            gridEl.querySelectorAll('.nm-active').forEach(function (el) { el.classList.remove('nm-active'); });
+            var card = gridEl.querySelector('[data-i="' + i + '"]');
             if (card) {
               card.classList.add('nm-active');
               card.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
