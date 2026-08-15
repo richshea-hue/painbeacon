@@ -69,6 +69,9 @@ Env vars
   SUPABASE_URL, SUPABASE_SERVICE_KEY   service role key (NOT the anon key)
   GOOGLE_MAPS_API_KEY                  needs the Geocoding API enabled
   LIMIT                                max geocode calls this run (default 500)
+  MONTHLY_BUDGET                       hard cap on TOTAL calls this month across
+                                       all runs (default 9000; ledger table
+                                       google_api_usage, see google_usage_table.sql)
   DRY_RUN                              "1" = count + show sample queries only
   FAILURE_CSV                          default scripts/outreach/out/geocode_failures.csv
   CLOUDFLARE_DEPLOY_HOOK               OPTIONAL — POSTed if coordinates were written
@@ -93,6 +96,59 @@ SUPABASE_TIMEOUT = 30
 PAGE = 1000
 
 GEOCODE_URL = "https://maps.googleapis.com/maps/api/geocode/json"
+
+# --- Monthly budget ledger (google_api_usage table) -------------------------
+# Per-run LIMIT cannot stop dispatches from STACKING within a month, so every
+# live run first reads this month's spend from the ledger, clamps its LIMIT to
+# what is left of MONTHLY_BUDGET, and records the calls it actually made
+# (every LEDGER_FLUSH_EVERY calls, and again on exit, so an abort loses at
+# most one flush interval). The table is created by google_usage_table.sql —
+# live runs FAIL CLOSED if it is missing, because a billing guard that shrugs
+# and continues is not a guard.
+#
+# Default budget 9,000: the Geocoding SKU's free allowance is BELIEVED to be
+# 10,000/month under Essentials pricing but is UNVERIFIED for this billing
+# account (see BILLING above — two SKU assumptions here have already been
+# wrong). 9,000 leaves headroom for that risk plus the flush interval. Verify
+# in Billing → Reports, then raise deliberately via the workflow input.
+USAGE_SKU = "geocoding"
+MONTHLY_BUDGET = int(os.environ.get("MONTHLY_BUDGET") or "9000")
+LEDGER_FLUSH_EVERY = 25
+CALLS_MADE = 0          # incremented by geocode() on every Google call
+_LEDGER_BASE = 0        # this month's spend when the run started
+
+
+def usage_month():
+    return time.strftime("%Y-%m", time.gmtime())
+
+
+def ledger_read():
+    """This month's recorded calls, or None if the ledger table is missing."""
+    r = requests.get(
+        f"{SUPABASE_URL}/rest/v1/google_api_usage",
+        headers=SB_HEADERS,
+        params={"month": f"eq.{usage_month()}", "sku": f"eq.{USAGE_SKU}", "select": "calls"},
+        timeout=SUPABASE_TIMEOUT,
+    )
+    if r.status_code == 404:
+        return None
+    r.raise_for_status()
+    rows = r.json()
+    return rows[0]["calls"] if rows else 0
+
+
+def ledger_flush():
+    """Upsert this month's total (baseline + this run's calls so far)."""
+    headers = dict(SB_HEADERS)
+    headers["Prefer"] = "resolution=merge-duplicates,return=minimal"
+    r = requests.post(
+        f"{SUPABASE_URL}/rest/v1/google_api_usage",
+        headers=headers,
+        json={"month": usage_month(), "sku": USAGE_SKU,
+              "calls": _LEDGER_BASE + CALLS_MADE},
+        timeout=SUPABASE_TIMEOUT,
+    )
+    r.raise_for_status()
 
 # Precise enough to pin a building. APPROXIMATE is excluded on purpose — see
 # the Quality gates note above.
@@ -247,7 +303,16 @@ def geocode(c):
         # cannot match a same-named street in another country.
         "components": f"country:US|administrative_area:{state}" if state else "country:US",
     }
+    global CALLS_MADE
     r = requests.get(GEOCODE_URL, params=params, timeout=GEOCODE_TIMEOUT)
+    CALLS_MADE += 1
+    if CALLS_MADE % LEDGER_FLUSH_EVERY == 0:
+        try:
+            ledger_flush()
+        except requests.RequestException as e:
+            # The next flush (or the final one) carries the running total, so
+            # a transient ledger hiccup should not kill a healthy run.
+            log(f"  [warn] ledger flush failed: {e}")
     if r.status_code >= 500:
         raise RuntimeError(f"Geocoding 5xx: {r.status_code}")
     try:
@@ -294,6 +359,7 @@ def geocode(c):
 # Main
 # ---------------------------------------------------------------------------
 def main():
+    global _LEDGER_BASE
     backlog = count_candidates()
     log(f"Clinics with no coordinates that have a street address: {backlog}")
     log(f"LIMIT={LIMIT}  DRY_RUN={DRY_RUN}")
@@ -302,55 +368,95 @@ def main():
     log("SKU: Geocoding (NOT one of the three Places pools) - verify the free "
         "allowance in Billing > Reports before a large run.\n")
 
-    clinics = get_candidates(LIMIT)
+    # Monthly budget check BEFORE any Google call. Fail closed on a missing
+    # ledger for live runs; dry runs just report.
+    used = ledger_read()
+    if used is None:
+        if DRY_RUN:
+            log("[warn] google_api_usage table not found - dry run continues, "
+                "but a live run will refuse to start. Run google_usage_table.sql "
+                "in Supabase first.")
+            used = 0
+        else:
+            sys.exit("ABORT: google_api_usage table not found in Supabase. "
+                     "Run google_usage_table.sql (repo root) in the Supabase "
+                     "SQL editor once, then re-dispatch. Refusing to spend "
+                     "unmetered Google calls.")
+    remaining = max(0, MONTHLY_BUDGET - used)
+    log(f"Monthly budget ({USAGE_SKU}): {used} of {MONTHLY_BUDGET} used in "
+        f"{usage_month()} - {remaining} remaining")
+    limit = min(LIMIT, remaining)
+    if limit < LIMIT:
+        log(f"  LIMIT clamped {LIMIT} -> {limit} to stay inside the budget")
+    if not DRY_RUN and limit <= 0:
+        sys.exit(f"ABORT: monthly {USAGE_SKU} budget ({MONTHLY_BUDGET}) is "
+                 f"spent - nothing left this month. Re-run next month, or "
+                 f"raise MONTHLY_BUDGET deliberately AFTER verifying the free "
+                 f"allowance in Billing > Reports.")
+    _LEDGER_BASE = used
+
+    clinics = get_candidates(limit)
 
     if DRY_RUN:
         log("Dry run - no Geocoding calls, no writes. Sample addresses that "
             "would be sent (note: no clinic name):")
         for c in clinics[:10]:
             log(f"  {c['npi']}  {address_for(c)}")
-        if backlog and LIMIT:
-            runs = (backlog + LIMIT - 1) // LIMIT
-            log(f"\nAt {LIMIT}/run the backlog needs {runs} run(s).")
+        if backlog and limit:
+            runs = (backlog + limit - 1) // limit
+            log(f"\nAt {limit}/run the backlog needs {runs} run(s).")
         return
 
     log(f"Processing {len(clinics)} clinic(s)\n")
     wrote = out_of_state = rejected = failed = 0
     failures = []
 
-    for i, c in enumerate(clinics, 1):
-        npi = c["npi"]
-        state = (c.get("state") or "").upper()
-        try:
-            lat, lon, info = geocode(c)
-        except RuntimeError as e:
-            log(f"[abort] {e}")
-            log(f"[abort] wrote={wrote} rejected={rejected} out_of_state={out_of_state}")
-            break
-        time.sleep(SLEEP_BETWEEN_CALLS)
+    try:
+        for i, c in enumerate(clinics, 1):
+            npi = c["npi"]
+            state = (c.get("state") or "").upper()
+            try:
+                lat, lon, info = geocode(c)
+            except RuntimeError as e:
+                log(f"[abort] {e}")
+                log(f"[abort] wrote={wrote} rejected={rejected} out_of_state={out_of_state}")
+                break
+            time.sleep(SLEEP_BETWEEN_CALLS)
 
-        if lat is None:
-            rejected += 1
-            failures.append({"npi": npi, "name": c.get("name") or "",
-                             "address": address_for(c), "reason": info})
-        elif not in_state(state, lat, lon):
-            # Geocoded, but outside the state the federal record claims.
-            out_of_state += 1
-            failures.append({"npi": npi, "name": c.get("name") or "",
-                             "address": address_for(c),
-                             "reason": f"out_of_state ({lat:.4f},{lon:.4f})"})
-        elif patch(npi, {"latitude": lat, "longitude": lon}):
-            wrote += 1
-        else:
-            failed += 1
+            if lat is None:
+                rejected += 1
+                failures.append({"npi": npi, "name": c.get("name") or "",
+                                 "address": address_for(c), "reason": info})
+            elif not in_state(state, lat, lon):
+                # Geocoded, but outside the state the federal record claims.
+                out_of_state += 1
+                failures.append({"npi": npi, "name": c.get("name") or "",
+                                 "address": address_for(c),
+                                 "reason": f"out_of_state ({lat:.4f},{lon:.4f})"})
+            elif patch(npi, {"latitude": lat, "longitude": lon}):
+                wrote += 1
+            else:
+                failed += 1
 
-        if i % 100 == 0:
-            log(f"  {i}/{len(clinics)}  wrote={wrote} rejected={rejected} "
-                f"out_of_state={out_of_state}")
+            if i % 100 == 0:
+                log(f"  {i}/{len(clinics)}  wrote={wrote} rejected={rejected} "
+                    f"out_of_state={out_of_state}")
+    finally:
+        # The ledger must reflect every call actually made, however this run
+        # ends — this is what makes next month's arithmetic trustworthy.
+        if CALLS_MADE:
+            try:
+                ledger_flush()
+                log(f"Ledger: {USAGE_SKU} at {_LEDGER_BASE + CALLS_MADE} of "
+                    f"{MONTHLY_BUDGET} for {usage_month()}")
+            except requests.RequestException as e:
+                log(f"[warn] FINAL ledger flush failed ({e}) - record "
+                    f"{CALLS_MADE} extra {USAGE_SKU} call(s) for "
+                    f"{usage_month()} manually in google_api_usage.")
 
     log(f"\nDone. wrote={wrote} rejected={rejected} out_of_state={out_of_state} "
         f"write_failures={failed}")
-    log(f"Geocoding calls made: {min(len(clinics), wrote + rejected + out_of_state + failed)}")
+    log(f"Geocoding calls made: {CALLS_MADE}")
 
     if failures:
         os.makedirs(os.path.dirname(FAILURE_CSV) or ".", exist_ok=True)

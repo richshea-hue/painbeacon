@@ -75,6 +75,11 @@ out, test a second placement on zone pages rather than adding homepage slots.
   have no coordinates and appear on no map. The automated backfill is gated
   for data-quality reasons; a reviewed, manually-dispatched run per state or
   territory would let the map fill in. Guam is the visible gap today.
+  Billing is guarded: both geocode jobs share a monthly ledger
+  (`google_api_usage` in Supabase, created by `google_usage_table.sql`) and
+  refuse to exceed their SKU's monthly budget no matter how many runs are
+  dispatched — so the backlog can be worked in safe monthly slices without
+  ever crossing into paid Google usage.
 - **"Near me" landing page.** `/near-me/` that geolocates and redirects into
   the map with the visitor's area pre-searched — a high-intent SEO term.
 - **Map social cards.** Per-state OG images cropped from the national map for

@@ -51,6 +51,9 @@ Env vars (set as GitHub Actions secrets / workflow inputs):
   SUPABASE_SERVICE_KEY    service role key (NOT the anon key)
   GOOGLE_MAPS_API_KEY     same key the hours/website backfills use
   LIMIT                   max Google calls this run (default 4000)
+  MONTHLY_BUDGET          hard cap on TOTAL calls this month across all runs
+                          (default 4500; ledger table google_api_usage — see
+                          google_usage_table.sql)
   DRY_RUN                 "1" = count candidates only
   CLOUDFLARE_DEPLOY_HOOK  OPTIONAL — POSTed after a run that wrote coordinates
 
@@ -99,6 +102,57 @@ SB_HEADERS = {
     "Content-Type": "application/json",
     "Prefer": "return=minimal",
 }
+
+# --- Monthly budget ledger (google_api_usage table) -------------------------
+# Per-run LIMIT cannot stop dispatches from STACKING within a month, so every
+# live run first reads this month's Text Search Pro spend from the ledger,
+# clamps its LIMIT to what is left of MONTHLY_BUDGET, and records the calls it
+# actually made (every LEDGER_FLUSH_EVERY calls, and again on exit, so an
+# abort loses at most one flush interval). The table is created by
+# google_usage_table.sql — live runs FAIL CLOSED if it is missing, because a
+# billing guard that shrugs and continues is not a guard.
+#
+# Default budget 4,500: the Text Search Pro free tier is 5,000/month (verified
+# — see BILLING above) and this keeps the month's TOTAL under it with headroom
+# for the flush interval, even across repeated dispatches.
+USAGE_SKU = "text_search_pro"
+MONTHLY_BUDGET = int(os.environ.get("MONTHLY_BUDGET") or "4500")
+LEDGER_FLUSH_EVERY = 25
+CALLS_MADE = 0          # incremented by places_lookup() on every Google call
+_LEDGER_BASE = 0        # this month's spend when the run started
+
+
+def usage_month():
+    return time.strftime("%Y-%m", time.gmtime())
+
+
+def ledger_read():
+    """This month's recorded calls, or None if the ledger table is missing."""
+    r = requests.get(
+        f"{SUPABASE_URL}/rest/v1/google_api_usage",
+        headers=SB_HEADERS,
+        params={"month": f"eq.{usage_month()}", "sku": f"eq.{USAGE_SKU}", "select": "calls"},
+        timeout=SUPABASE_TIMEOUT,
+    )
+    if r.status_code == 404:
+        return None
+    r.raise_for_status()
+    rows = r.json()
+    return rows[0]["calls"] if rows else 0
+
+
+def ledger_flush():
+    """Upsert this month's total (baseline + this run's calls so far)."""
+    headers = dict(SB_HEADERS)
+    headers["Prefer"] = "resolution=merge-duplicates,return=minimal"
+    r = requests.post(
+        f"{SUPABASE_URL}/rest/v1/google_api_usage",
+        headers=headers,
+        json={"month": usage_month(), "sku": USAGE_SKU,
+              "calls": _LEDGER_BASE + CALLS_MADE},
+        timeout=SUPABASE_TIMEOUT,
+    )
+    r.raise_for_status()
 
 # Approximate bounding boxes per state/territory: (lat_min, lat_max, lon_min,
 # lon_max). Kept in step with the copy in fix_errant_locations.py — each script
@@ -243,6 +297,7 @@ def places_lookup(query):
     The field mask is Pro-tier only. Adding an Enterprise field would cut the
     monthly free allowance from 5,000 calls to 1,000 — see the billing note.
     """
+    global CALLS_MADE
     r = requests.post(
         "https://places.googleapis.com/v1/places:searchText",
         headers={
@@ -255,6 +310,14 @@ def places_lookup(query):
         json={"textQuery": query},
         timeout=GOOGLE_TIMEOUT,
     )
+    CALLS_MADE += 1
+    if CALLS_MADE % LEDGER_FLUSH_EVERY == 0:
+        try:
+            ledger_flush()
+        except requests.RequestException as e:
+            # The next flush (or the final one) carries the running total, so
+            # a transient ledger hiccup should not kill a healthy run.
+            log(f"  [warn] ledger flush failed: {e}")
     if r.status_code == 429 or "RESOURCE_EXHAUSTED" in r.text:
         sys.exit(f"ABORT: Google quota exhausted — stopping rather than billing on.\n{r.text[:400]}")
     if r.status_code >= 300:
@@ -279,18 +342,46 @@ def query_for(c):
 # Main
 # ---------------------------------------------------------------------------
 def main():
+    global _LEDGER_BASE
     backlog = count_candidates()
     log(f"Clinics with no coordinates, never attempted: {backlog if backlog >= 0 else 'unknown'}")
     log(f"LIMIT={LIMIT} (Text Search Pro free tier is 5,000/month)  DRY_RUN={DRY_RUN}")
 
+    # Monthly budget check BEFORE any Google call. Fail closed on a missing
+    # ledger for live runs; dry runs just report.
+    used = ledger_read()
+    if used is None:
+        if DRY_RUN:
+            log("[warn] google_api_usage table not found - dry run continues, "
+                "but a live run will refuse to start. Run google_usage_table.sql "
+                "in Supabase first.")
+            used = 0
+        else:
+            sys.exit("ABORT: google_api_usage table not found in Supabase. "
+                     "Run google_usage_table.sql (repo root) in the Supabase "
+                     "SQL editor once, then re-dispatch. Refusing to spend "
+                     "unmetered Google calls.")
+    remaining = max(0, MONTHLY_BUDGET - used)
+    log(f"Monthly budget ({USAGE_SKU}): {used} of {MONTHLY_BUDGET} used in "
+        f"{usage_month()} - {remaining} remaining")
+    limit = min(LIMIT, remaining)
+    if limit < LIMIT:
+        log(f"  LIMIT clamped {LIMIT} -> {limit} to stay inside the budget")
+    if not DRY_RUN and limit <= 0:
+        sys.exit(f"ABORT: monthly {USAGE_SKU} budget ({MONTHLY_BUDGET}) is "
+                 f"spent - nothing left this month. Re-run next month, or "
+                 f"raise MONTHLY_BUDGET deliberately AFTER verifying spend in "
+                 f"Billing > Reports.")
+    _LEDGER_BASE = used
+
     if DRY_RUN:
-        sample = get_candidates(min(LIMIT, 5))
+        sample = get_candidates(min(limit, 5))
         log("\nDry run — no Google calls, no writes. Sample queries that would be sent:")
         for c in sample:
             log(f"  {c['npi']}  {query_for(c)}")
-        if backlog >= 0 and LIMIT > 0:
-            months = (backlog + LIMIT - 1) // LIMIT
-            log(f"\nAt {LIMIT}/run this backlog clears in {months} run(s).")
+        if backlog >= 0 and limit > 0:
+            months = (backlog + limit - 1) // limit
+            log(f"\nAt {limit}/run this backlog clears in {months} run(s).")
         return
 
     id_cols = detect_place_id_columns()
@@ -299,50 +390,64 @@ def main():
         log("  NOTE: `place_id` not found — the hours and website backfills select on"
             " that column, so geocoded clinics will not enter their queues.")
 
-    clinics = get_candidates(LIMIT)
+    clinics = get_candidates(limit)
     log(f"Processing {len(clinics)} clinic(s)\n")
 
     matched = out_of_state = no_match = failed = 0
 
-    for i, c in enumerate(clinics, 1):
-        npi = c["npi"]
-        state = (c.get("state") or "").upper()
-        place = places_lookup(query_for(c))
-        time.sleep(SLEEP_BETWEEN_CALLS)
+    try:
+        for i, c in enumerate(clinics, 1):
+            npi = c["npi"]
+            state = (c.get("state") or "").upper()
+            place = places_lookup(query_for(c))
+            time.sleep(SLEEP_BETWEEN_CALLS)
 
-        loc = (place or {}).get("location") or {}
-        lat, lon = loc.get("latitude"), loc.get("longitude")
+            loc = (place or {}).get("location") or {}
+            lat, lon = loc.get("latitude"), loc.get("longitude")
 
-        if place and lat is not None and in_state(state, lat, lon):
-            payload = {
-                "latitude": lat,
-                "longitude": lon,
-                "google_maps_uri": place.get("googleMapsUri") or "",
-            }
-            for col in id_cols:
-                payload[col] = place.get("id")
-            if patch(npi, payload):
-                matched += 1
+            if place and lat is not None and in_state(state, lat, lon):
+                payload = {
+                    "latitude": lat,
+                    "longitude": lon,
+                    "google_maps_uri": place.get("googleMapsUri") or "",
+                }
+                for col in id_cols:
+                    payload[col] = place.get("id")
+                if patch(npi, payload):
+                    matched += 1
+                else:
+                    failed += 1
             else:
-                failed += 1
-        else:
-            # Permanent outcome: record it so this clinic is never re-billed.
-            # An out-of-state match usually means a bad address in the federal
-            # record — the same signal fix_errant_locations.py flags for
-            # outreach — and no result usually means the practice has closed.
-            reason = "out of state" if place and lat is not None else "no match"
-            if reason == "out of state":
-                out_of_state += 1
-            else:
-                no_match += 1
-            if not patch(npi, {"google_maps_uri": ""}):
-                failed += 1
+                # Permanent outcome: record it so this clinic is never re-billed.
+                # An out-of-state match usually means a bad address in the federal
+                # record — the same signal fix_errant_locations.py flags for
+                # outreach — and no result usually means the practice has closed.
+                reason = "out of state" if place and lat is not None else "no match"
+                if reason == "out of state":
+                    out_of_state += 1
+                else:
+                    no_match += 1
+                if not patch(npi, {"google_maps_uri": ""}):
+                    failed += 1
 
-        if i % 250 == 0:
-            log(f"  {i}/{len(clinics)}  matched={matched} out_of_state={out_of_state} no_match={no_match}")
+            if i % 250 == 0:
+                log(f"  {i}/{len(clinics)}  matched={matched} out_of_state={out_of_state} no_match={no_match}")
+    finally:
+        # The ledger must reflect every call actually made, however this run
+        # ends (including the RESOURCE_EXHAUSTED abort) — this is what makes
+        # next month's arithmetic trustworthy.
+        if CALLS_MADE:
+            try:
+                ledger_flush()
+                log(f"Ledger: {USAGE_SKU} at {_LEDGER_BASE + CALLS_MADE} of "
+                    f"{MONTHLY_BUDGET} for {usage_month()}")
+            except requests.RequestException as e:
+                log(f"[warn] FINAL ledger flush failed ({e}) - record "
+                    f"{CALLS_MADE} extra {USAGE_SKU} call(s) for "
+                    f"{usage_month()} manually in google_api_usage.")
 
     log(f"\nDone. matched={matched} out_of_state={out_of_state} no_match={no_match} write_failures={failed}")
-    log(f"Google calls made: {len(clinics)} (free tier 5,000/month)")
+    log(f"Google calls made: {CALLS_MADE} (free tier 5,000/month)")
 
     remaining = max(backlog - len(clinics), 0) if backlog >= 0 else -1
     if remaining >= 0:
