@@ -112,7 +112,7 @@ const fillFor = (fips) => {
 };
 
 // Draws the choropleth to fit inside the given box (AlbersUSA keeps its own
-// aspect ratio, so it centres within whichever dimension is the constraint).
+// aspect ratio, so it centers within whichever dimension is the constraint).
 function mapSvg(x, y, w, h) {
   const path_ = d3.geoPath(d3.geoAlbersUsa().fitExtent([[x, y], [x + w, y + h]], nation));
   let out = '';

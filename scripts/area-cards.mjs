@@ -86,7 +86,7 @@ function shell({ kicker, titleLines, statBig, statLabel, bullets, footer }) {
 
 const render = async (svg, file) => {
   const buf = await sharp(Buffer.from(svg))
-    .png({ palette: true, colours: 32, compressionLevel: 9, effort: 7 })
+    .png({ palette: true, colors: 32, compressionLevel: 9, effort: 7 })
     .toBuffer();
   fs.writeFileSync(file, buf);
   return buf.length;

@@ -44,7 +44,7 @@ What this clears, and why each one
   rendering. The id is not lost either — candor-nppes' cache still has it.
 - `google_maps_uri` -> '' (empty, not NULL). It currently points at the wrong
   business on Google Maps, so it cannot stay. Empty is deliberate: it is falsy,
-  so [slug].astro falls back to a name+address Maps search (correct behaviour),
+  so [slug].astro falls back to a name+address Maps search (correct behavior),
   and it is also backfill_geocodes.py's "Places could not identify this
   business" sentinel — which is precisely, literally true here.
 

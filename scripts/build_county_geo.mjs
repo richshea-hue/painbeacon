@@ -219,7 +219,7 @@ function simplify(points, tolerance) {
 // Output coordinates are integers on the 975x610 grid: worst-case error is half
 // a unit, sub-pixel at any width the map actually renders at, and it keeps every
 // number to three digits. Snapping to a shared grid also pulls the independently
-// generalized borders of neighbouring counties back onto identical vertices.
+// generalized borders of neighboring counties back onto identical vertices.
 function quantize(points) {
   const out = [];
   for (const [x, y] of points) {
@@ -247,7 +247,7 @@ function quantize(points) {
       const prev = out[(i + out.length - 1) % out.length];
       const next = out[(i + 1) % out.length];
       if (prev[0] === next[0] && prev[1] === next[1]) {
-        // Drop both the spur tip and one of its duplicate neighbours.
+        // Drop both the spur tip and one of its duplicate neighbors.
         out.splice(i, 1);
         out.splice(i % out.length, 1);
         changed = true;
@@ -290,7 +290,7 @@ function featureToPath(geometry, { project, clip }, { minMark = 0 } = {}) {
   // below one grid unit, so they quantize away to nothing. A national county
   // map cannot render them at true size at any resolution, and dropping them
   // would silently leave holes in an otherwise complete dataset, so they get a
-  // minimum-size mark at their centre instead. Deliberately slightly oversized
+  // minimum-size mark at their center instead. Deliberately slightly oversized
   // so they remain visible and hoverable.
   if (!d && minMark && all.length) {
     const cx = Math.round(all.reduce((a, p) => a + p[0], 0) / all.length);

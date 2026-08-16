@@ -17,7 +17,7 @@
 // undifferentiated brown — the desert mass stopped separating from the rest,
 // which is the whole point of the graphic. Letting the lightest step recede is
 // the standard allowance for a choropleth, where the palest counties mean
-// "nothing to see here" and are read in context against their neighbours. The
+// "nothing to see here" and are read in context against their neighbors. The
 // relief for that choice is elsewhere on the page: every county is hoverable
 // for its exact figures, and the full county and state tables follow the map.
 //
@@ -88,7 +88,7 @@ const missing = paths.filter((p) => p.cls === 'no-data').length;
       </g>
 
       {/* A single spare path that re-draws whichever county is hovered, on top
-          of its neighbours — SVG has no z-index, so an outline applied in place
+          of its neighbors — SVG has no z-index, so an outline applied in place
           would be painted over by the counties that come after it. */}
       <path class="hl" d="" aria-hidden="true"></path>
     </svg>
@@ -124,7 +124,7 @@ const missing = paths.filter((p) => p.cls === 'no-data').length;
   .desert-map {
     margin: 2rem 0 2.5rem;
     /* Break out of the 44rem prose column — a national county map needs the
-       width. Centred on the column's midline, which is also the viewport's, and
+       width. Centered on the column's midline, which is also the viewport's, and
        held inside the viewport on narrow screens. */
     width: min(58rem, 100vw - 3rem);
     margin-left: 50%;
@@ -146,7 +146,7 @@ const missing = paths.filter((p) => p.cls === 'no-data').length;
 
   /* The validated sequential ramp. Each step is set as `color` so a single rule
      can drive both fill and stroke: the hairline stroke closes the sub-pixel
-     seams left when neighbouring counties are generalised independently. */
+     seams left when neighboring counties are generalized independently. */
   .us-map .d0 { color: #5c3009; }
   .us-map .d1 { color: #965e1f; }
   .us-map .d2 { color: #bd8442; }
@@ -255,7 +255,7 @@ const missing = paths.filter((p) => p.cls === 'no-data').length;
   .legend .d2 { color: #bd8442; }
   .legend .d3 { color: #d8ae76; }
   /* The lightest step recedes toward the paper surface by design — on the map
-     it is read in context, bounded by its neighbours and the state lines. In
+     it is read in context, bounded by its neighbors and the state lines. In
      the legend it has nothing around it, so the swatch gets a hairline ring to
      stay visible. */
   .legend .d4 { color: #eddcc0; }

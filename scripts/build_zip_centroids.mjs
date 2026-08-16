@@ -59,7 +59,7 @@ for (let i = 1; i < lines.length; i++) {
   const lat = Number(c[iLat]);
   const lng = Number(c[iLng]);
   if (!/^\d{5}$/.test(zip) || !Number.isFinite(lat) || !Number.isFinite(lng)) continue;
-  // 3 decimals ~= 110 m. The value only centres a map; more is payload.
+  // 3 decimals ~= 110 m. The value only centers a map; more is payload.
   shards[zip[0]][zip] = [Number(lat.toFixed(3)), Number(lng.toFixed(3))];
   n++;
 }

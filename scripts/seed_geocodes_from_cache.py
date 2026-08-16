@@ -36,7 +36,7 @@ enrich_places.py scores each match as
     0.45 * (clinic ZIP == place ZIP) + 0.55 * (name-token overlap)
 and clamps anything with zero name overlap to 0.34 — below its own 0.50 accept
 floor. So every entry this script will use has real name agreement, not just a
-shared ZIP; that clamp is what stops same-building neighbours matching.
+shared ZIP; that clamp is what stops same-building neighbors matching.
 
 Worth knowing before raising the floor: `backfill_geocodes.py` — the paid job
 this replaces — takes the FIRST Text Search result with no name scoring at all,

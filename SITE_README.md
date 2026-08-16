@@ -24,6 +24,33 @@ npm run build
 Deploy `dist/` to Cloudflare Pages or Vercel (build command `npm run build`,
 output dir `dist`). Set the same env vars in the host's build settings.
 
+### American English is enforced by the build
+
+`scripts/us-english.mjs` runs before `astro build`. A British spelling fails the
+build rather than shipping — this is a US site for US readers on US federal
+data, and the spellings had drifted far enough to reach page copy — the map
+told people a ZIP was not recognised. <!-- us-english-ok -->
+
+```bash
+npm run lint:spelling   # scan
+npm run fix:spelling    # rewrite in place
+```
+
+It matches **whole words from an explicit list**, never a prefix rule: the
+obvious `/\bcharacteris/ → characteriz` turns "characteristics" into
+"characteriztics". Words correct in both dialects (advertise, exercise,
+supervise, analysis, and *analyses* as the plural noun — as in the research
+index's "Original analyses of…") are absent from the list by construction.
+
+**Escape hatch: `us-english-ok` in a comment on that line**, per line. It exists
+for real data: `restore_obvious_matches.py`'s `STOP` set deliberately keeps the
+British spelling of "center" because clinics spell their names that way, and
+the first pass of this gate quietly collapsed it into a duplicate — a silent
+loss of matching coverage. Anything that is a *value* rather than prose
+deserves that scrutiny before you accept a fix.
+
+The same file lives in the `primary-source` repo. Keep the two identical.
+
 ### Clinic website links (Safe Browsing)
 
 Outbound links to clinics' own websites (verified profiles + `sameAs` in the

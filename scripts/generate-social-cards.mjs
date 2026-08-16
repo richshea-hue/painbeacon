@@ -87,7 +87,7 @@ async function makeCard(outFile, { eyebrow, title, footer }) {
     return;
   }
   // Spine art: portrait, spine slightly right of center — cover-crop to square.
-  const bg = await sharp(ART).resize(SIZE, SIZE, { fit: 'cover', position: 'centre' }).toBuffer();
+  const bg = await sharp(ART).resize(SIZE, SIZE, { fit: 'cover', position: 'center' }).toBuffer();
   // Logo (cream on transparent) scaled for the top-left corner.
   const logo = await sharp(LOGO, { density: 300 }).resize({ width: 400 }).png().toBuffer();
 

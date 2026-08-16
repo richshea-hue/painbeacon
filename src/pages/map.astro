@@ -350,7 +350,7 @@ const crumbs = [
     // Leaflet.markercluster 1.5.3 are vendored under /vendor/leaflet/ (copied
     // from the npm dist files) so the site's flagship map has no third-party
     // script dependency. The container here is NOT .clinic-map on purpose —
-    // Base's per-page CDN loader must not also initialise it.
+    // Base's per-page CDN loader must not also initialize it.
     (function () {
       var el = document.getElementById('natmap');
       if (!el) return;
@@ -536,7 +536,7 @@ const crumbs = [
         function goNearestToZip(zip) {
           status.textContent = 'Finding clinics near ' + zip + '…';
           return zipCentroid(zip).then(function (c) {
-            if (!c) { status.textContent = zip + " isn't a recognised ZIP code."; return; }
+            if (!c) { status.textContent = zip + " isn't a recognized ZIP code."; return; }
             var ranked = rows
               .map(function (r, i) { return { i: i, d: haversine(c[0], c[1], r[0], r[1]) }; })
               .sort(function (a, b) { return a.d - b.d; });

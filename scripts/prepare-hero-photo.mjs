@@ -1,7 +1,7 @@
 // Build the homepage hero photo set from one source image.
 //
 //   node scripts/prepare-hero-photo.mjs --src <source.jpg> --source <pexels-url-or-id>
-//   node scripts/prepare-hero-photo.mjs --src <source.jpg> --source <pexels-url-or-id> --position centre
+//   node scripts/prepare-hero-photo.mjs --src <source.jpg> --source <pexels-url-or-id> --position center
 //
 // --source is REQUIRED (Pexels photo URL, numeric id, or "manual:<note>"): the
 // photo is checked against data/image-registry.json and refused if any article
@@ -20,7 +20,7 @@
 // shorter file than the desktop background.
 //
 // --position picks the crop anchor: "attention" (default, sharp's saliency
-// detector), "centre", "north", "east", etc. Check the result — saliency
+// detector), "center", "north", "east", etc. Check the result — saliency
 // sometimes locks onto a bright window instead of the face.
 //
 // Swapping the hero photo later is this one command plus a commit. Source
@@ -44,7 +44,7 @@ const src = opt('src');
 const sourceRef = opt('source');
 if (!src || !sourceRef) {
   console.error(
-    'usage: node scripts/prepare-hero-photo.mjs --src <source.jpg> --source <pexels-url-or-id> [--position attention|centre|north|…]'
+    'usage: node scripts/prepare-hero-photo.mjs --src <source.jpg> --source <pexels-url-or-id> [--position attention|center|north|…]'
   );
   process.exit(1);
 }

@@ -105,7 +105,7 @@ def build_zip_map(counties):
     overlap when a ZCTA spans county lines (the standard assignment rule)."""
     raw = fetch(ZCTA_REL_URL).decode("utf-8", errors="replace")
     best = {}  # zip -> (arealand, fips)
-    orphans = {}  # zip -> set of state fips whose counties we did not recognise
+    orphans = {}  # zip -> set of state fips whose counties we did not recognize
     for row in csv.DictReader(io.StringIO(raw), delimiter="|"):
         z = row["GEOID_ZCTA5_20"].strip()
         fips = row["GEOID_COUNTY_20"].strip()

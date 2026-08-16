@@ -306,7 +306,7 @@ const blocks = [organizationLd, ...(Array.isArray(jsonld) ? jsonld : [jsonld])].
             // reads as a single clinic. Group them onto one pin that carries a
             // count and lists every practice in its popup. Grouping rather than
             // scattering the pins keeps each clinic on its real coordinates.
-            // 4 decimal places is about 11m: tight enough to keep neighbouring
+            // 4 decimal places is about 11m: tight enough to keep neighboring
             // practices apart, loose enough to catch the slightly different
             // geocodes one building can produce.
             var groups = {};

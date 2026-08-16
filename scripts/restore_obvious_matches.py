@@ -34,11 +34,11 @@ until a real Places URL is fetched alongside the hours.
 
 The matching rule
 -----------------
-Normalise both names (case-fold, strip punctuation, drop legal-form and generic
+Normalize both names (case-fold, strip punctuation, drop legal-form and generic
 words: LLC/PC/INC/PLLC/LTD/... plus the/of/and/associates/center/clinic/group,
 the same list enrich_places.py uses), singularise tokens, then require EITHER:
 
-  ratio   >= 0.88   difflib similarity on the normalised strings, which forgives
+  ratio   >= 0.88   difflib similarity on the normalized strings, which forgives
                     typos and small spelling differences
   jaccard >= 0.80   token-set overlap, which forgives word ORDER and trailing
                     descriptors
@@ -106,7 +106,9 @@ STOP = {
     "llc", "lc", "pc", "pa", "pllc", "plc", "inc", "ltd", "llp", "lp", "corp",
     "corporation", "co", "company", "md", "do", "dba",
     "the", "of", "and", "associates", "associate", "association",
-    "center", "centers", "centre", "clinic", "clinics", "group",
+    # The British spelling turns up in real clinic names, so it belongs in the
+    # stop set regardless of house style — hence the marker on the next line.
+    "center", "centers", "centre", "clinic", "clinics", "group",  # us-english-ok
 }
 
 
