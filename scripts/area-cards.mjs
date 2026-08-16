@@ -92,6 +92,16 @@ const render = async (svg, file) => {
   return buf.length;
 };
 
+/**
+ * NEVER fail the deploy over a social card.
+ *
+ * This runs after `astro build` in the same npm script, so an exception here
+ * would take the whole build down and the site would stop shipping — trading a
+ * working deploy for a cosmetic asset. Cards are nice; publishing is the job.
+ * Anything that goes wrong is reported loudly and exits 0 with the built site
+ * intact, falling back to the generic card that every page had before.
+ */
+async function main() {
 const clinics = await getClinics();
 const primaries = clinics.filter((c) => c.isPrimary);
 const byState = groupBy(primaries, (c) => c.stateSlug);
@@ -150,3 +160,13 @@ console.log(`area cards: ${count}`);
 console.log(`  total ${(bytes / 1024 / 1024).toFixed(1)} MB · average ${(bytes / count / 1024).toFixed(1)} KB`);
 console.log(`  ${((Date.now() - started) / 1000).toFixed(0)}s`);
 console.log(`-> dist/social/area/`);
+}
+
+try {
+  await main();
+} catch (err) {
+  console.error('\n!! area card generation FAILED — deploying without them.');
+  console.error('   Pages fall back to the generic site card; nothing else is affected.');
+  console.error(`   ${err?.stack || err}`);
+  process.exit(0);
+}
