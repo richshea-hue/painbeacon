@@ -8,5 +8,9 @@ stannp_*.csv
 Thumbs.db
 /scripts/places_hours_cache
 /scripts/.cache
+# Census gazetteer source for scripts/build_zip_centroids.mjs — 6.4 MB and
+# regenerable from census.gov. The generated public/zip/*.json IS committed,
+# so a deploy never depends on having this file.
+/data/2020_Gaz_zcta_national.txt
 scripts/outreach/out/
 __pycache__/

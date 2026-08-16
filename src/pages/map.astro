@@ -498,6 +498,60 @@ const crumbs = [
           status.textContent = '';
         }
 
+        // ---- ZIP centroids -----------------------------------------------
+        // Sharded by first digit (public/zip/{0..9}.json, ~80 KB each) and
+        // fetched only when a searcher actually types a full ZIP, so ordinary
+        // visits pay nothing. Built by scripts/build_zip_centroids.mjs from the
+        // Census ZCTA gazetteer.
+        var zipShards = {};
+        function zipCentroid(zip) {
+          var shard = zip.charAt(0);
+          if (zipShards[shard]) return Promise.resolve(zipShards[shard][zip] || null);
+          return fetch('/zip/' + shard + '.json')
+            .then(function (r) { return r.ok ? r.json() : {}; })
+            .catch(function () { return {}; })
+            .then(function (obj) {
+              zipShards[shard] = obj;
+              return obj[zip] || null;
+            });
+        }
+
+        function haversine(aLat, aLng, bLat, bLng) {
+          var R = 3958.8, toRad = function (x) { return (x * Math.PI) / 180; };
+          var dLat = toRad(bLat - aLat), dLng = toRad(bLng - aLng);
+          var h = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                  Math.cos(toRad(aLat)) * Math.cos(toRad(bLat)) *
+                  Math.sin(dLng / 2) * Math.sin(dLng / 2);
+          return 2 * R * Math.asin(Math.sqrt(h));
+        }
+
+        /**
+         * Last-resort ZIP handling: locate the ZIP itself and fit to the
+         * nearest clinics by real distance. A 3-digit prefix is administrative,
+         * not spatial — Arlington VA's nearest clinics sit in DC's 200xx, and
+         * 138 real Census prefixes (4,449 ZIPs, Atlantic City among them) have
+         * no clinic at all, which the prefix fallback can only answer with a
+         * dead end.
+         */
+        function goNearestToZip(zip) {
+          status.textContent = 'Finding clinics near ' + zip + '…';
+          return zipCentroid(zip).then(function (c) {
+            if (!c) { status.textContent = zip + " isn't a recognised ZIP code."; return; }
+            var ranked = rows
+              .map(function (r, i) { return { i: i, d: haversine(c[0], c[1], r[0], r[1]) }; })
+              .sort(function (a, b) { return a.d - b.d; });
+            if (!ranked.length) { status.textContent = 'No clinics on the map.'; return; }
+            var take = ranked.slice(0, 10);
+            var bounds = L.latLngBounds(
+              take.map(function (x) { return [rows[x.i][0], rows[x.i][1]]; }).concat([[c[0], c[1]]])
+            );
+            map.fitBounds(bounds, { padding: [46, 46], maxZoom: 12 });
+            var nearest = Math.round(ranked[0].d);
+            status.textContent = 'No clinic in ' + zip + ' — nearest is ' +
+              nearest + (nearest === 1 ? ' mile' : ' miles') + ' away.';
+          });
+        }
+
         function matches(query) {
           var s = query.trim().toLowerCase();
           if (!s) return { cities: [], clinics: [], zip: null, state: null };
@@ -579,8 +633,15 @@ const crumbs = [
               add('zip', 'Near ' + m.zip.q, m.zip.near.length + ' clinics in the ' + m.zip.q.slice(0, 3) + 'xx area', function () {
                 fitRows(m.zip.near, 11, 'No clinic right in ' + m.zip.q + ' — showing ' + m.zip.near.length + ' nearby');
               });
+            } else if (/^\d{5}$/.test(m.zip.q)) {
+              // Whole 3-digit area is empty. Locate the ZIP and rank by real
+              // distance rather than dead-ending — this is exactly the searcher
+              // who most needs the nearest clinic shown.
+              add('zip', 'Nearest clinics to ' + m.zip.q, 'no clinic in this area', function () {
+                goNearestToZip(m.zip.q);
+              });
             } else {
-              group('No clinics on the map near that ZIP');
+              group('Keep typing the full ZIP code');
               any = true;
             }
           }
@@ -603,6 +664,11 @@ const crumbs = [
 
         var t;
         q.addEventListener('input', function () {
+          // Clear the status line as soon as the query changes. Otherwise the
+          // result of the PREVIOUS search stays on screen while a new one is
+          // typed — so the page can read "No clinic right in 22213" while the
+          // box says 08401, describing a ZIP the user has already moved on from.
+          status.textContent = '';
           clearTimeout(t);
           t = setTimeout(function () { render(matches(q.value)); }, 120);
         });
