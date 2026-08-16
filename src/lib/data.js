@@ -5,7 +5,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import sampleData from '../data/sample.json';
+// Import attribute so this module also loads under plain Node — the post-build
+// card generator imports getClinics() directly, outside Vite, which resolves a
+// bare JSON import on its own. Vite and Node 20+ both accept `with`.
+import sampleData from '../data/sample.json' with { type: 'json' };
 import { normalizeWebsite, checkWebsites } from './safebrowsing.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));

@@ -61,6 +61,10 @@ const crumbs = [
 ---
 <Base title={`Pain clinics in ${zoneLabel}, ${c0.state}`}
       description={`${clinics.length} pain medicine clinics in the ${zoneLabel}, ${c0.state} area, ranked by board certification, interventional capability, and verified reviews.`}
+      ogImage={`/social/area/${state}-${zone}.png`}
+      ogImageAlt={`${clinics.length} pain clinics in the ${zoneLabel}, ${c0.state} area — PainBeacon`}
+      ogImageWidth={1200}
+      ogImageHeight={630}
       jsonld={[breadcrumbLd(crumbs), itemListLd(ranked, `Pain clinics in ${zoneLabel}, ${c0.state}`)]}>
   <div class="wrap">
     <Breadcrumbs items={crumbs} />
