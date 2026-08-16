@@ -24,7 +24,44 @@ const twitterCard = ogImageWidth > ogImageHeight ? 'summary_large_image' : 'summ
 
 const fullTitle = title ? `${title} — ${SITE.name}` : `${SITE.name} — ${SITE.tagline}`;
 const canonicalUrl = canonical || new URL(Astro.url.pathname, SITE.url).href;
-const blocks = Array.isArray(jsonld) ? jsonld : [jsonld];
+
+/**
+ * Organization, emitted on every page with a stable @id.
+ *
+ * The socials config already said these were "emitted as sameAs in the site's
+ * Organization JSON-LD" — but no Organization block existed, so sameAs was
+ * never actually published and every page asserted an unlinked publisher.
+ * Other blocks can now reference `${SITE.url}/#organization` instead of
+ * repeating a bare publisher name.
+ *
+ * Deliberately NO author/reviewer claim here: SITE.medicalReviewer.active is
+ * false, and the config is explicit that a fabricated reviewer must never
+ * appear on a health site. When a real clinician is retained, add
+ * `reviewedBy` here and nowhere else.
+ */
+const organizationLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  '@id': `${SITE.url}/#organization`,
+  name: SITE.name,
+  legalName: SITE.legalName,
+  url: `${SITE.url}/`,
+  description: SITE.description,
+  logo: {
+    '@type': 'ImageObject',
+    url: `${SITE.url}/brand/painbeacon-logo-horizontal-dark.svg`,
+    caption: `${SITE.name} logo`,
+  },
+  sameAs: [SITE.socials.x, SITE.socials.facebook].filter(Boolean),
+  publishingPrinciples: `${SITE.url}/how-we-rank/`,
+  knowsAbout: [
+    'Pain management clinics',
+    'Interventional pain medicine',
+    'Board-certified pain specialists',
+  ],
+};
+
+const blocks = [organizationLd, ...(Array.isArray(jsonld) ? jsonld : [jsonld])].filter(Boolean);
 ---
 
 <!doctype html>
