@@ -71,6 +71,20 @@ The rule: a prefix chooses **which** answer, never **whether** to answer.
   `/map/?q=56201` answered "No clinics on the map near 56201" and then listed
   Brandon FL at 1,181 miles.
 
+**Locating a ZIP switches the list to distance order** and moves the sort
+toggle with it, so the control never disagrees with the ordering. Without it the
+status line read "nearest is 45 miles away" while the first card said 103 —
+both true, because the cards were in best-match order, and confusing precisely
+because the two numbers sat next to each other. It is a default, not a lock;
+"Best match" stays one click away.
+
+**`fitBounds` and `setView` are followed by an explicit `updateList()`.** Leaflet
+fires no `moveend` when the view it is asked for is the view it is already on,
+and the list then keeps a render made before the anchor existed — every row
+saying "from map center" under a status line naming a ZIP. The move event is an
+optimization, not a guarantee. This was found by logging `updateList` calls and
+seeing exactly one, at init.
+
 **Distances are measured from the searched ZIP** (`distAnchor`), not the map
 center. Fitting the map to a Minnesota ZIP and a Rhode Island clinic puts the
 center halfway between them, so the status line said "nearest is 1,200 miles
