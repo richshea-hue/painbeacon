@@ -526,11 +526,16 @@ const total = primaries.length;
     const track = (e) => (window.pbTrack || (() => {}))(e);
 
     // ZIP -> zone lookup. Fetches the build-time /zip3-zones.json (cached) and
-    // maps the 3-digit prefix to a "state/zone" segment. The lookup stays the
-    // validity check either way: a covered ZIP typed in the hero goes to the
-    // MAP centered on it; the ?zip= deep link (ads/email) keeps landing on the
-    // zone page directly; an uncovered ZIP gets the inline hint instead of a
-    // dead-end navigation.
+    // maps the 3-digit prefix to a "state/zone" segment.
+    //
+    // THE PREFIX DECIDES ROUTING, NOT WHETHER TO ROUTE. A 3-digit prefix is
+    // administrative, not spatial, and 123 real Census prefixes — thousands of
+    // ZIPs across Minnesota, Iowa, Montana, Missouri, Nebraska and Maine — hold
+    // no clinic at all. Gating navigation on coverage told a searcher in
+    // Willmar MN "we don't list clinics for that ZIP yet" while the map could
+    // locate the ZIP and rank every clinic by real distance. Every full ZIP now
+    // goes to the map; only the ?zip= deep link (ads, email) still prefers the
+    // zone page, and only when the prefix is actually covered.
     let zoneMap = null;
     function loadZoneMap() {
       if (zoneMap) return Promise.resolve(zoneMap);
@@ -550,11 +555,9 @@ const total = primaries.length;
         const seg = m[z3];
         track({ source: source || 'hero', query: digits, kind: 'zip', zip3: z3,
                 matched: !!seg, zone: seg || null });
-        if (seg) {
-          window.location.href = dest === 'zone' ? `/pain-clinics/${seg}/` : mapHref(digits);
-          return;
-        }
-        hint('We don\'t list clinics for that ZIP yet. <a href="/pain-clinics/">Browse by state</a>.');
+        window.location.href = dest === 'zone' && seg
+          ? `/pain-clinics/${seg}/`
+          : mapHref(digits);
       });
     }
 

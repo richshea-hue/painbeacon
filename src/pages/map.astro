@@ -481,7 +481,24 @@ const crumbs = [
         var status = document.getElementById('natmap-status');
         var locate = document.getElementById('natmap-locate');
 
+        /**
+         * When a search located a ZIP, distances are measured FROM THAT ZIP
+         * rather than from the map center.
+         *
+         * Without it the two numbers on screen disagree: fitting the map to a
+         * ZIP in Minnesota and its nearest clinic puts the center halfway
+         * between them, so the status line says "nearest is 1,200 miles away"
+         * while every row underneath says "611 mi from map center". Both are
+         * true; only one answers the question, and the smaller number is the
+         * one a reader takes as the distance to drive.
+         *
+         * Cleared as soon as the reader moves the map or searches something
+         * else, because the anchor stops being where they are.
+         */
+        var distAnchor = null;
+
         function fitRows(idxs, maxZoom, label) {
+          distAnchor = null;
           if (!idxs.length) return;
           var bounds = L.latLngBounds(idxs.map(function (i) { return [rows[i][0], rows[i][1]]; }));
           map.fitBounds(bounds, { padding: [46, 46], maxZoom: maxZoom || 12 });
@@ -489,6 +506,7 @@ const crumbs = [
         }
 
         function goClinic(i) {
+          distAnchor = null;
           var r = rows[i];
           map.setView([r[0], r[1]], 15);
           // Open the popup once clustering has resolved the marker at this zoom.
@@ -545,6 +563,9 @@ const crumbs = [
             var bounds = L.latLngBounds(
               take.map(function (x) { return [rows[x.i][0], rows[x.i][1]]; }).concat([[c[0], c[1]]])
             );
+            // Set BEFORE fitBounds — that call fires moveend, and updateList
+            // must already know where to measure from.
+            distAnchor = { lat: c[0], lng: c[1], label: zip };
             map.fitBounds(bounds, { padding: [46, 46], maxZoom: 12 });
             var nearest = Math.round(ranked[0].d);
             status.textContent = 'No clinic in ' + zip + ' — nearest is ' +
@@ -693,6 +714,9 @@ const crumbs = [
           status.textContent = 'Finding your location — your browser may ask permission first…';
           navigator.geolocation.getCurrentPosition(
             function (pos) {
+              // Measure from the reader's actual position, which beats both the
+              // map center and any ZIP they searched before pressing this.
+              distAnchor = { lat: pos.coords.latitude, lng: pos.coords.longitude, label: 'you' };
               map.setView([pos.coords.latitude, pos.coords.longitude], 11);
               status.textContent = 'Showing clinics near you.';
             },
@@ -749,7 +773,8 @@ const crumbs = [
 
         function updateList() {
           var bounds = map.getBounds();
-          var center = map.getCenter();
+          var center = distAnchor || map.getCenter();
+          var fromLabel = distAnchor ? distAnchor.label : 'map center';
           var inView = [];
           rows.forEach(function (r, i) {
             if (!bounds.contains([r[0], r[1]])) return;
@@ -830,7 +855,7 @@ const crumbs = [
               (sponsored ? '<span class="nm-sponsor-chip">Sponsored</span>' : '') +
               '<h3>' + (r[3] ? '<a href="/clinic/' + encodeURIComponent(r[3]) + '/">' + esc(r[2]) + '</a>' : esc(r[2])) + '</h3>' +
               '<p class="nm-card-meta">' + esc(r[4]) + (r[5] ? ' ' + r[5] : '') + ' · ' +
-              (d < 10 ? d.toFixed(1) : Math.round(d)) + ' mi from map center</p>' +
+              (d < 10 ? d.toFixed(1) : Math.round(d)) + ' mi from ' + fromLabel + '</p>' +
               (tags.length ? '<p class="nm-card-tags">' + tags.join(' ') + '</p>' : '') +
               '</div>' +
               '<button type="button" class="nm-card-show" data-show="' + i + '">Show on map</button>' +
@@ -852,6 +877,31 @@ const crumbs = [
           clearTimeout(listTimer);
           listTimer = setTimeout(updateList, 200);
         });
+        // Touching the map is user-initiated — fitBounds/setView never are — so
+        // it is the honest signal that the searched ZIP is no longer the frame
+        // of reference. Distances go back to the map center from here.
+        //
+        // Two listeners on purpose. `dragend` is the precise one, but it lives
+        // inside Leaflet's Draggable and does not fire for keyboard panning or
+        // for a synthetic drag; `pointerdown` on the container is a plain DOM
+        // event that fires for any real interaction. Belt and braces on a
+        // label that would otherwise quietly misstate a distance.
+        //
+        // NOT zoomend — fitBounds() zooms, so it would clear the anchor that
+        // goNearestToZip() had just set, one frame after setting it.
+        map.on('dragend', function () { distAnchor = null; });
+        map.getContainer().addEventListener(
+          'pointerdown',
+          function (e) {
+            // Zoom buttons and the attribution live inside the container.
+            // Zooming around a searched ZIP is not "I've moved on from it" —
+            // caught this by watching the label flip to "map center" on a
+            // plain zoom-out.
+            if (e.target.closest && e.target.closest('.leaflet-control')) return;
+            distAnchor = null;
+          },
+          { passive: true }
+        );
         updateList();
 
         // Card -> map: "Show on map" zooms to the pin and opens its popup.
@@ -910,7 +960,14 @@ const crumbs = [
           if (m.state) fitRows(byState[m.state], 7, (STATES[m.state] || m.state));
           else if (m.zip && m.zip.idxs.length) fitRows(m.zip.idxs, 12, m.zip.idxs.length + ' clinics near ' + m.zip.q);
           else if (m.zip && m.zip.near.length) fitRows(m.zip.near, 11, 'No clinic right in ' + m.zip.q + ' — showing ' + m.zip.near.length + ' nearby');
-          else if (m.zip) status.textContent = 'No clinics on the map near ' + m.zip.q + '.';
+          // Whole 3-digit area empty: locate the ZIP and rank by real distance,
+          // exactly as the typed-suggestion path already does. This branch was
+          // left behind when goNearestToZip() was added — the deep link answered
+          // "No clinics on the map near 56201" and then listed Brandon FL at
+          // 1,181 miles, sorted from a map center nowhere near Minnesota. 123
+          // real Census prefixes have no clinic, so this is not a rare corner.
+          else if (m.zip && /^\d{5}$/.test(m.zip.q)) goNearestToZip(m.zip.q);
+          else if (m.zip) status.textContent = 'Keep typing the full ZIP code.';
           else if (m.cities.length) fitRows(byCity[m.cities[0]], 12, m.cities[0] + ' — ' + byCity[m.cities[0]].length + ' on map');
           else if (m.clinics.length) goClinic(m.clinics[0]);
         } else if (location.hash === '#near-me') {

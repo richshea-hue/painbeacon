@@ -51,6 +51,38 @@ deserves that scrutiny before you accept a fix.
 
 The same file lives in the `primary-source` repo. Keep the two identical.
 
+### A ZIP is a location, not a filter
+
+Three-digit ZIP prefixes are administrative, not spatial. **123 real Census
+prefixes hold no clinic at all** — thousands of ZIPs across Minnesota, Iowa,
+Montana, Missouri, Nebraska and Maine — so any code path that decides *whether
+to answer* by looking up a prefix will dead-end on real people in real towns.
+
+The rule: a prefix chooses **which** answer, never **whether** to answer.
+
+- **`index.astro`** sends every full ZIP to the map. The `zip3-zones.json`
+  lookup only decides whether the `?zip=` deep link (ads, email) prefers the
+  zone page. It used to gate navigation entirely, so a searcher in Willmar MN
+  got "we don't list clinics for that ZIP yet" while the map could have located
+  them and ranked every clinic by real distance.
+- **`map.astro`** falls back to `goNearestToZip()`, which geocodes the ZIP from
+  the Census centroids and ranks by haversine. The typed-suggestion path always
+  did this; the `?q=` deep-link branch was left behind when it was added, so
+  `/map/?q=56201` answered "No clinics on the map near 56201" and then listed
+  Brandon FL at 1,181 miles.
+
+**Distances are measured from the searched ZIP** (`distAnchor`), not the map
+center. Fitting the map to a Minnesota ZIP and a Rhode Island clinic puts the
+center halfway between them, so the status line said "nearest is 1,200 miles
+away" while every row said "611 mi from map center" — both true, and the
+smaller number is the one a reader takes as the drive. The anchor is released
+when the reader touches the map surface, but **not** when they use the zoom
+control (which lives inside the Leaflet container, so a naive `pointerdown`
+listener catches it — that bug was caught by watching the label flip on a plain
+zoom-out).
+
+City search already routed to the map on both paths and needed no change.
+
 ### Clinic website links (Safe Browsing)
 
 Outbound links to clinics' own websites (verified profiles + `sameAs` in the
