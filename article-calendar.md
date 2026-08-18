@@ -10,7 +10,7 @@ unchecked one. Keep one topic per line.
 - [x] Your first pain clinic appointment (Patient Guides) — 2026-07-16
 - [x] Does insurance cover pain management? Referrals, prior auth, and costs (Patient Guides) — 2026-07-22
 - [x] Red flags: how to spot a pill mill before you book (Choosing a Clinic) — 2026-07-30
-- [ ] How we rank pain clinics — and why nobody can buy a spot (Inside the Rankings)
+- [x] How we rank pain clinics — and why nobody can buy a spot (Inside the Rankings) — 2026-08-18
 - [ ] Epidural steroid injections: what the evidence actually says (Treatments Explained)
 - [ ] Sciatica: when to see a pain specialist vs. wait it out (Patient Guides)
 - [ ] Pain management without opioids: what modern clinics actually offer (Treatments Explained)

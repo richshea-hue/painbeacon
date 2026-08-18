@@ -159,6 +159,46 @@
       "note": "backfilled 2026-08-01 — shipped before the registry existed, Pexels id unknown; only file hashes guard this one"
     },
     {
+      "page": "news/how-we-rank-pain-clinics",
+      "role": "hero",
+      "pexels_id": 6129153,
+      "src_url": "https://www.pexels.com/photo/6129153/",
+      "photographer": null,
+      "source_md5": "e8a825407157c2cc2668f4d0369f5634",
+      "files": [
+        {
+          "path": "/images/news/how-we-rank-pain-clinics/pain-clinic-physicians-reviewing-patient-record-hero.jpg",
+          "md5": "a129df8150a09bec44bf5c43f8925244",
+          "bytes": 75711
+        },
+        {
+          "path": "/images/news/how-we-rank-pain-clinics/pain-clinic-physicians-reviewing-patient-record-thumb.jpg",
+          "md5": "9a36963fbb39673d347e41e9197b6d96",
+          "bytes": 28242
+        },
+        {
+          "path": "/images/news/how-we-rank-pain-clinics/pain-clinic-physicians-reviewing-patient-record-share.jpg",
+          "md5": "47111f5ef1bcb927c506d840d1c29475",
+          "bytes": 78901
+        }
+      ]
+    },
+    {
+      "page": "news/how-we-rank-pain-clinics",
+      "role": "inline",
+      "pexels_id": 7579823,
+      "src_url": "https://www.pexels.com/photo/7579823/",
+      "photographer": null,
+      "source_md5": "a5f4491d63f2f4d18e23c72e02c3e94d",
+      "files": [
+        {
+          "path": "/images/news/how-we-rank-pain-clinics/doctor-patient-consultation-clinic-office.jpg",
+          "md5": "074ef7390662dd0b3ffefb72b67bc39c",
+          "bytes": 69623
+        }
+      ]
+    },
+    {
       "page": "news/spot-a-pill-mill-red-flags",
       "role": "hero",
       "pexels_id": null,
