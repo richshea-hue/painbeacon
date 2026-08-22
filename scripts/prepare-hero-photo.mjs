@@ -53,7 +53,7 @@ if (!src || !sourceRef) {
 const reg = loadRegistry();
 const srcInfo = parseSource(sourceRef);
 const sourceMd5 = md5File(src);
-assertUnused(reg, { pexelsId: srcInfo.pexelsId, sourceMd5, page: 'home-hero' });
+assertUnused(reg, { ...srcInfo, sourceMd5, page: 'home-hero' });
 
 const positionArg = opt('position') || 'attention';
 const position = positionArg === 'attention' ? sharp.strategy.attention : positionArg;

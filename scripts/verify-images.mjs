@@ -27,9 +27,14 @@ const byHash = new Map();
 for (const s of reg.sources) {
   const tag = `${s.page} (${s.role})`;
   if (s.pexels_id != null) {
-    const prev = byId.get(s.pexels_id);
+    const prev = byId.get(`pexels:${s.pexels_id}`);
     if (prev) problems.push(`Pexels ${s.pexels_id} used by both ${prev} and ${tag}`);
-    else byId.set(s.pexels_id, tag);
+    else byId.set(`pexels:${s.pexels_id}`, tag);
+  }
+  if (s.unsplash_id != null) {
+    const prev = byId.get(`unsplash:${s.unsplash_id}`);
+    if (prev) problems.push(`Unsplash ${s.unsplash_id} used by both ${prev} and ${tag}`);
+    else byId.set(`unsplash:${s.unsplash_id}`, tag);
   }
   if (s.source_md5) {
     const prev = byHash.get(s.source_md5);
