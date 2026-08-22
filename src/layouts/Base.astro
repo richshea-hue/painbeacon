@@ -9,15 +9,19 @@ const {
   canonical,
   jsonld = [],
   noindex = false,
-  // Social share image. 1200×1200 (1:1 survives every platform uncropped).
-  // Defaults to the site card; article pages pass their own generated card
-  // (see scripts/generate-social-cards.mjs). Pages with a wide card — a chart
-  // or map that would be unreadable in a square thumbnail — pass their own
-  // dimensions, which promotes the X card to summary_large_image.
-  ogImage = '/social/painbeacon-card.png',
-  ogImageAlt = `${SITE.name} — ${SITE.tagline}`,
+  // Social share image. Defaults to the site card — a 1200×630 shot of the home
+  // page itself (see scripts/home-share-card.mjs), which is the 1.91:1 shape
+  // every link preview is built around. The old default was a separate 1200×1200
+  // graphic, and every platform cropped it to this shape, cutting the headline off.
+  //
+  // Pages with art of their own pass it here. Anything that is NOT 1200×630 —
+  // notably the square article cards — must pass its own width and height too,
+  // or it will claim a shape it does not have. The ratio also picks the X card
+  // type below: wider than tall gets summary_large_image, square gets summary.
+  ogImage = '/social/painbeacon-home.png',
+  ogImageAlt = `The ${SITE.name} home page — search a city or ZIP to find board-certified pain clinics near you`,
   ogImageWidth = 1200,
-  ogImageHeight = 1200,
+  ogImageHeight = 630,
 } = Astro.props;
 const ogImageUrl = new URL(ogImage, SITE.url).href;
 const twitterCard = ogImageWidth > ogImageHeight ? 'summary_large_image' : 'summary';

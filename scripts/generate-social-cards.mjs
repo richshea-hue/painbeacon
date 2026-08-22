@@ -1,15 +1,18 @@
-// Generate 1200×1200 social-share cards (og:image) from the brand spine art.
+// Generate 1200×1200 article social-share cards (og:image) from the brand spine art.
 //
 //   node scripts/generate-social-cards.mjs           # make missing cards
 //   node scripts/generate-social-cards.mjs --force   # regenerate all
 //
 // Outputs to public/social/:
-//   painbeacon-card.png        site-wide default card (home + every non-article page)
 //   <article-slug>.png         one card per src/content/articles/*.md (title + category)
 //
 // Square (1:1) on purpose — Facebook/LinkedIn/WhatsApp crop tall or wide images,
-// but a 1200×1200 card survives every platform uncropped. Run this after adding
-// a weekly article, then commit the new PNG alongside the .md.
+// but a 1200×1200 card survives every platform uncropped, which is what a card
+// carrying a long headline needs. Run this after adding a weekly article, then
+// commit the new PNG alongside the .md.
+//
+// The site-wide default card is NOT made here. It is a 1200×630 shot of the home
+// page — see scripts/home-share-card.mjs.
 import { readFileSync, readdirSync, mkdirSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -102,13 +105,6 @@ async function makeCard(outFile, { eyebrow, title, footer }) {
 }
 
 mkdirSync(OUT_DIR, { recursive: true });
-
-// Site-wide default card.
-await makeCard('painbeacon-card.png', {
-  eyebrow: 'Independent national directory',
-  title: 'Find the right pain clinic near you.',
-  footer: 'painbeacon.com',
-});
 
 // One card per article.
 for (const f of readdirSync(ARTICLES).filter((f) => f.endsWith('.md'))) {
