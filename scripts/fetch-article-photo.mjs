@@ -30,10 +30,11 @@
 //
 // The downloaded source is written OUTSIDE public/ and is never committed —
 // only the crops prepare-article-images.mjs makes from it are.
-import { mkdirSync, writeFileSync, existsSync, readdirSync, statSync } from 'node:fs';
+import { mkdirSync, writeFileSync, unlinkSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import sharp from 'sharp';
 import { loadRegistry, md5, md5File, root } from './lib/image-registry.mjs';
+import { dhash, hamming, REUSE_MAX, REVIEW_MAX } from './lib/perceptual-hash.mjs';
 
 const SRC_DIR = join(root, '.photo-src'); // gitignored scratch, not public/
 const MIN_WIDTH = 1600; // enough for the 1600x900 hero without upscaling
@@ -109,6 +110,8 @@ async function searchUnsplash(q, perPage = 30) {
     photographer: p.user?.name ?? null,
     alt: p.alt_description || p.description || null,
     pageUrl: p.links?.html ?? `https://unsplash.com/photos/${p.id}`,
+    profileUrl: p.user?.links?.html ?? null,
+    downloadLocation: p.links?.download_location ?? null,
     previewUrl: p.urls?.small,
     fullUrl: p.urls?.full,
     used: usedUnsplash.has(p.id),
@@ -131,6 +134,8 @@ async function fetchById(spec) {
       photographer: p.user?.name ?? null,
       alt: p.alt_description || p.description || null,
       pageUrl: p.links?.html ?? `https://unsplash.com/photos/${p.id}`,
+      profileUrl: p.user?.links?.html ?? null,
+      downloadLocation: p.links?.download_location ?? null,
       fullUrl: p.urls?.full,
       used: usedUnsplash.has(p.id),
     };
@@ -286,6 +291,56 @@ mkdirSync(SRC_DIR, { recursive: true });
 const outPath = join(SRC_DIR, `${page.replace(/\//g, '-')}-${chosen.provider}-${chosen.id}.jpg`);
 writeFileSync(outPath, raw);
 
+// PERCEPTUAL CHECK, at pull time. The id and byte checks above only catch a
+// photo used verbatim. They do NOT catch the same shoot at a different frame or
+// crop — that is how the home hero, news/how-to-choose-a-pain-clinic's hero and
+// news/how-we-rank-pain-clinics' inline all ended up being one photo session
+// with three different Pexels ids and three different byte hashes. A reader sees
+// the same picture three times; every exact check saw three unrelated files.
+const candHash = await dhash(outPath);
+const tooClose = [];
+for (const s of reg.sources) {
+  const f = (s.files ?? [])[0];
+  if (!f) continue;
+  const p = join(root, 'public', f.path.replace(/^\//, ''));
+  if (!existsSync(p)) continue;
+  try {
+    const d = hamming(candHash, await dhash(p));
+    if (d <= REVIEW_MAX) tooClose.push({ d, page: `${s.page} (${s.role})` });
+  } catch {
+    /* skip unreadable */
+  }
+}
+tooClose.sort((a, b) => a.d - b.d);
+const blocking = tooClose.filter((t) => t.d <= REUSE_MAX);
+if (blocking.length) {
+  unlinkSync(outPath);
+  console.error(
+    `This is the same photograph the site already uses. Discarded ${outPath.replace(root, '.')}.\n` +
+      blocking.map((t) => `  - dHash distance ${t.d} from ${t.page}`).join('\n') +
+      `\nPick a different photo — a new crop or another frame from the same shoot still reads as a repeat.`
+  );
+  process.exit(1);
+}
+for (const t of tooClose) {
+  console.warn(`! near miss: dHash distance ${t.d} from ${t.page} — look at both before shipping.`);
+}
+
+// Unsplash API Guidelines require an application to hit the photo's
+// download_location endpoint whenever a photo is actually used, the same way a
+// pageview is counted. It is a bare event ping; a failure must not lose the
+// photo we just downloaded, so it is best-effort and only warns.
+if (chosen.provider === 'unsplash' && chosen.downloadLocation) {
+  try {
+    const r = await fetch(chosen.downloadLocation, {
+      headers: { Authorization: `Client-ID ${unsplashKey}` },
+    });
+    console.log(`unsplash download event: ${r.ok ? 'sent' : `FAILED ${r.status}`}`);
+  } catch (e) {
+    console.warn(`! unsplash download event failed: ${e.message}`);
+  }
+}
+
 const sourceRef = chosen.provider === 'unsplash' ? `unsplash:${chosen.id}` : String(chosen.id);
 console.log(`matched       : ${chosenQuery}`);
 console.log(`provider      : ${chosen.provider}`);
@@ -295,6 +350,18 @@ console.log(`page          : ${chosen.pageUrl}`);
 console.log(`wrote         : ${outPath.replace(root, '.')} (${raw.length} bytes, ${chosen.width}px wide)`);
 console.log('\nLOOK AT IT before using it — open the file and confirm it is plausibly a US');
 console.log('clinical setting with no legible foreign-language text or off-brand logos.');
+// Attribution, ready to paste. Unsplash REQUIRES the photographer and Unsplash
+// to be credited with a link back to the photographer's profile; Pexels does not
+// require it, but the same fields render for both.
+console.log('\n--- paste into the article frontmatter ---');
+console.log(`heroCreditName: '${(chosen.photographer ?? '').replace(/'/g, "\\'")}'`);
+if (chosen.profileUrl) console.log(`heroCreditProfile: '${chosen.profileUrl}'`);
+console.log(`heroCreditPhoto: '${chosen.pageUrl}'`);
+console.log(`heroCreditProvider: '${chosen.provider === 'unsplash' ? 'Unsplash' : 'Pexels'}'`);
+if (chosen.provider === 'unsplash' && !chosen.profileUrl) {
+  console.warn('! no photographer profile URL came back — Unsplash requires one; do not ship without it.');
+}
+
 console.log('\n--- then crop and register it ---');
 console.log(
   `node scripts/prepare-article-images.mjs <article-slug> \\\n` +

@@ -25,6 +25,16 @@ const articles = defineCollection({
     // platform crops it, but real photography (user preference over the branded
     // card, which remains the site-wide default for non-article pages).
     shareImg: z.string().optional(),
+    // Hero photo credit. REQUIRED for Unsplash photos: their API Guidelines say
+    // an app must attribute both the photographer and Unsplash, with a link back
+    // to the photographer's profile, and that links back carry utm_source /
+    // utm_medium=referral. Optional for Pexels, whose license does not require
+    // it — we render it anyway when present. scripts/fetch-article-photo.mjs
+    // prints these ready to paste.
+    heroCreditName: z.string().optional(),
+    heroCreditProfile: z.string().optional(), // photographer's profile page
+    heroCreditPhoto: z.string().optional(), // the photo's own page
+    heroCreditProvider: z.enum(['Unsplash', 'Pexels']).optional(),
   }),
 });
 

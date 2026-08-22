@@ -21,6 +21,12 @@ const imageAlt = d.shareImg ? (d.heroAlt || d.title) : (d.imageAlt || d.title);
 const heroImg = d.heroImg;
 const heroAlt = d.heroAlt || d.title;
 
+// Unsplash's API Guidelines require links back to carry utm_source (the app) and
+// utm_medium=referral. Harmless on Pexels links, so the same suffix is used for
+// both rather than branching.
+const utm = '?utm_source=painbeacon&utm_medium=referral';
+const providerHome = { Unsplash: 'https://unsplash.com', Pexels: 'https://www.pexels.com' };
+
 const crumbs = [
   { name: 'Home', href: '/' },
   { name: 'News & guides', href: '/news/' },
@@ -65,6 +71,19 @@ const shares = [
       <img class="article-hero-img" src={heroImg} alt={heroAlt} width="1600" height="900" loading="eager" fetchpriority="high" />
     ) : (
       <img class="article-hero-img" src={image} alt={imageAlt} width="1200" height="1200" loading="eager" />
+    )}
+
+    {d.heroCreditName && d.heroCreditProvider && (
+      <p class="photo-credit">
+        Photo by{' '}
+        {d.heroCreditProfile
+          ? <a href={`${d.heroCreditProfile}${utm}`} rel="noopener">{d.heroCreditName}</a>
+          : d.heroCreditName}
+        {' on '}
+        {d.heroCreditPhoto
+          ? <a href={`${d.heroCreditPhoto}${utm}`} rel="noopener">{d.heroCreditProvider}</a>
+          : <a href={`${providerHome[d.heroCreditProvider]}${utm}`} rel="noopener">{d.heroCreditProvider}</a>}
+      </p>
     )}
 
     <article class="prose article-body">

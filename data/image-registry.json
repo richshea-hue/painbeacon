@@ -196,7 +196,9 @@
           "md5": "074ef7390662dd0b3ffefb72b67bc39c",
           "bytes": 69623
         }
-      ]
+      ],
+      "waived": true,
+      "note": "DUPLICATE SHOOT, must be replaced: this is the same photo session as the home hero and news/how-to-choose-a-pain-clinic hero (same room, same doctor and patient, different frame). Caught 2026-08-22 by the perceptual check in verify-images.mjs at dHash distance 12; the Pexels id and byte hashes all differ, so no exact check could see it. Waived only so the existing page keeps building - swap in an unrelated photo and delete this waiver."
     },
     {
       "page": "news/spot-a-pill-mill-red-flags",

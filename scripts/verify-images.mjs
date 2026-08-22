@@ -10,12 +10,19 @@
 //      hand-dropped without going through the prep scripts.
 //   3. Frontmatter: two articles whose heroImg/thumb/shareImg point at the
 //      same file.
-// Entries with "waived": true are reported as warnings, not failures — that is
-// the pre-registry home-hero / how-to-choose overlap, kept visible on purpose
-// until the home hero photo is replaced.
+//   4. Perceptual: the same PHOTOGRAPH on two pages at different crops or from
+//      the same shoot. Checks 1-3 are all exact and cannot see this — a re-crop
+//      shares no bytes, and a different frame of the same session has its own
+//      provider id. This is the check that caught the home hero, how-to-choose's
+//      hero and how-we-rank's inline all being one photo session.
+// Entries with "waived": true are reported as warnings, not failures — the
+// pre-registry home-hero / how-to-choose overlap, and the how-we-rank inline
+// duplicate found on 2026-08-22. Both need a fresh photo; the waiver keeps the
+// pages building without hiding the problem.
 import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { loadRegistry, md5File, root } from './lib/image-registry.mjs';
+import { dhash, hamming, REUSE_MAX, REVIEW_MAX } from './lib/perceptual-hash.mjs';
 
 const problems = [];
 const warnings = [];
@@ -80,6 +87,70 @@ for (const f of readdirSync(artDir).filter((f) => f.endsWith('.md'))) {
     const prev = usedBy.get(m[1]);
     if (prev && prev !== f) problems.push(`${m[1]} referenced by both ${prev} and ${f}`);
     else usedBy.set(m[1], f);
+  }
+}
+
+// 4 — the SAME PHOTOGRAPH on two pages at different crops. Checks 1-3 are all
+// exact (id, bytes, path) and cannot see this: a re-crop shares no bytes and a
+// different frame of one shoot has its own provider id.
+//
+// One entry per SOURCE PHOTO, which is exactly what the registry already models:
+// a (page, role) pair owns one photo and all the crops made from it. Comparing
+// per-file instead would flag a hero against its own thumb, and every brand
+// variant against every other — hero-clinic-wide vs -band vs .webp are one photo
+// by design.
+//
+// Brand marks (logos, badges, generated social cards) are excluded: they are not
+// stock photography, they SHOULD recur across pages, and a first attempt at this
+// check failed them against each other at distance 7. A bit-balance guard was
+// tried to separate flat graphics from photos and measured 24-35 bits set for
+// both, so it does not discriminate — scoping by what the registry knows is a
+// photo does.
+const candidates = [];
+for (const s of reg.sources) {
+  const f = (s.files ?? [])[0];
+  if (!f) continue;
+  // Registry paths are site-absolute ("/images/..."); on disk they live under
+  // public/. Getting this wrong makes every candidate vanish and the whole check
+  // pass silently, so it is asserted rather than skipped.
+  const p = join(root, 'public', f.path.replace(/^\//, ''));
+  if (!existsSync(p)) {
+    problems.push(`registry points at a missing file: ${f.path} (${s.page} ${s.role})`);
+    continue;
+  }
+  candidates.push({ key: `${s.page} (${s.role})`, path: p, waived: !!s.waived });
+}
+// Article photos that never went through the registry still need checking.
+const registered = new Set(
+  reg.sources.flatMap((s) => (s.files ?? []).map((f) => f.path.replace(/^\//, '')))
+);
+const newsDir = join(root, 'public/images/news');
+if (existsSync(newsDir)) {
+  for (const p of walk(newsDir)) {
+    const rel = p.slice(root.length + 1).replace(/\\/g, '/').replace(/^public\//, '');
+    if (registered.has(rel)) continue;
+    if (/-(thumb|share)\.(jpe?g|png|webp)$/i.test(p)) continue; // same photo as its -hero
+    candidates.push({ key: `/${rel} (unregistered)`, path: p, waived: false });
+  }
+}
+
+const hashes = [];
+for (const c of candidates) {
+  try {
+    hashes.push({ ...c, hash: await dhash(c.path) });
+  } catch {
+    /* unreadable/exotic file — the byte check above still covers it */
+  }
+}
+for (let i = 0; i < hashes.length; i++) {
+  for (let j = i + 1; j < hashes.length; j++) {
+    const a = hashes[i];
+    const b = hashes[j];
+    const d = hamming(a.hash, b.hash);
+    if (d > REVIEW_MAX) continue;
+    const line = `same photograph at different crops (dHash distance ${d}): ${a.key} and ${b.key}`;
+    if (d <= REUSE_MAX && !(a.waived || b.waived)) problems.push(line);
+    else warnings.push(`${line}${a.waived || b.waived ? ' [waived]' : ' — near miss, worth a look'}`);
   }
 }
 
