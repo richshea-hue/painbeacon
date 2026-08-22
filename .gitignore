@@ -14,3 +14,6 @@ Thumbs.db
 /data/2020_Gaz_zcta_national.txt
 scripts/outreach/out/
 __pycache__/
+# Source photos downloaded by scripts/fetch-article-photo.mjs. Only the crops
+# prepare-article-images.mjs makes from them are committed.
+/.photo-src/

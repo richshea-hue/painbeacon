@@ -4,12 +4,17 @@
 //     --hero <src.jpg> --hero-name <seo-file-name> --hero-source <pexels-url-or-id> \
 //     [--inline <src.jpg> --inline-name <seo-file-name> --inline-source <pexels-url-or-id>]
 //
-// --hero-source / --inline-source are REQUIRED: the Pexels photo-page URL or the
-// numeric id from the images.pexels.com download URL (use "manual:<note>" for a
-// non-Pexels source). The script refuses any photo whose Pexels id or file hash
-// is already registered to another page in data/image-registry.json, and records
-// this article's choice there — that registry is the only record of which stock
-// photos the site has used, because source downloads are never committed.
+// To FIND the source files first, use scripts/fetch-article-photo.mjs — it
+// searches Pexels (then Unsplash as a backup), skips anything already in the
+// registry, and prints the exact command below with --hero-source filled in.
+//
+// --hero-source / --inline-source are REQUIRED: a Pexels photo-page URL or
+// numeric id, an unsplash.com/photos/... URL or "unsplash:<id>", or
+// "manual:<note>" for a non-stock source. The script refuses any photo whose
+// provider id or file hash is already registered to another page in
+// data/image-registry.json, and records this article's choice there — that
+// registry is the only record of which stock photos the site has used, because
+// source downloads are never committed.
 // Commit data/image-registry.json together with the images.
 //
 // Outputs to public/images/news/<article-slug>/:
@@ -63,14 +68,17 @@ const reg = loadRegistry();
 const page = `news/${slug}`;
 const heroSrcInfo = parseSource(heroSource);
 const heroMd5 = md5File(hero);
-assertUnused(reg, { pexelsId: heroSrcInfo.pexelsId, sourceMd5: heroMd5, page });
+assertUnused(reg, { ...heroSrcInfo, sourceMd5: heroMd5, page });
 let inlineSrcInfo = null;
 let inlineMd5 = null;
 if (inline) {
   inlineSrcInfo = parseSource(inlineSource);
   inlineMd5 = md5File(inline);
-  assertUnused(reg, { pexelsId: inlineSrcInfo.pexelsId, sourceMd5: inlineMd5, page });
-  if (inlineMd5 === heroMd5 || (heroSrcInfo.pexelsId && heroSrcInfo.pexelsId === inlineSrcInfo.pexelsId)) {
+  assertUnused(reg, { ...inlineSrcInfo, sourceMd5: inlineMd5, page });
+  const sameId =
+    (heroSrcInfo.pexelsId && heroSrcInfo.pexelsId === inlineSrcInfo.pexelsId) ||
+    (heroSrcInfo.unsplashId && heroSrcInfo.unsplashId === inlineSrcInfo.unsplashId);
+  if (inlineMd5 === heroMd5 || sameId) {
     console.error('hero and inline are the same photo — pick two different ones.');
     process.exit(1);
   }

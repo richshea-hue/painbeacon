@@ -34,31 +34,63 @@ export function saveRegistry(reg) {
   writeFileSync(REGISTRY, JSON.stringify(reg, null, 2) + '\n');
 }
 
-// Parse "--source" input: a Pexels photo URL or bare numeric id. Returns
-// { pexelsId, srcUrl }. Accepts "manual:<free text>" for the rare non-Pexels
-// source (own photo, commissioned art) — recorded verbatim, no id dedup.
+// Parse "--source" input. Returns { pexelsId, unsplashId, srcUrl } — exactly one
+// of the two ids is set, or neither for "manual:<free text>" (own photo,
+// commissioned art), which is recorded verbatim with no id dedup.
+//
+// Accepted forms:
+//   Pexels    https://www.pexels.com/photo/12345/  |  12345
+//   Unsplash  https://unsplash.com/photos/slug-AbCdEfGhIjK  |  unsplash:AbCdEfGhIjK
+//
+// A bare number is always Pexels; Unsplash ids are not numeric, so they need the
+// photo-page URL or the "unsplash:" prefix rather than being guessed at.
 export function parseSource(s) {
   if (!s) return null;
-  if (s.startsWith('manual:')) return { pexelsId: null, srcUrl: s };
+  if (s.startsWith('manual:')) return { pexelsId: null, unsplashId: null, srcUrl: s };
+
+  const prefixed = String(s).match(/^unsplash:([A-Za-z0-9_-]{6,})$/);
+  if (prefixed) {
+    const id = prefixed[1];
+    return { pexelsId: null, unsplashId: id, srcUrl: `https://unsplash.com/photos/${id}` };
+  }
+  const path = String(s).match(/unsplash\.com\/photos\/([A-Za-z0-9_-]+)\/?$/);
+  if (path) {
+    // Unsplash photo URLs are "…/photos/<words-of-slug>-<id>", and the id is the
+    // last hyphen-separated token — so take that, not the whole slug. An id that
+    // itself contains a hyphen cannot be told apart from slug words here; pass
+    // "unsplash:<id>" directly for that rare case.
+    const last = path[1].split('-').pop();
+    const id = last.length >= 6 ? last : path[1];
+    return { pexelsId: null, unsplashId: id, srcUrl: `https://unsplash.com/photos/${id}` };
+  }
+
   const m = String(s).match(/(?:pexels\.com\/(?:photo\/)?[^/]*?(\d{4,})|^(\d{4,})$)/);
   if (!m) {
     throw new Error(
-      `--source "${s}" is neither a Pexels URL, a numeric Pexels id, nor "manual:<note>". ` +
-        `Pass the pexels.com photo page URL or the numeric id from the images.pexels.com download URL.`
+      `--source "${s}" is not a recognized photo source. Pass one of:\n` +
+        `  a pexels.com photo URL, or the numeric id from the images.pexels.com download URL\n` +
+        `  an unsplash.com/photos/... URL, or "unsplash:<id>"\n` +
+        `  "manual:<note>" for a non-stock source (own photo, commissioned art)`
     );
   }
   const id = Number(m[1] || m[2]);
-  return { pexelsId: id, srcUrl: `https://www.pexels.com/photo/${id}/` };
+  return { pexelsId: id, unsplashId: null, srcUrl: `https://www.pexels.com/photo/${id}/` };
 }
 
 // Throw if this source photo is already registered to a DIFFERENT page.
 // Re-running the prep script for the same page is fine (idempotent replace).
-export function assertUnused(reg, { pexelsId, sourceMd5, page }) {
+export function assertUnused(reg, { pexelsId, unsplashId, sourceMd5, page }) {
   for (const s of reg.sources) {
     if (s.page === page) continue;
     if (pexelsId != null && s.pexels_id === pexelsId) {
       throw new Error(
         `Pexels photo ${pexelsId} is already used by "${s.page}" (${s.files[0]?.path}). ` +
+          `Pick a different photo — every page must have images the site has never shown before.`
+      );
+    }
+    if (unsplashId != null && s.unsplash_id === unsplashId) {
+      throw new Error(
+        `Unsplash photo ${unsplashId} is already used by "${s.page}" (${s.files[0]?.path}). ` +
           `Pick a different photo — every page must have images the site has never shown before.`
       );
     }
@@ -79,12 +111,13 @@ export function assertUnused(reg, { pexelsId, sourceMd5, page }) {
 
 // Record (or replace) a source entry. files: [{ path, md5, bytes }] with paths
 // site-absolute ("/images/news/<slug>/x.jpg").
-export function registerSource(reg, { page, role, pexelsId, srcUrl, photographer, sourceMd5, files, note }) {
+export function registerSource(reg, { page, role, pexelsId, unsplashId, srcUrl, photographer, sourceMd5, files, note }) {
   reg.sources = reg.sources.filter((s) => !(s.page === page && s.role === role));
   reg.sources.push({
     page,
     role,
     pexels_id: pexelsId ?? null,
+    ...(unsplashId ? { unsplash_id: unsplashId } : {}),
     src_url: srcUrl ?? null,
     photographer: photographer ?? null,
     source_md5: sourceMd5 ?? null,
