@@ -114,6 +114,27 @@ For local dev with the fictional sample you can set
 `SAFE_BROWSING_ASSUME_SAFE=1` to preview the verified-link UI — never in
 production.
 
+### Article photos (Pexels / Unsplash)
+
+`scripts/fetch-article-photo.mjs` finds a source photo the site has never
+shipped before and downloads it for `prepare-article-images.mjs` to crop. It
+takes its keys from `.env`, which is gitignored — copy `.env.example` and fill
+it in:
+
+```bash
+cp .env.example .env                     # then paste the two keys
+node --env-file=.env scripts/fetch-article-photo.mjs --contact "sciatica" 12
+```
+
+Either provider may be absent — the script says which one it is missing and
+carries on with the other. Pexels is searched first; Unsplash is the backup
+only when no Pexels query yields an unused, landscape, ≥1600px photo. Both are
+deduped against `data/image-registry.json`, so a photo can never ship twice.
+
+The keys belong in the local `.env` and in the environment of whatever runs the
+weekly draft — not in the repo. Nothing in the build needs them: photo sourcing
+happens when an article is written, and only the finished crops are committed.
+
 ## Page structure (matches the brief)
 
 | Route | Page |
