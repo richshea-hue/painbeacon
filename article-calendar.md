@@ -21,13 +21,40 @@ closed unmerged. PR #6 was an earlier instance of the same loop.
 So, before writing: list this repo's OPEN pull requests and look for any whose
 head branch starts with `news/draft-`. Use whatever GitHub access the session
 has — the GitHub MCP tools (`list_pull_requests`, state `open`) or `gh pr list
---state open`. If GitHub is unreachable, stop and say so; do not assume there is
-no open draft.
+--state open`.
 
 - An open `news/draft-*` PR exists → STOP. Do not write a second article on the
   same topic. Report the open PR and ask whether to merge it, rebase it, or
   close it. That decision is the human's, not the routine's.
 - No open draft → proceed with the top unchecked topic below.
+
+### If the GitHub API is unreachable
+
+Fall back to plain git, which needs no API. Do NOT skip the check and do NOT
+assume there is no open draft.
+
+A `news/draft-*` branch existing is NOT by itself a live draft — spent branches
+outlive their PRs. As of 2026-08-22 four such branches are still on the remote
+and every one of them is spent; a bare `ls-remote` check would stop the routine
+every week for nothing. Two tests make a branch spent:
+
+    git fetch -q origin main
+    for b in $(git ls-remote --heads origin 'refs/heads/news/draft-*' \
+                 | awk '{print $2}' | sed 's|refs/heads/||'); do
+      git fetch -q origin "$b"; s=$(git rev-parse FETCH_HEAD)
+      # 1. Already merged into main (a merge-commit PR leaves the branch an ancestor).
+      git merge-base --is-ancestor "$s" origin/main && continue
+      # 2. Superseded: the article it adds is already published on main. This is
+      #    what a squash-merged PR, or a closed duplicate, leaves behind.
+      art=$(git diff --name-only origin/main...FETCH_HEAD -- 'src/content/articles/*.md' | head -1)
+      [ -n "$art" ] && git cat-file -e "origin/main:$art" 2>/dev/null && continue
+      echo "LIVE DRAFT: $b ($art)"
+    done
+
+Anything printed is a real unfinished draft → STOP, exactly as for an open PR.
+Nothing printed → proceed.
+
+If you can reach neither the API nor the remote, stop and say so.
 
 One unmerged draft stalls the entire queue, so the fix is always to resolve the
 open PR — never to write around it.
