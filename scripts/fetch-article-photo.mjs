@@ -28,13 +28,24 @@
 //   PEXELS_API_KEY        https://www.pexels.com/api/
 //   UNSPLASH_ACCESS_KEY   https://unsplash.com/developers
 //
-// The downloaded source is written OUTSIDE public/ and is never committed —
-// only the crops prepare-article-images.mjs makes from it are.
+// TWO DIFFERENT OUTCOMES, because the two providers have different rules:
+//
+//   Pexels   -> downloaded to .photo-src/, then cropped and re-hosted from
+//               public/ by prepare-article-images.mjs, as before.
+//   Unsplash -> HOTLINKED. Their API Guidelines require every use of a photo to
+//               go through the urls the API returns, so their CDN sees the view
+//               and the photographer gets the stats. Nothing is re-hosted: this
+//               script registers the source, prints `heroRemote` frontmatter,
+//               and deletes its temporary download. Do not run
+//               prepare-article-images.mjs on an Unsplash photo.
+//
+// The temporary download exists only to give the perceptual reuse check pixels
+// to hash. It is written OUTSIDE public/ and is never committed.
 import { mkdirSync, writeFileSync, unlinkSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import sharp from 'sharp';
-import { loadRegistry, md5, md5File, root } from './lib/image-registry.mjs';
-import { dhash, hamming, REUSE_MAX, REVIEW_MAX } from './lib/perceptual-hash.mjs';
+import { loadRegistry, saveRegistry, registerSource, md5, md5File, root } from './lib/image-registry.mjs';
+import { dhash, hamming, toHex, REUSE_MAX, REVIEW_MAX } from './lib/perceptual-hash.mjs';
 
 const SRC_DIR = join(root, '.photo-src'); // gitignored scratch, not public/
 const MIN_WIDTH = 1600; // enough for the 1600x900 hero without upscaling
@@ -112,6 +123,7 @@ async function searchUnsplash(q, perPage = 30) {
     pageUrl: p.links?.html ?? `https://unsplash.com/photos/${p.id}`,
     profileUrl: p.user?.links?.html ?? null,
     downloadLocation: p.links?.download_location ?? null,
+    rawUrl: p.urls?.raw ?? null,
     previewUrl: p.urls?.small,
     fullUrl: p.urls?.full,
     used: usedUnsplash.has(p.id),
@@ -136,6 +148,7 @@ async function fetchById(spec) {
       pageUrl: p.links?.html ?? `https://unsplash.com/photos/${p.id}`,
       profileUrl: p.user?.links?.html ?? null,
       downloadLocation: p.links?.download_location ?? null,
+      rawUrl: p.urls?.raw ?? null,
       fullUrl: p.urls?.full,
       used: usedUnsplash.has(p.id),
     };
@@ -350,6 +363,57 @@ console.log(`page          : ${chosen.pageUrl}`);
 console.log(`wrote         : ${outPath.replace(root, '.')} (${raw.length} bytes, ${chosen.width}px wide)`);
 console.log('\nLOOK AT IT before using it — open the file and confirm it is plausibly a US');
 console.log('clinical setting with no legible foreign-language text or off-brand logos.');
+// UNSPLASH IS HOTLINKED, NOT RE-HOSTED. Their API Guidelines require every use
+// of a photo to go through the hotlinked urls the API returns, so their CDN sees
+// the views and the photographer gets the stats. Pexels has no such rule, so
+// Pexels photos keep going through prepare-article-images.mjs and are served
+// from our own /public.
+//
+// The temporary download above is NOT a re-host: it exists only so the
+// perceptual reuse check has pixels to hash, and it is deleted here. Nothing
+// from Unsplash is ever written into public/ or committed.
+if (chosen.provider === 'unsplash') {
+  if (!chosen.rawUrl) {
+    console.error('Unsplash returned no urls.raw to hotlink — cannot use this photo compliantly.');
+    unlinkSync(outPath);
+    process.exit(1);
+  }
+  // Register the source here, because prepare-article-images.mjs (which normally
+  // does the registering) is skipped for hotlinked photos. Without this the
+  // photo would be invisible to next week's dedup. The perceptual hash is stored
+  // because there is no local file for verify-images.mjs to hash later.
+  registerSource(reg, {
+    page,
+    role: 'hero',
+    unsplashId: chosen.id,
+    srcUrl: chosen.pageUrl,
+    photographer: chosen.photographer,
+    files: [],
+    note: 'hotlinked from Unsplash per their API Guidelines; no local copy',
+  });
+  const entry = reg.sources.find((x) => x.page === page && x.role === 'hero');
+  entry.remote_url = chosen.rawUrl;
+  entry.dhash = toHex(candHash);
+  saveRegistry(reg);
+  unlinkSync(outPath);
+
+  console.log(`\nregistered  : ${page} (hero) as a hotlinked Unsplash source`);
+  console.log(`discarded   : the temporary download (hotlinked, never re-hosted)`);
+  console.log('\n--- paste into the article frontmatter ---');
+  console.log(`heroRemote: '${chosen.rawUrl}'`);
+  console.log(`heroAlt: '${(chosen.alt ?? '').replace(/'/g, "\\'")}'`);
+  console.log(`heroCreditName: '${(chosen.photographer ?? '').replace(/'/g, "\\'")}'`);
+  if (chosen.profileUrl) console.log(`heroCreditProfile: '${chosen.profileUrl}'`);
+  console.log(`heroCreditPhoto: '${chosen.pageUrl}'`);
+  console.log(`heroCreditProvider: 'Unsplash'`);
+  if (!chosen.profileUrl) {
+    console.warn('! no photographer profile URL came back — Unsplash requires one; do not ship without it.');
+  }
+  console.log('\nDo NOT run prepare-article-images.mjs for this photo — hotlinked photos');
+  console.log('have no local crops. The templates size it via Unsplash CDN params.');
+  process.exit(0);
+}
+
 // Attribution, ready to paste. Unsplash REQUIRES the photographer and Unsplash
 // to be credited with a link back to the photographer's profile; Pexels does not
 // require it, but the same fields render for both.

@@ -25,6 +25,11 @@ const articles = defineCollection({
     // platform crops it, but real photography (user preference over the branded
     // card, which remains the site-wide default for non-article pages).
     shareImg: z.string().optional(),
+    // Hotlinked Unsplash base URL (urls.raw). When set, the hero/thumb/share are
+    // served from Unsplash's CDN with sizing params rather than from public/ —
+    // their API Guidelines require every use of a photo to go through the
+    // hotlinked url. Pexels photos leave this unset and keep local crops.
+    heroRemote: z.string().optional(),
     // Hero photo credit. REQUIRED for Unsplash photos: their API Guidelines say
     // an app must attribute both the photographer and Unsplash, with a link back
     // to the photographer's profile, and that links back carry utm_source /

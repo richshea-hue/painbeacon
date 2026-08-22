@@ -22,7 +22,7 @@
 import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { loadRegistry, md5File, root } from './lib/image-registry.mjs';
-import { dhash, hamming, REUSE_MAX, REVIEW_MAX } from './lib/perceptual-hash.mjs';
+import { dhash, hamming, fromHex, REUSE_MAX, REVIEW_MAX } from './lib/perceptual-hash.mjs';
 
 const problems = [];
 const warnings = [];
@@ -108,6 +108,17 @@ for (const f of readdirSync(artDir).filter((f) => f.endsWith('.md'))) {
 // photo does.
 const candidates = [];
 for (const s of reg.sources) {
+  // Hotlinked Unsplash sources have no local files by design — nothing is
+  // re-hosted. They still have to take part in reuse detection, so the fetch
+  // script stores their perceptual hash at pull time and it is read back here.
+  if (s.remote_url) {
+    if (!s.dhash) {
+      problems.push(`hotlinked source has no stored dhash, so it cannot be deduped: ${s.page} (${s.role})`);
+      continue;
+    }
+    candidates.push({ key: `${s.page} (${s.role}, hotlinked)`, hash: fromHex(s.dhash), waived: !!s.waived });
+    continue;
+  }
   const f = (s.files ?? [])[0];
   if (!f) continue;
   // Registry paths are site-absolute ("/images/..."); on disk they live under
@@ -136,6 +147,10 @@ if (existsSync(newsDir)) {
 
 const hashes = [];
 for (const c of candidates) {
+  if (c.hash !== undefined) {
+    hashes.push(c); // hotlinked: hash came from the registry, there is no file
+    continue;
+  }
   try {
     hashes.push({ ...c, hash: await dhash(c.path) });
   } catch {
