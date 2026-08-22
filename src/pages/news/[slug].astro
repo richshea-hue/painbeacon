@@ -80,22 +80,29 @@ const shares = [
       <img class="article-hero-img" src={image} alt={imageAlt} width="1200" height="1200" loading="eager" />
     )}
 
-    {d.heroCreditName && d.heroCreditProvider && (
-      <p class="photo-credit">
-        Photo by{' '}
-        {d.heroCreditProfile
-          ? <a href={`${d.heroCreditProfile}${utm}`} rel="noopener">{d.heroCreditName}</a>
-          : d.heroCreditName}
-        {' on '}
-        {d.heroCreditPhoto
-          ? <a href={`${d.heroCreditPhoto}${utm}`} rel="noopener">{d.heroCreditProvider}</a>
-          : <a href={`${providerHome[d.heroCreditProvider]}${utm}`} rel="noopener">{d.heroCreditProvider}</a>}
-      </p>
-    )}
-
     <article class="prose article-body">
       <Content />
       <p class="byline">— The {SITE.name} editorial desk</p>
+      {/* Photo credit sits at the foot beside the byline, not under the hero, so
+          the reader meets the photograph without a caption hanging off it. It
+          stays a real link because that is the actual obligation: Unsplash
+          requires a link to the photographer's profile, and the Pexels API
+          guidelines require a prominent link to Pexels. It deliberately does NOT
+          live in the hero's alt text — alt is a description for screen reader
+          users and cannot carry a link, so credit there would be both worse for
+          them and non-compliant. */}
+      {d.heroCreditName && d.heroCreditProvider && (
+        <p class="photo-credit">
+          Photography:{' '}
+          {d.heroCreditProfile
+            ? <a href={`${d.heroCreditProfile}${utm}`} rel="noopener">{d.heroCreditName}</a>
+            : d.heroCreditName}
+          {' on '}
+          {d.heroCreditPhoto
+            ? <a href={`${d.heroCreditPhoto}${utm}`} rel="noopener">{d.heroCreditProvider}</a>
+            : <a href={`${providerHome[d.heroCreditProvider]}${utm}`} rel="noopener">{d.heroCreditProvider}</a>}
+        </p>
+      )}
     </article>
 
     <div class="share-row" data-url={pageUrl}>

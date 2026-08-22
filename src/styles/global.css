@@ -434,10 +434,12 @@ hr.rule { border: 0; border-top: 1px solid var(--line); margin: 2.5rem 0; }
 /* Hero photo credit. Unsplash's API Guidelines require the photographer and
    Unsplash to be named and linked; this is that line. Quiet by design — it sits
    under the hero without competing with the standfirst. */
+/* Sits at the article foot under the byline, so it uses ink-faint to match it
+   rather than the hero-caption spacing this had when it lived under the photo. */
 .photo-credit {
-  margin: -0.5rem 0 1.5rem;
+  margin: 0.35rem 0 0;
   font-size: 0.8125rem;
-  color: var(--muted, #667);
+  color: var(--ink-faint);
 }
 .photo-credit a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
-.photo-credit a:hover { color: var(--ink, #111); }
+.photo-credit a:hover { color: var(--ink); }
