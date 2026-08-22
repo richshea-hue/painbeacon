@@ -1,8 +1,8 @@
 // Shoot the home page and crop it to the site's share card (og:image).
 //
-//   npm run build                        # the card is shot from dist/, so build first
-//   node scripts/home-share-card.mjs     # -> public/social/painbeacon-home.png
-//   node scripts/home-share-card.mjs --hero   # tighter crop, hero band only
+//   npm run build                             # the card is shot from dist/, so build first
+//   node scripts/home-share-card.mjs          # -> public/social/painbeacon-home.png
+//   node scripts/home-share-card.mjs --chrome # same shot, opened up to include the masthead
 //
 // WHY A SCREENSHOT AND NOT A DRAWN CARD. The previous site card was a separate
 // 1200×1200 graphic, and every link preview surface is built around 1.91:1 — so
@@ -17,8 +17,13 @@
 // platforms crop it again. Rather than pin pixel coordinates that a design tweak
 // would silently invalidate, this measures the region it wants and then picks the
 // viewport width at which that region is already 1.91:1, so the shot needs no
-// cropping and nothing is squeezed. Today that lands at ~1264px wide for the
-// default crop. Shot at 2× and downsampled to 1200×630, so type stays crisp.
+// cropping and nothing is squeezed. Today that lands at ~1061px wide. Shot at 2×
+// and downsampled to 1200×630, so type stays crisp.
+//
+// FRAMED ON THE HERO BAND, not the top of the page. A share card is read at
+// thumbnail size, where the masthead is an unreadable strip that costs the
+// headline and the search field the room they need. Dropping it lets both fill
+// the frame. `--chrome` opens the crop back up to the top of the page.
 //
 // ONE SUBSTITUTION, AND ONLY ONE. The hero's eyebrow is a live clinic count
 // ("12,431 pain clinics · 54 states and territories"). It comes from Supabase at
@@ -49,10 +54,9 @@ const CARD_W = 1200;
 const CARD_H = 630;
 const RATIO = CARD_H / CARD_W; // 0.525 — the 1.91:1 every link preview expects
 
-// Default crop starts at the top of the page, so the card reads as the site:
-// masthead, trust bar, hero. `--hero` drops the chrome and frames the hero band
-// alone, which makes the headline and search field bigger in the thumbnail.
-const HERO_ONLY = process.argv.includes('--hero');
+// Frame the hero band alone by default; `--chrome` starts the crop at the top of
+// the page instead, taking in the masthead and the trust bar above the hero.
+const HERO_ONLY = !process.argv.includes('--chrome');
 
 // The eyebrow's live count, swapped for a claim that does not go stale. See the
 // note at the top of this file.
@@ -172,4 +176,4 @@ await sharp(shot).resize(CARD_W, CARD_H, { fit: 'fill' }).png({ quality: 90 }).t
 
 await browser.close();
 server.close();
-console.log(`wrote ${path.relative(root, OUT)}  ${CARD_W}×${CARD_H}${HERO_ONLY ? '  (hero crop)' : ''}`);
+console.log(`wrote ${path.relative(root, OUT)}  ${CARD_W}×${CARD_H}${HERO_ONLY ? '' : '  (with masthead)'}`);
