@@ -414,9 +414,12 @@ if (chosen.provider === 'unsplash') {
   process.exit(0);
 }
 
-// Attribution, ready to paste. Unsplash REQUIRES the photographer and Unsplash
-// to be credited with a link back to the photographer's profile; Pexels does not
-// require it, but the same fields render for both.
+// Attribution, ready to paste. Required for BOTH providers because we pull
+// through their APIs: Unsplash requires crediting the photographer and Unsplash
+// with a link to the photographer's profile, and the Pexels API guidelines
+// require a prominent link to Pexels and ask that photographers always be
+// credited where possible. The Pexels LICENSE alone does not require this — the
+// API guidelines are the stricter rule that applies to us.
 console.log('\n--- paste into the article frontmatter ---');
 console.log(`heroCreditName: '${(chosen.photographer ?? '').replace(/'/g, "\\'")}'`);
 if (chosen.profileUrl) console.log(`heroCreditProfile: '${chosen.profileUrl}'`);
