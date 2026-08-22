@@ -48,8 +48,11 @@ const shares = [
   { label: 'Email', href: `mailto:?subject=${enc(d.title)}&body=${enc(`${d.dek}\n\n${pageUrl}`)}` },
 ];
 ---
+{/* Article art is square — both the generated card and the 1200×1200 shareImg
+    crop — so it declares its own dimensions rather than inheriting the site
+    card's 1200×630. */}
 <Base title={d.title} description={d.dek} jsonld={[breadcrumbLd(crumbs), articleLd]}
-      ogImage={image} ogImageAlt={imageAlt}>
+      ogImage={image} ogImageAlt={imageAlt} ogImageWidth={1200} ogImageHeight={1200}>
   <div class="wrap narrow">
     <Breadcrumbs items={crumbs} />
     <header class="article-head">
