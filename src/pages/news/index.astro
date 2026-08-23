@@ -3,6 +3,7 @@ import Base from '../../layouts/Base.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import { getCollection } from 'astro:content';
 import { breadcrumbLd } from '../../lib/schema.js';
+import { SITE } from '../../lib/site.js';
 
 const articles = (await getCollection('articles')).sort(
   (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
@@ -26,6 +27,12 @@ const fmt = (d) =>
         kind of clinic fits your situation, what treatments actually involve, and
         how our rankings work. New articles weekly.
         <a href="/rss.xml" class="muted">RSS</a>
+        {SITE.preferredSourceUrl && (
+          <Fragment>
+            {' · '}
+            <a href={SITE.preferredSourceUrl} class="muted" target="_blank" rel="noopener">Add us to Google</a>
+          </Fragment>
+        )}
       </p>
     </section>
 

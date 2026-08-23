@@ -203,6 +203,12 @@ const blocks = [organizationLd, ...(Array.isArray(jsonld) ? jsonld : [jsonld])].
               {SITE.socials.facebook && <a href={SITE.socials.facebook} target="_blank" rel="noopener">Facebook</a>}
             </p>
           )}
+          {SITE.preferredSourceUrl && (
+            <p class="social-links">
+              <a href={SITE.preferredSourceUrl} target="_blank" rel="noopener">Add {SITE.name} to Google</a><br />
+              <span class="muted">Tick the box and our guides carry a “Preferred” badge in Google’s AI answers.</span>
+            </p>
+          )}
           <p class="muted" style="margin-top:1rem;">
             Clinic data sourced from the U.S. federal NPI registry, enriched with
             public location and review information. Informational only — not medical

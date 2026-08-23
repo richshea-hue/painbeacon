@@ -17,6 +17,19 @@ export const SITE = {
     facebook: 'https://www.facebook.com/profile.php?id=61592202442574',
   },
 
+  // Google Preferred Sources — a READER opt-in, not a ranking setting. Someone
+  // who ticks our box gets a "Preferred" badge on our links inside AI Overviews
+  // and AI Mode, and Google reports preferred sources are about twice as likely
+  // to be clicked. Nothing here changes how the site is crawled or indexed, and
+  // Google alone decides which domains appear in the tool.
+  //
+  // Domain-level only: painbeacon.com is eligible, painbeacon.com/news is not.
+  // Google also ships an interactive button (a script from news.google.com) —
+  // we use the plain deeplink instead so the site keeps loading no third-party
+  // JavaScript. Set '' to pull the links from the footer, article pages and
+  // The Beacon index in one edit.
+  preferredSourceUrl: 'https://www.google.com/preferences/source?q=painbeacon.com',
+
   // E-E-A-T: real, named editorial accountability on every page (YMYL).
   // IMPORTANT: keep active=false until a real, named clinician agrees to review.
   // Never display a fabricated reviewer on a health site. When you retain one,
