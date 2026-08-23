@@ -43,6 +43,16 @@ export const SITE = {
   // method, paste ONLY the content="..." value from Bing here and redeploy.
   bingSiteVerification: '',
 
+  // Facebook App ID, emitted as fb:app_id. OPTIONAL — the Sharing Debugger
+  // lists it under "missing required properties", but it is not required and a
+  // link preview renders identically without it (verified on the live site).
+  // Its only job is to attribute shares of this domain to a Facebook App so
+  // engagement shows up in Domain Insights; there is nothing else to build with
+  // it. Getting one means registering an app at developers.facebook.com purely
+  // for the ID. Leave blank and no tag is emitted — which is the right setting
+  // unless someone is actually reading those Insights.
+  facebookAppId: '',
+
   // Outbound links to each clinic's OWN website. Practice domains in the
   // federal data sometimes expire and get re-registered as spam/malware, and
   // linking to them once got the site flagged by Google Safe Browsing. Links
