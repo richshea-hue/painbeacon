@@ -75,6 +75,46 @@
       "note": "backfilled 2026-08-01 — shipped before the registry existed, Pexels id unknown; only file hashes guard this one"
     },
     {
+      "page": "news/epidural-steroid-injections-evidence",
+      "role": "hero",
+      "pexels_id": 39192386,
+      "src_url": "https://www.pexels.com/photo/39192386/",
+      "photographer": null,
+      "source_md5": "442aa5132c41b4c0a0cbb260898ebb8f",
+      "files": [
+        {
+          "path": "/images/news/epidural-steroid-injections-evidence/doctor-reviewing-mri-scans-with-patient-hero.jpg",
+          "md5": "37d47e12ae825274ca015bb219336ada",
+          "bytes": 108305
+        },
+        {
+          "path": "/images/news/epidural-steroid-injections-evidence/doctor-reviewing-mri-scans-with-patient-thumb.jpg",
+          "md5": "7d2eab68de1fcb9b094bf138ba9d3d4b",
+          "bytes": 34458
+        },
+        {
+          "path": "/images/news/epidural-steroid-injections-evidence/doctor-reviewing-mri-scans-with-patient-share.jpg",
+          "md5": "b40ca913c504342c5c631b01c93a2882",
+          "bytes": 89337
+        }
+      ]
+    },
+    {
+      "page": "news/epidural-steroid-injections-evidence",
+      "role": "inline",
+      "pexels_id": 7108351,
+      "src_url": "https://www.pexels.com/photo/7108351/",
+      "photographer": null,
+      "source_md5": "e5c2595622c4483739e4d860e4f7e21f",
+      "files": [
+        {
+          "path": "/images/news/epidural-steroid-injections-evidence/outpatient-procedure-room-prepared-for-injection.jpg",
+          "md5": "a37ed95cdc1ba835384eb732812b771e",
+          "bytes": 30932
+        }
+      ]
+    },
+    {
       "page": "news/first-pain-clinic-appointment",
       "role": "hero",
       "pexels_id": null,
