@@ -1,6 +1,6 @@
 ---
 title: 'Epidural Steroid Injections: What the Evidence Actually Says'
-dek: 'An epidural steroid injection helps one particular kind of pain reasonably well, and the honest summary is that the relief is real, often partial, and usually temporary. Here is what the research supports — and what it does not.'
+dek: 'Epidural steroid injections work best for one thing: leg pain from an irritated nerve root. The relief is real, often partial, and usually temporary.'
 date: 2026-08-26
 category: 'Treatments Explained'
 heroImg: '/images/news/epidural-steroid-injections-evidence/doctor-reviewing-mri-scans-with-patient-hero.jpg'
