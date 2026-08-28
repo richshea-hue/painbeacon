@@ -8,9 +8,21 @@ const S = await getDesertStats();
 const fmt = (n) => n.toLocaleString('en-US');
 const crumbs = [{ name: 'Home', href: '/' }, { name: 'Research', href: '/research/' }];
 
-// One entry for now, but kept as a list so a second study is a push rather than
-// a rewrite — and so the markup matches /news, which already reads as a feed.
+// Kept as a list so each new entry is a push rather than a rewrite — and so the
+// markup matches /news, which already reads as a feed. `kicker` overrides the
+// default "Data study · Updated {date}" line; `more` overrides the link text.
 const studies = [
+  {
+    href: '/research/chronic-pain-prevalence-2019-2023/',
+    title: 'How common is chronic pain in America? 1 in 5 adults — and rising',
+    kicker: 'Featured research · Peer-reviewed · The Journal of Pain (2026)',
+    dek:
+      'New peer-reviewed analysis of 91,001 adults finds chronic pain climbed from 20.5% of ' +
+      'U.S. adults in 2019 to 24.3% in 2023, with high-impact chronic pain — pain that limits ' +
+      'daily life most days — affecting roughly 1 in 13 adults. Featured with the author’s ' +
+      'permission, with a plain-English summary from PainBeacon.',
+    more: 'Read the summary →',
+  },
   {
     href: '/research/pain-care-deserts/',
     title: 'Pain care deserts: U.S. counties with no pain management clinic',
@@ -38,8 +50,9 @@ const studies = [
     <h1>Research &amp; data studies</h1>
     <p class="lede">
       Original analyses of pain management access in the United States, built from the
-      federal NPI registry and U.S. Census data. All statistics are free to cite with
-      attribution, and every study includes a downloadable dataset.
+      federal NPI registry and U.S. Census data, alongside featured peer-reviewed
+      research. All of our own statistics are free to cite with attribution, and every
+      original data study includes a downloadable dataset.
     </p>
 
     <ol class="article-feed">
@@ -48,14 +61,18 @@ const studies = [
           <a class="article-card" href={s.href}>
             <div class="article-card-body">
               <p class="article-kicker">
-                Data study · <time datetime={s.updated}>Updated {s.updated}</time>
+                {s.kicker
+                  ? s.kicker
+                  : <>Data study · <time datetime={s.updated}>Updated {s.updated}</time></>}
               </p>
               <h2>{s.title}</h2>
               <p class="article-dek">{s.dek}</p>
-              <span class="article-more">Read the study →</span>
+              <span class="article-more">{s.more || 'Read the study →'}</span>
             </div>
-            <img class="article-thumb" src={s.thumb} alt={s.thumbAlt}
-              width="180" height="180" loading="lazy" />
+            {s.thumb && (
+              <img class="article-thumb" src={s.thumb} alt={s.thumbAlt}
+                width="180" height="180" loading="lazy" />
+            )}
           </a>
         </li>
       ))}
