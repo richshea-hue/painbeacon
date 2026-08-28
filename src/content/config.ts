@@ -25,6 +25,29 @@ const articles = defineCollection({
     // platform crops it, but real photography (user preference over the branded
     // card, which remains the site-wide default for non-article pages).
     shareImg: z.string().optional(),
+    // Hotlinked Unsplash base URL (urls.raw). When set, the hero/thumb/share are
+    // served from Unsplash's CDN with sizing params rather than from public/ —
+    // their API Guidelines require every use of a photo to go through the
+    // hotlinked url. Pexels photos leave this unset and keep local crops.
+    heroRemote: z.string().optional(),
+    // Hero photo credit. REQUIRED for BOTH providers, because we pull through
+    // their APIs rather than downloading from their websites:
+    //
+    //   Unsplash — their API Guidelines require attributing the photographer AND
+    //   Unsplash, linking to the photographer's profile, with utm_source and
+    //   utm_medium=referral on links back.
+    //
+    //   Pexels — the Pexels LICENSE does not require attribution, which is what
+    //   you find first and what an earlier version of this comment wrongly said.
+    //   Their API guidelines are stricter: "whenever you are doing an API
+    //   request, make sure to show a prominent link to Pexels", and "always
+    //   credit photographers when possible".
+    //
+    // scripts/fetch-article-photo.mjs prints these ready to paste.
+    heroCreditName: z.string().optional(),
+    heroCreditProfile: z.string().optional(), // photographer's profile page
+    heroCreditPhoto: z.string().optional(), // the photo's own page
+    heroCreditProvider: z.enum(['Unsplash', 'Pexels']).optional(),
   }),
 });
 

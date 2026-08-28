@@ -16,10 +16,23 @@ const d = article.data;
 const dateStr = d.date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 const iso = d.date.toISOString().slice(0, 10);
 const pageUrl = new URL(`/news/${article.slug}/`, SITE.url).href;
-const image = d.shareImg || d.image || `/social/${article.slug}.png`;
-const imageAlt = d.shareImg ? (d.heroAlt || d.title) : (d.imageAlt || d.title);
-const heroImg = d.heroImg;
+// Unsplash CDN sizing. urls.raw already carries a query string, so params are
+// appended with &. fit=crop&crop=entropy keeps the subject when the aspect
+// changes, matching what prepare-article-images.mjs does locally with sharp.
+// Declared before first use — `image` below calls it.
+const unsplashCrop = (base, w, h) => `${base}&w=${w}&h=${h}&fit=crop&crop=entropy&q=80`;
+const image = d.heroRemote
+  ? unsplashCrop(d.heroRemote, 1200, 1200)
+  : d.shareImg || d.image || `/social/${article.slug}.png`;
+const imageAlt = d.heroRemote || d.shareImg ? (d.heroAlt || d.title) : (d.imageAlt || d.title);
+const heroImg = d.heroRemote ? unsplashCrop(d.heroRemote, 1600, 900) : d.heroImg;
 const heroAlt = d.heroAlt || d.title;
+
+// Unsplash's API Guidelines require links back to carry utm_source (the app) and
+// utm_medium=referral. Harmless on Pexels links, so the same suffix is used for
+// both rather than branching.
+const utm = '?utm_source=painbeacon&utm_medium=referral';
+const providerHome = { Unsplash: 'https://unsplash.com', Pexels: 'https://www.pexels.com' };
 
 const crumbs = [
   { name: 'Home', href: '/' },
@@ -36,7 +49,7 @@ const articleLd = {
   author: { '@type': 'Organization', name: SITE.name, url: SITE.url },
   publisher: { '@type': 'Organization', name: SITE.name, url: SITE.url },
   // Photo first (what the article shows), branded card second (share asset).
-  image: [heroImg, image].filter(Boolean).map((i) => new URL(i, SITE.url).href),
+  image: [heroImg, image].filter(Boolean).map((i) => (/^https?:/.test(i) ? i : new URL(i, SITE.url).href)),
   mainEntityOfPage: pageUrl,
 };
 
@@ -70,6 +83,26 @@ const shares = [
     <article class="prose article-body">
       <Content />
       <p class="byline">— The {SITE.name} editorial desk</p>
+      {/* Photo credit sits at the foot beside the byline, not under the hero, so
+          the reader meets the photograph without a caption hanging off it. It
+          stays a real link because that is the actual obligation: Unsplash
+          requires a link to the photographer's profile, and the Pexels API
+          guidelines require a prominent link to Pexels. It deliberately does NOT
+          live in the hero's alt text — alt is a description for screen reader
+          users and cannot carry a link, so credit there would be both worse for
+          them and non-compliant. */}
+      {d.heroCreditName && d.heroCreditProvider && (
+        <p class="photo-credit">
+          Photography:{' '}
+          {d.heroCreditProfile
+            ? <a href={`${d.heroCreditProfile}${utm}`} rel="noopener">{d.heroCreditName}</a>
+            : d.heroCreditName}
+          {' on '}
+          {d.heroCreditPhoto
+            ? <a href={`${d.heroCreditPhoto}${utm}`} rel="noopener">{d.heroCreditProvider}</a>
+            : <a href={`${providerHome[d.heroCreditProvider]}${utm}`} rel="noopener">{d.heroCreditProvider}</a>}
+        </p>
+      )}
     </article>
 
     <div class="share-row" data-url={pageUrl}>

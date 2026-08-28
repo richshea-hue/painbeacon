@@ -17,6 +17,22 @@ function cardEnclosure(webPath) {
   }
 }
 
+// Hotlinked Unsplash heroes have no local file to stat, and statSync failing
+// silently returns {} — which would drop the enclosure and leave dlvr.it posting
+// to Facebook and X with no photo. Ask the CDN for the length instead. A HEAD
+// that fails still degrades to no enclosure, same as a missing local file, but
+// it is no longer the default outcome for every Unsplash-illustrated article.
+async function remoteEnclosure(url) {
+  try {
+    const r = await fetch(url, { method: 'HEAD' });
+    const len = Number(r.headers.get('content-length'));
+    if (!r.ok || !Number.isFinite(len) || len <= 0) return {};
+    return { enclosure: { url, length: len, type: r.headers.get('content-type') || 'image/jpeg' } };
+  } catch {
+    return {};
+  }
+}
+
 export async function GET(context) {
   const articles = (await getCollection('articles')).sort(
     (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
@@ -28,12 +44,18 @@ export async function GET(context) {
       'the right kind of pain clinic, treatments explained in plain English, and how ' +
       'our rankings work.',
     site: context.site,
-    items: articles.map((a) => ({
-      title: a.data.title,
-      description: a.data.dek,
-      pubDate: a.data.date,
-      link: `/news/${a.slug}/`,
-      ...cardEnclosure(a.data.shareImg || a.data.image || `/social/${a.slug}.png`),
-    })),
+    // Promise.all, not a bare map: remoteEnclosure does a HEAD request, so the
+    // per-item spread has to be awaited before rss() sees the items.
+    items: await Promise.all(
+      articles.map(async (a) => ({
+        title: a.data.title,
+        description: a.data.dek,
+        pubDate: a.data.date,
+        link: `/news/${a.slug}/`,
+        ...(a.data.heroRemote
+          ? await remoteEnclosure(`${a.data.heroRemote}&w=1200&h=1200&fit=crop&crop=entropy&q=80`)
+          : cardEnclosure(a.data.shareImg || a.data.image || `/social/${a.slug}.png`)),
+      }))
+    ),
   });
 }
