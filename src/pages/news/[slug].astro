@@ -113,7 +113,7 @@ const shares = [
       <button class="btn ghost share-btn" id="copy-link" type="button">Copy link</button>
     </div>
     <script>
-      const row = document.querySelector('.share-row') as HTMLElement;
+      const row = document.querySelector('.share-row[data-url]') as HTMLElement;
       const copy = document.getElementById('copy-link');
       copy?.addEventListener('click', async () => {
         try {
@@ -125,6 +125,18 @@ const shares = [
         }
       });
     </script>
+
+    {SITE.preferredSourceUrl && (
+      <div class="share-row">
+        <span class="share-label">Follow us</span>
+        <a class="btn ghost share-btn" href={SITE.preferredSourceUrl} target="_blank" rel="noopener">
+          Add {SITE.name} to Google
+        </a>
+        <span class="muted" style="font-size:.82rem; flex:1 1 16rem;">
+          Tick the box and our guides carry a “Preferred” badge in Google’s AI answers.
+        </span>
+      </div>
+    )}
 
     <div class="notice" style="display:flex; flex-wrap:wrap; align-items:center; gap:1rem;">
       <span style="flex:1 1 20rem;">

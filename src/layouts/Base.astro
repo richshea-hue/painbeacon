@@ -90,6 +90,8 @@ const blocks = [organizationLd, ...(Array.isArray(jsonld) ? jsonld : [jsonld])].
     <meta name="twitter:card" content={twitterCard} />
     <meta name="twitter:image" content={ogImageUrl} />
     <meta name="twitter:image:alt" content={ogImageAlt} />
+    {/* Optional, and off by default — see the note on SITE.facebookAppId. */}
+    {SITE.facebookAppId && <meta property="fb:app_id" content={SITE.facebookAppId} />}
 
     <link rel="alternate" type="application/rss+xml" title={`${SITE.name} — News & guides`} href="/rss.xml" />
     <link rel="icon" href="/favicon.ico" sizes="any" />
@@ -201,6 +203,12 @@ const blocks = [organizationLd, ...(Array.isArray(jsonld) ? jsonld : [jsonld])].
               {SITE.socials.x && <a href={SITE.socials.x} target="_blank" rel="noopener">X (@painbeacon)</a>}
               {SITE.socials.x && SITE.socials.facebook && <span> · </span>}
               {SITE.socials.facebook && <a href={SITE.socials.facebook} target="_blank" rel="noopener">Facebook</a>}
+            </p>
+          )}
+          {SITE.preferredSourceUrl && (
+            <p class="social-links">
+              <a href={SITE.preferredSourceUrl} target="_blank" rel="noopener">Add {SITE.name} to Google</a><br />
+              <span class="muted">Tick the box and our guides carry a “Preferred” badge in Google’s AI answers.</span>
             </p>
           )}
           <p class="muted" style="margin-top:1rem;">

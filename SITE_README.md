@@ -114,6 +114,45 @@ For local dev with the fictional sample you can set
 `SAFE_BROWSING_ASSUME_SAFE=1` to preview the verified-link UI — never in
 production.
 
+### Article photos (Pexels / Unsplash)
+
+`scripts/fetch-article-photo.mjs` finds a source photo the site has never
+shipped before and downloads it for `prepare-article-images.mjs` to crop. It
+takes its keys from `.env`, which is gitignored — copy `.env.example` and fill
+it in:
+
+```bash
+cp .env.example .env                     # then paste the two keys
+node --env-file=.env scripts/fetch-article-photo.mjs --contact "sciatica" 12
+```
+
+Either provider may be absent — the script says which one it is missing and
+carries on with the other. Pexels is searched first; Unsplash is the backup
+only when no Pexels query yields an unused, landscape, ≥1600px photo. Both are
+deduped against `data/image-registry.json`, so a photo can never ship twice.
+
+The keys belong in the local `.env` and in the environment of whatever runs the
+weekly draft — not in the repo. Nothing in the build needs them: photo sourcing
+happens when an article is written, and only the finished crops are committed.
+
+### Google Preferred Sources
+
+A reader who adds PainBeacon at `google.com/preferences/source?q=painbeacon.com`
+gets a "Preferred" badge on our links inside AI Overviews and AI Mode, and
+Google reports preferred sources are roughly twice as likely to be clicked. It
+is a reader opt-in — it changes nothing about how the site is crawled, indexed
+or ranked, and Google alone decides which domains appear in that tool.
+
+The URL lives once in `SITE.preferredSourceUrl` (`src/lib/site.js`) and renders
+in three places: the footer's Follow block (so every page carries it), a "Follow
+us" row under the share buttons on each article, and beside the RSS link on The
+Beacon index. Setting it to `''` removes all three.
+
+Domain-level only — `painbeacon.com` is eligible, `painbeacon.com/news` is not.
+Google also offers an interactive button that loads a script from
+`news.google.com`; we use the plain link instead, so the site still ships no
+third-party JavaScript beyond Google Fonts.
+
 ## Page structure (matches the brief)
 
 | Route | Page |
