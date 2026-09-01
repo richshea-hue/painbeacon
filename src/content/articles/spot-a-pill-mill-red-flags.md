@@ -4,7 +4,12 @@ dek: 'Most of the warning signs of a bad pain practice are visible from your cou
 date: 2026-07-30
 category: 'Choosing a Clinic'
 heroImg: '/images/news/spot-a-pill-mill-red-flags/pain-clinic-waiting-room-patient-consultation-hero.jpg'
-heroAlt: 'A clinician in scrubs sits with a patient in a bright clinic waiting area, reviewing information on a tablet together.'
+heroRemote: 'https://images.unsplash.com/photo-1628771065518-0d82f1938462?ixid=M3wxMDM5NjYwfDB8MXxhbGx8fHx8fHx8fHwxNzg4MjY5MDQ4fA&ixlib=rb-4.1.0'
+heroAlt: 'colorful pills spilling from orange bottle'
+heroCreditName: 'Towfiqu barbhuiya'
+heroCreditProfile: 'https://unsplash.com/@towfiqu999999'
+heroCreditPhoto: 'https://unsplash.com/photos/colorful-pills-spilling-from-orange-bottle-w8p9cQDLX7I'
+heroCreditProvider: 'Unsplash'
 thumb: '/images/news/spot-a-pill-mill-red-flags/pain-clinic-waiting-room-patient-consultation-thumb.jpg'
 shareImg: '/images/news/spot-a-pill-mill-red-flags/pain-clinic-waiting-room-patient-consultation-share.jpg'
 ---

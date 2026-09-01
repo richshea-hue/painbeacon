@@ -244,27 +244,14 @@
       "page": "news/spot-a-pill-mill-red-flags",
       "role": "hero",
       "pexels_id": null,
-      "src_url": null,
-      "photographer": null,
+      "unsplash_id": "w8p9cQDLX7I",
+      "src_url": "https://unsplash.com/photos/colorful-pills-spilling-from-orange-bottle-w8p9cQDLX7I",
+      "photographer": "Towfiqu barbhuiya",
       "source_md5": null,
-      "files": [
-        {
-          "path": "/images/news/spot-a-pill-mill-red-flags/pain-clinic-waiting-room-patient-consultation-hero.jpg",
-          "md5": "e4d274ba48646d8b71a7530fb229db07",
-          "bytes": 76113
-        },
-        {
-          "path": "/images/news/spot-a-pill-mill-red-flags/pain-clinic-waiting-room-patient-consultation-thumb.jpg",
-          "md5": "bfe51a9283438e95e569109dbbc23d2f",
-          "bytes": 24992
-        },
-        {
-          "path": "/images/news/spot-a-pill-mill-red-flags/pain-clinic-waiting-room-patient-consultation-share.jpg",
-          "md5": "ec6c9716f5c64583181099e44472099c",
-          "bytes": 72156
-        }
-      ],
-      "note": "backfilled 2026-08-01 — shipped before the registry existed, Pexels id unknown; only file hashes guard this one"
+      "files": [],
+      "note": "hotlinked from Unsplash per their API Guidelines; no local copy",
+      "remote_url": "https://images.unsplash.com/photo-1628771065518-0d82f1938462?ixid=M3wxMDM5NjYwfDB8MXxhbGx8fHx8fHx8fHwxNzg4MjY5MDQ4fA&ixlib=rb-4.1.0",
+      "dhash": "010000010616160e"
     },
     {
       "page": "news/spot-a-pill-mill-red-flags",
