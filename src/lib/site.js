@@ -99,7 +99,7 @@ export const SITE = {
     // Brand sponsorship (data/sponsors.json) — sold, not self-serve. Prices
     // render on /advertise/; the sale closes by conversation and invoice.
     sponsor: {
-      price: '$750', period: '/mo', term: 'month to month, 30 days notice',
+      price: '$750', period: '/mo', term: 'Month to month, 30 days notice',
       commit: { label: '3 months prepaid', price: '$1,800', per: '$600/mo' },
     },
   },
