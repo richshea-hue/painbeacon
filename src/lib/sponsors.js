@@ -33,8 +33,15 @@ export function allSponsors() {
 // Live = master switch on AND today inside the (optional) date window. The
 // window is what lets a signed deal be committed before it starts and expire
 // without a deploy — the daily rebuild picks it up.
+//
+// SPONSOR_PREVIEW=1 in the build env treats every entry as live, dates and all.
+// Set it ONLY on the Cloudflare Pages *Preview* environment: it lets a branch
+// preview show a prospect their card on the real pages before anything is
+// signed, while production, which never sets it, keeps unsold entries dark.
 export function isLive(s, today = new Date()) {
-  if (!s || s.active !== true) return false;
+  if (!s) return false;
+  if (process.env.SPONSOR_PREVIEW === '1') return true;
+  if (s.active !== true) return false;
   const d = today.toISOString().slice(0, 10);
   if (s.starts && d < s.starts) return false;
   if (s.ends && d > s.ends) return false;

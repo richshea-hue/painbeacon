@@ -147,6 +147,10 @@ clinic pages, after the byline on articles. No sponsor → nothing renders.
 
 - Master switch `active`, plus an optional `starts`/`ends` window, so a signed
   deal can be committed early and expires without a deploy.
+- `SPONSOR_PREVIEW=1` in the build env shows every entry regardless of `active`
+  or dates. Set it on the Pages **Preview** environment only, so a branch
+  preview can show a prospect their card on the real pages; production never
+  sets it.
 - Zero tracking scripts. Clicks go through `/go/<id>/` (`functions/go/[id].js`),
   which counts server-side via the `log_sponsor_click` RPC (create it with
   `sponsor_clicks_table.sql`) and 302s to the sponsor's URL with UTM tags. The
