@@ -12,7 +12,7 @@ so the dashboard shows which pitch produced each claim):
   fix-info           "here's what patients see for you — is it right?"
   badge-backlink     free Verified badge + followed link to their site
   founding-featured  ONE clinic per market: 4 months Featured for the price
-                     of one ($299), recycled into local Google ads
+                     of one ($500), recycled into local Google ads
   confirm-update     "we just found your hours/website via Google" — input is
                      scripts/outreach/build_confirm_targets.py's output
                      (rows carry an updated_fields column: hours, website,
@@ -180,7 +180,7 @@ PainBeacon lists every pain clinic in {market} — here's your profile:
 
 We're a new directory, so we're offering ONE practice per market a
 founding partner deal: 4 months of Featured placement for the price of
-one ($299 total, normally $299/month). We then put that entire amount
+one ($500 total, normally $500/month). We then put that entire amount
 into Google ads for local pain-clinic searches, pointed at the {market}
 pages — where you'd sit at the top, clearly marked Featured.
 

@@ -1,0 +1,90 @@
+---
+// Brand sponsorships — the labeled "Advertisement" unit, sold by state to
+// businesses that are not clinics. The rate card renders from SITE.pricing so
+// it can never drift from /for-practices/. Sold by conversation, not checkout.
+import Base from '../layouts/Base.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { breadcrumbLd } from '../lib/schema.js';
+import { SITE } from '../lib/site.js';
+
+const crumbs = [{ name: 'Home', href: '/' }, { name: 'Advertise', href: '/advertise/' }];
+const sp = SITE.pricing.sponsor;
+const mail = `mailto:contactus@painbeacon.com?subject=${encodeURIComponent('Sponsoring PainBeacon')}&body=${encodeURIComponent('Company:\nStates you serve:\nWhat you do for people in pain:\n')}`;
+---
+<Base title="Advertise on PainBeacon — sponsor pain-clinic pages by state"
+      description="Reach people who are looking for pain care right now. State-targeted, clearly labeled sponsorships on PainBeacon's clinic pages and guides — with no tracking scripts and no effect on rankings."
+      jsonld={breadcrumbLd(crumbs)}>
+  <div class="wrap narrow prose">
+    <Breadcrumbs items={crumbs} />
+    <p class="eyebrow">Advertise</p>
+    <h1>Be the one name on the page when someone is looking for pain care.</h1>
+    <p class="lede">
+      PainBeacon lists every pain medicine clinic in the United States and ranks them on
+      published criteria that are never for sale. A brand sponsorship puts your message on
+      those pages in the states you serve — labeled, exclusive to your category, and
+      measured.
+    </p>
+
+    <h2>Who it is for</h2>
+    <p>
+      Businesses that serve people in pain but are not clinics: personal injury and
+      workers' compensation attorneys, physical therapy and home-care networks, medical
+      device and brace makers, pharmacies and compounding services, employers and payers
+      with a pain program. Clinics belong in the directory itself — see
+      <a href="/for-practices/">for practices</a>.
+    </p>
+
+    <h2>Where your card appears</h2>
+    <ul>
+      <li><strong>Every area page in your states</strong> — below the ranked clinic list, where a reader has just finished comparing options.</li>
+      <li><strong>Every clinic profile in your states</strong> — after the profile and its questions, before the record's provenance note.</li>
+      <li><strong>State hub pages</strong> — after the list of areas.</li>
+      <li><strong>Guides you sponsor</strong> — after the byline on an article from <a href="/news/">The Beacon</a>, and on request, an interview-driven guide on your subject in which you are quoted as a source.</li>
+    </ul>
+    <p>
+      Never inside a ranked list, never on the map pins, never on the homepage. The card
+      is marked <em>Advertisement</em> and carries the line "Sponsors never influence
+      rankings or editorial" every time it renders.
+    </p>
+
+    <h2>What you get</h2>
+    <ul>
+      <li><strong>Category exclusivity by state.</strong> One law firm, one device maker, one therapy network per state. Your competitors cannot buy in beside you.</li>
+      <li><strong>Measurement without surveillance.</strong> The site runs no tracking scripts. Every click on your card is counted at the edge and forwarded to your site with UTM tags, so your own analytics see PainBeacon as a source. You get a monthly report by page.</li>
+      <li><strong>Your words.</strong> A kicker, a headline, two lines of copy, a call to action and a phone number, in the site's own typography. No banners, no animation.</li>
+    </ul>
+
+    <h2>Rates</h2>
+    <div class="rate">
+      <div>
+        <p class="rate-price">{sp.price}<span class="rate-per">{sp.period}</span></p>
+        <p class="rate-note">Per state group (a metro's states are sold together). {sp.term}.</p>
+      </div>
+      <div>
+        <p class="rate-price">{sp.commit.price}<span class="rate-per"> · {sp.commit.label}</span></p>
+        <p class="rate-note">{sp.commit.per}. Founding sponsors also get a share of the fee reinvested in local search ads pointed at the pages they sponsor — ask.</p>
+      </div>
+    </div>
+
+    <h2>How we keep it fair</h2>
+    <p>
+      Our rankings are independent and <a href="/how-we-rank/">published in full</a>.
+      Sponsors have no say in which clinics appear, in what order, or in what we write.
+      Sponsored guides carry a disclosure. Attorney and health advertising must comply with
+      the rules of the states it appears in; we will decline creative that makes a
+      medical claim.
+    </p>
+
+    <p><a class="btn" href={mail}>Start a conversation</a></p>
+    <p class="muted">Or write to contactus@painbeacon.com with the states you serve and what you do for people in pain.</p>
+  </div>
+
+  <style>
+    .rate { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:.9rem; margin:1rem 0 1.5rem; }
+    .rate > div { border:1px solid var(--line,#e3ddcf); border-top:3px solid var(--amber,#b86f2e); border-radius:4px;
+      background:var(--card,#fff); padding:1rem 1.2rem; }
+    .rate-price { font-family:var(--mono,monospace); font-size:1.5rem; font-weight:600; color:var(--teal-deep,#0a4f46); margin:0 0 .3rem; }
+    .rate-per { font-family:var(--sans); font-size:.85rem; font-weight:400; color:var(--ink-faint,#7c8a87); }
+    .rate-note { font-size:.86rem; color:var(--ink-soft,#4c5b59); margin:0; line-height:1.5; }
+  </style>
+</Base>

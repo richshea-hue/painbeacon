@@ -79,6 +79,11 @@ const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || '';
            {...(SITE.pricing.enhanced.url ? { target: '_blank', rel: 'noopener' } : {})}>
           {SITE.pricing.enhanced.url ? 'Get Enhanced' : 'Talk to us'}
         </a>
+        <p class="tier-commit">
+          Or <strong>{SITE.pricing.enhanced.commit.price}</strong> for {SITE.pricing.enhanced.commit.label}
+          <span class="tier-per">({SITE.pricing.enhanced.commit.per})</span>
+          {SITE.pricing.enhanced.commit.url && <> · <a href={SITE.pricing.enhanced.commit.url} target="_blank" rel="noopener">Prepay 3 months</a></>}
+        </p>
         <p class="tier-note">Make your profile the most complete one in your area.</p>
       </div>
 
@@ -86,19 +91,29 @@ const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || '';
         <h3>Featured</h3>
         <p class="tier-price">{SITE.pricing.featured.price}<span class="tier-per">{SITE.pricing.featured.period}</span></p>
         <ul>
-          <li>Clearly labeled featured placement on your local city pages</li>
-          <li>One Featured practice per area — priority position on relevant searches</li>
+          <li><strong>The top slot on every area page you serve</strong> — a labeled Featured card above the ranked list, and one practice per area, so a competitor can never buy in beside you</li>
+          <li><strong>On the clinic map</strong> — whenever your practice is in view, it appears in the sponsored rail beside the results, on every search and pan</li>
+          <li>A Featured badge on your profile and on your card wherever it appears</li>
+          <li>Eligible for the homepage sponsored slot</li>
           <li>Everything in Enhanced</li>
         </ul>
         <a class="btn tier-btn" href={SITE.pricing.featured.url || '#talk'}
            {...(SITE.pricing.featured.url ? { target: '_blank', rel: 'noopener' } : {})}>
           {SITE.pricing.featured.url ? 'Get Featured' : 'Talk to us'}
         </a>
-        <p class="tier-note">Labeled as advertising — kept separate from ranking.</p>
+        <p class="tier-commit">
+          Or <strong>{SITE.pricing.featured.commit.price}</strong> for {SITE.pricing.featured.commit.label}
+          <span class="tier-per">({SITE.pricing.featured.commit.per})</span>
+          {SITE.pricing.featured.commit.url && <> · <a href={SITE.pricing.featured.commit.url} target="_blank" rel="noopener">Prepay 3 months</a></>}
+        </p>
+        <p class="tier-note">Labeled as advertising — kept separate from ranking. Areas sell one at a time; ask whether yours is open.</p>
       </div>
     </div>
     <p class="tier-foot">Secure checkout via Stripe. We verify you represent the practice before an
-      upgraded listing goes live — if we can’t verify it, you’re fully refunded.</p>
+      upgraded listing goes live — if we can’t verify it, you’re fully refunded. Prepaid terms
+      run three months from the day your listing goes live and renew month to month after.</p>
+    <p class="tier-foot">Not a clinic? Brands and professional services that serve people in pain can
+      sponsor pages by state — see <a href="/advertise/">advertising on PainBeacon</a>.</p>
 
     <h2>How we keep it fair</h2>
     <p>
@@ -191,6 +206,8 @@ const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || '';
     .tier ul { margin:0 0 .7rem; padding-left:1.1rem; }
     .tier li { margin:.3rem 0; font-size:.93rem; }
     .tier-note { font-size:.8rem; color:var(--ink-faint,#7c8a87); margin:0; }
+    .tier-commit { font-size:.86rem; color:var(--ink-soft,#4c5b59); margin:0 0 .6rem; line-height:1.45; }
+    .tier-commit strong { font-family:var(--mono,monospace); color:var(--teal-deep,#0a4f46); }
     .pq { border:1px solid var(--line,#e3ddcf); border-radius:14px; background:var(--card,#fff);
       padding:1.1rem 1.2rem; margin:1rem 0; position:relative; }
     .pq-form { display:flex; flex-direction:column; gap:.7rem; }

@@ -78,11 +78,11 @@ scale the winner.
 
 ## Founding-Featured mechanics
 
-- **The deal:** one practice per market, 4 months of Featured for $299 total
-  (normally $299/mo). Create a dedicated one-time Stripe Payment Link named
+- **The deal:** one practice per market, 4 months of Featured for $500 total
+  (normally $500/mo — the price in `site.js`; keep the two in step). Create a dedicated one-time Stripe Payment Link named
   "Founding Featured — 4 months" so it doesn't collide with the monthly
   subscription link in `site.js`.
-- **The flywheel:** the $299 goes straight into Google Ads for
+- **The flywheel:** the $500 goes straight into Google Ads for
   "[city] pain clinic"-type searches pointed at that market's PainBeacon
   pages. The featured clinic sits on top, clearly labeled. Real patients
   arrive → the clinic sees value → renews at full price; the ads also seed
