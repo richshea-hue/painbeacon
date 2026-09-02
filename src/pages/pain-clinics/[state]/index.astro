@@ -1,6 +1,7 @@
 ---
 import Base from '../../../layouts/Base.astro';
 import Breadcrumbs from '../../../components/Breadcrumbs.astro';
+import SponsorCard from '../../../components/SponsorCard.astro';
 import { getClinics, groupBy, stateName } from '../../../lib/data.js';
 import { breadcrumbLd, itemListLd } from '../../../lib/schema.js';
 
@@ -50,5 +51,6 @@ const crumbs = [
         </a></li>
       ))}
     </ul>
+    <SponsorCard placement="state" state={abbr} />
   </div>
 </Base>

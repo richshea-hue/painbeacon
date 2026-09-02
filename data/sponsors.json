@@ -1,0 +1,35 @@
+{
+  "_readme": [
+    "Brand sponsorships — the labeled 'Advertisement' unit (src/components/SponsorCard.astro).",
+    "Separate product from Featured clinic listings: a sponsor is a business that is NOT a",
+    "clinic in the directory (a law firm, a device maker, a pharmacy), so it can never touch",
+    "rank order or slice membership. Build-time static, zero tracking scripts. Clicks route",
+    "through /go/<id>, a Pages Function that counts server-side and redirects — no pixel.",
+    "",
+    "Fields: id (slug, also the /go/ key) · name · url (landing page) · active (master switch)",
+    "· starts/ends (ISO dates, inclusive; either optional) · states (2-letter codes; the card",
+    "renders only on pages IN one of these states — [] = national) · placements (any of",
+    "state, zone, clinic, article) · articles (article slugs the card may follow; ['*'] = every",
+    "article; [] = none) · kicker/headline/body/cta (the creative) · phone (optional; rendered",
+    "as a tel: link) · disclosure (optional extra line, e.g. 'Attorney advertising')."
+  ],
+  "sponsors": [
+    {
+      "id": "samakow-law",
+      "name": "The Law Offices of Paul A. Samakow, P.C.",
+      "url": "https://www.samakowlaw.com/",
+      "active": false,
+      "starts": "2026-09-15",
+      "ends": "2026-12-15",
+      "states": ["VA", "MD", "DC"],
+      "placements": ["state", "zone", "clinic", "article"],
+      "articles": ["pain-after-a-car-accident"],
+      "kicker": "Hurt in a crash in Virginia, Maryland, or DC?",
+      "headline": "Get your treatment covered before the insurer decides what your injury is worth.",
+      "body": "Paul Samakow has represented injured people in Virginia and Maryland since 1980. Free consultation, no fee unless you recover.",
+      "cta": "Free consultation",
+      "phone": "703-761-4343",
+      "disclosure": "Attorney advertising."
+    }
+  ]
+}

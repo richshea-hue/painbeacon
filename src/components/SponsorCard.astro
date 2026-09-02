@@ -1,0 +1,69 @@
+---
+// The brand-sponsor unit. Renders ONLY when src/lib/sponsors.js finds a live
+// sponsor for this page; otherwise emits nothing, so unsold inventory leaves
+// no hole and no "your ad here". Always labeled, always outside ranked lists,
+// always carrying the never-affects-rankings line — that line is the product.
+//
+// Visual rule: Featured clinics get the teal pill inside the list; a brand
+// sponsor gets the amber rule and the plain "Advertisement" label. Keep the two
+// paid products distinguishable at a glance.
+import { sponsorFor, sponsorHref } from '../lib/sponsors.js';
+const { placement, state, article, pageKey = Astro.url.pathname } = Astro.props;
+const s = sponsorFor({ placement, state, article, pageKey });
+const href = s ? sponsorHref(s, pageKey) : '';
+---
+{s && (
+  <aside class="sponsor" aria-label={`Advertisement from ${s.name}`}>
+    <div class="sponsor-top">
+      <span class="sponsor-tag">Advertisement</span>
+      <span class="sponsor-fine">Sponsors never influence <a href="/how-we-rank/">rankings</a> or editorial.</span>
+    </div>
+    <div class="sponsor-grid">
+      <div class="sponsor-copy">
+        {s.kicker && <p class="sponsor-kicker">{s.kicker}</p>}
+        <p class="sponsor-head"><a href={href} rel="sponsored nofollow noopener" target="_blank">{s.headline}</a></p>
+        {s.body && <p class="sponsor-body">{s.body}</p>}
+        <p class="sponsor-from">{s.name}{s.disclosure && <> · {s.disclosure}</>}</p>
+      </div>
+      <div class="sponsor-act">
+        <a class="btn" href={href} rel="sponsored nofollow noopener" target="_blank">{s.cta || 'Learn more'}</a>
+        {s.phone && <a class="sponsor-phone" href={`tel:${s.phone.replace(/[^\d+]/g, '')}`}>{s.phone}</a>}
+      </div>
+    </div>
+  </aside>
+)}
+
+<style>
+  .sponsor {
+    margin: 2rem 0 1rem;
+    padding: 0.9rem 1.2rem 1.1rem;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-top: 3px solid var(--amber);
+    border-radius: var(--radius);
+  }
+  .sponsor-top {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.35rem 0.9rem;
+    margin-bottom: 0.7rem;
+  }
+  .sponsor-tag {
+    font-family: var(--sans); font-size: 0.68rem; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint);
+    border: 1px solid var(--line); border-radius: 3px; padding: 0.12rem 0.42rem;
+  }
+  .sponsor-fine { font-size: 0.78rem; color: var(--ink-faint); }
+  .sponsor-grid { display: flex; flex-wrap: wrap; align-items: center; gap: 0.9rem 1.5rem; }
+  .sponsor-copy { flex: 1 1 22rem; min-width: 0; }
+  .sponsor-copy p { margin: 0; }
+  .sponsor-kicker {
+    font-family: var(--sans); font-size: 0.78rem; font-weight: 600;
+    letter-spacing: 0.04em; text-transform: uppercase; color: var(--amber);
+    margin-bottom: 0.25rem !important;
+  }
+  .sponsor-head { font-family: var(--serif); font-size: 1.25rem; line-height: 1.25; font-weight: 500; }
+  .sponsor-head a { color: var(--ink); }
+  .sponsor-body { margin-top: 0.4rem !important; font-size: 0.92rem; color: var(--ink-soft); line-height: 1.5; }
+  .sponsor-from { margin-top: 0.5rem !important; font-size: 0.78rem; color: var(--ink-faint); }
+  .sponsor-act { display: flex; flex-direction: column; align-items: flex-start; gap: 0.45rem; }
+  .sponsor-phone { font-family: var(--mono); font-size: 0.95rem; font-variant-numeric: tabular-nums; }
+</style>

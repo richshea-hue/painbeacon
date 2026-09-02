@@ -1,5 +1,5 @@
 import rss from '@astrojs/rss';
-import { getCollection } from 'astro:content';
+import { getArticlesNewestFirst } from '../lib/articles.js';
 import { statSync } from 'node:fs';
 import { SITE } from '../lib/site.js';
 
@@ -34,9 +34,7 @@ async function remoteEnclosure(url) {
 }
 
 export async function GET(context) {
-  const articles = (await getCollection('articles')).sort(
-    (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
-  );
+  const articles = await getArticlesNewestFirst();
   return rss({
     title: `${SITE.name} — News & guides`,
     description:
