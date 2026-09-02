@@ -11,7 +11,9 @@
     "renders only on pages IN one of these states — [] = national) · placements (any of",
     "state, zone, clinic, article) · articles (article slugs the card may follow; ['*'] = every",
     "article; [] = none) · kicker/headline/body/cta (the creative) · phone (optional; rendered",
-    "as a tel: link) · disclosure (optional extra line, e.g. 'Attorney advertising')."
+    "as a tel: link) · disclosure (optional extra line, e.g. 'Attorney advertising').",
+    "",
+    "samakow-law: month 1 is a free trial in ONE state (VA, the Vienna office; MD is a one-word switch). The paid quarter widens states to VA, MD and DC and attaches the article. He is licensed in VA and MD, not DC, so the creative names only those two even when DC pages carry the card."
   ],
   "sponsors": [
     {
@@ -19,12 +21,21 @@
       "name": "The Law Offices of Paul A. Samakow, P.C.",
       "url": "https://www.samakowlaw.com/",
       "active": false,
-      "starts": "2026-09-15",
-      "ends": "2026-12-15",
-      "states": ["VA", "MD", "DC"],
-      "placements": ["state", "zone", "clinic", "article"],
-      "articles": ["pain-after-a-car-accident"],
-      "kicker": "Hurt in a crash in Virginia, Maryland, or DC?",
+      "starts": "2026-09-08",
+      "ends": "2026-10-07",
+      "states": [
+        "VA"
+      ],
+      "placements": [
+        "state",
+        "zone",
+        "clinic",
+        "article"
+      ],
+      "articles": [
+        "pain-after-a-car-accident"
+      ],
+      "kicker": "Hurt in a crash in Virginia or Maryland?",
       "headline": "Get your treatment covered before the insurer decides what your injury is worth.",
       "body": "Paul Samakow has represented injured people in Virginia and Maryland since 1980. Free consultation, no fee unless you recover.",
       "cta": "Free consultation",
