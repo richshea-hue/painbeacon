@@ -1,13 +1,11 @@
 ---
 import Base from '../../layouts/Base.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
-import { getCollection } from 'astro:content';
+import { getArticlesNewestFirst } from '../../lib/articles.js';
 import { breadcrumbLd } from '../../lib/schema.js';
 import { SITE } from '../../lib/site.js';
 
-const articles = (await getCollection('articles')).sort(
-  (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
-);
+const articles = await getArticlesNewestFirst();
 const crumbs = [{ name: 'Home', href: '/' }, { name: 'News & guides', href: '/news/' }];
 const fmt = (d) =>
   d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });

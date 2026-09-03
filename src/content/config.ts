@@ -9,6 +9,9 @@ const articles = defineCollection({
     title: z.string(),
     dek: z.string(), // standfirst; doubles as meta description and RSS summary
     date: z.coerce.date(),
+    // draft: true keeps the article out of the build entirely (page, feed,
+    // sitemap, homepage) — see src/lib/articles.js. SHOW_DRAFTS=1 previews it.
+    draft: z.boolean().optional(),
     category: z.enum(['Choosing a Clinic', 'Treatments Explained', 'Patient Guides', 'Inside the Rankings']),
     // Share card (og:image). Defaults to the generated card /social/<slug>.png —
     // run `node scripts/generate-social-cards.mjs` after adding an article.

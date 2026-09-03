@@ -76,13 +76,34 @@ export const SITE = {
   // this switch on. Set false to kill all clinic links regardless of checks.
   linkClinicWebsites: true,
 
-  // Paid listing tiers. Create the two subscription Payment Links in Stripe,
-  // then paste each checkout URL into `url` below — the buttons go live
-  // automatically. Until a url is set, the button falls back to the inquiry
-  // form (#talk). Prices are display-only here; the real amount is whatever you
-  // set on the Stripe Payment Link, so keep the two in sync.
+  // Paid listing tiers and the brand sponsorship. Display copy lives here so
+  // /for-practices/ and /advertise/ can never disagree with each other.
+  //
+  // Stripe: create one Product per tier with TWO prices — a monthly recurring
+  // price and a one-time "3 months prepaid" price — and a Payment Link for
+  // each. Paste the links into `url` below; a button goes live the moment its
+  // url is non-empty and falls back to the inquiry form (#talk) until then.
+  // The dollar figures here are display-only; the charge is whatever the
+  // Payment Link says, so change both together. The pre-2026-09 links
+  // (5kQ4gBgGl97W… at $29, 3cI5kF1Lresg… at $299) charge the OLD prices —
+  // archive them in Stripe once the new ones exist, never re-paste them.
   pricing: {
-    enhanced: { price: '$29', period: '/mo', note: '30-day free trial', url: 'https://buy.stripe.com/5kQ4gBgGl97WfpTaHReAg00' },
-    featured: { price: '$299', period: '/mo', note: '', url: 'https://buy.stripe.com/3cI5kF1Lresgb9D03deAg02' },
+    enhanced: {
+      price: '$50', period: '/mo', note: '30-day free trial', url: '',
+      commit: { label: '3 months prepaid', price: '$135', per: '$45/mo', url: '' },
+    },
+    featured: {
+      price: '$500', period: '/mo', note: '', url: '',
+      commit: { label: '3 months prepaid', price: '$1,350', per: '$450/mo', url: '' },
+    },
+    // Brand sponsorship (data/sponsors.json) — sold, not self-serve. Prices
+    // render on /advertise/; the sale closes by conversation and invoice.
+    sponsor: {
+      // A state group is a metro's states sold together (VA + MD + DC).
+      price: '$750', period: '/mo', term: 'Month to month, 30 days notice',
+      commit: { label: '3 months prepaid', price: '$1,800', per: '$600/mo' },
+      // One state on its own, for a business that only serves one.
+      single: { price: '$400', period: '/mo', commit: { label: '3 months prepaid', price: '$1,000', per: '$333/mo' } },
+    },
   },
 };

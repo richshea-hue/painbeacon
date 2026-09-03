@@ -135,6 +135,37 @@ The keys belong in the local `.env` and in the environment of whatever runs the
 weekly draft — not in the repo. Nothing in the build needs them: photo sourcing
 happens when an article is written, and only the finished crops are committed.
 
+### Brand sponsorships (the "Advertisement" unit)
+
+A second paid product, separate from Featured clinic listings: a business that
+is **not** a clinic (a law firm, a device maker) buys labeled placement in one
+or more states. Everything lives in `data/sponsors.json`; `src/lib/sponsors.js`
+matches a sponsor to a page by the page's STATE (or, on articles, by an explicit
+article slug), and `src/components/SponsorCard.astro` renders it — below the
+ranked list on zone pages, after the tiles on state hubs, after the profile on
+clinic pages, after the byline on articles. No sponsor → nothing renders.
+
+- Master switch `active`, plus an optional `starts`/`ends` window, so a signed
+  deal can be committed early and expires without a deploy.
+- `SPONSOR_PREVIEW=1` in the build env shows every entry regardless of `active`
+  or dates. Set it on the Pages **Preview** environment only, so a branch
+  preview can show a prospect their card on the real pages; production never
+  sets it.
+- Zero tracking scripts. Clicks go through `/go/<id>/` (`functions/go/[id].js`),
+  which counts server-side via the `log_sponsor_click` RPC (create it with
+  `sponsor_clicks_table.sql`) and 302s to the sponsor's URL with UTM tags. The
+  destination comes from the JSON, never the query string. `/go/` is disallowed
+  in `robots.txt` like `/c/`.
+- The card always carries the "Sponsors never influence rankings or editorial"
+  line and `rel="sponsored nofollow"`. Amber top rule = brand sponsor; teal pill
+  = Featured clinic. Keep the two distinguishable.
+
+### Draft articles
+
+`draft: true` in an article's front matter keeps it out of the build entirely —
+page, feed, sitemap, homepage row — because every consumer goes through
+`src/lib/articles.js`. `SHOW_DRAFTS=1 npx astro build` previews it.
+
 ### Google Preferred Sources
 
 A reader who adds PainBeacon at `google.com/preferences/source?q=painbeacon.com`

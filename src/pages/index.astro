@@ -5,7 +5,7 @@ import { getClinics, groupBy, stateName, titleCase } from '../lib/data.js';
 import { rankClinics } from '../lib/ranking.js';
 import { getDesertStats } from '../lib/deserts.js';
 import { websiteLd } from '../lib/schema.js';
-import { getCollection } from 'astro:content';
+import { getArticlesNewestFirst } from '../lib/articles.js';
 
 const clinics = await getClinics();
 // Count and group PRIMARY practices only, so duplicates folded by dedup never
@@ -38,9 +38,7 @@ const topZones = [...groupBy(primaries.filter((c) => c.zoneUrlSlug), (c) => c.zo
   .slice(0, 8);
 
 // Research & guides row: the deserts study plus the two most recent articles.
-const articles = (await getCollection('articles'))
-  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
-  .slice(0, 2);
+const articles = (await getArticlesNewestFirst()).slice(0, 2);
 const desertStats = await getDesertStats();
 const fmtDate = (d) =>
   d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });

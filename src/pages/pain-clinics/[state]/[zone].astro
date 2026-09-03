@@ -3,6 +3,7 @@ import Base from '../../../layouts/Base.astro';
 import Breadcrumbs from '../../../components/Breadcrumbs.astro';
 import ClinicCard from '../../../components/ClinicCard.astro';
 import ClinicMap from '../../../components/ClinicMap.astro';
+import SponsorCard from '../../../components/SponsorCard.astro';
 import { getClinics, groupBy, stateName, titleCase } from '../../../lib/data.js';
 import { rankClinics } from '../../../lib/ranking.js';
 import { breadcrumbLd, itemListLd } from '../../../lib/schema.js';
@@ -91,5 +92,9 @@ const crumbs = [
     <ul class="clinic-list">
       {listed.map((c, i) => <ClinicCard clinic={c} rank={i + 1} />)}
     </ul>
+
+    {/* Brand sponsor bought for this STATE (data/sponsors.json). Below the
+        ranked list, never inside it — a sponsor is not a clinic. */}
+    <SponsorCard placement="zone" state={c0.state} />
   </div>
 </Base>

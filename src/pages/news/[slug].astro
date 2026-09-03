@@ -1,12 +1,13 @@
 ---
 import Base from '../../layouts/Base.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
-import { getCollection } from 'astro:content';
+import SponsorCard from '../../components/SponsorCard.astro';
+import { getArticles } from '../../lib/articles.js';
 import { breadcrumbLd } from '../../lib/schema.js';
 import { SITE } from '../../lib/site.js';
 
 export async function getStaticPaths() {
-  const articles = await getCollection('articles');
+  const articles = await getArticles();
   return articles.map((a) => ({ params: { slug: a.slug }, props: { article: a } }));
 }
 
@@ -104,6 +105,11 @@ const shares = [
         </p>
       )}
     </article>
+
+    {/* Brand sponsor, if one is attached to THIS article in data/sponsors.json.
+        Below the byline and outside the article element, so it is never part of
+        the editorial and never reads as one. */}
+    <SponsorCard placement="article" article={article.slug} />
 
     <div class="share-row" data-url={pageUrl}>
       <span class="share-label">Share this</span>
