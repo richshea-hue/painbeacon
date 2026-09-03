@@ -20,7 +20,7 @@
 //    Supabase search log are the honest visitor signals.
 //  - Supabase (service role key): searches logged by the site, split by the
 //    states you are selling; leads; claims; page inventory per state; sponsor
-//    clicks if the ledger exists. Needs SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY.
+//    views and clicks if the ledger exists. Needs SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY.
 //
 // This must run where those hosts are reachable (Rich's computer). The cloud
 // container's egress proxy blocks Cloudflare and Supabase.
@@ -188,9 +188,10 @@ async function supabase() {
   say('| State | Clinic pages |'); say('|---|---:|');
   for (const st of STATES) say(`| ${st} | ${n(await count('clinics_public', `&state=eq.${st}`))} |`);
 
-  const clicks = await count('sponsor_clicks', `&created_at=gte.${since30}`);
-  if (clicks == null) say('\n_sponsor_clicks table not created yet (run sponsor_clicks_table.sql before a sponsor goes live)._');
-  else say(`\n**Sponsor clicks, last 30 days:** ${n(clicks)}`);
+  const views = await count('sponsor_events', `&created_at=gte.${since30}&event=eq.view`);
+  const clicks = await count('sponsor_events', `&created_at=gte.${since30}&event=eq.click`);
+  if (views == null) say('\n_sponsor_events table not created yet (run sponsor_events_table.sql before a sponsor goes live)._');
+  else say(`\n**Sponsor cards, last 30 days:** ${n(views)} views, ${n(clicks)} clicks — run scripts/sponsor-report.mjs for the per-sponsor report.`);
   say('');
 }
 

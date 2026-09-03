@@ -20,9 +20,9 @@
       "id": "samakow-law",
       "name": "The Law Offices of Paul A. Samakow, P.C.",
       "url": "https://www.samakowlaw.com/",
-      "active": false,
-      "starts": "2026-09-08",
-      "ends": "2026-10-07",
+      "active": true,
+      "starts": "2026-09-03",
+      "ends": "2026-10-03",
       "states": [
         "VA"
       ],

@@ -2,7 +2,8 @@ User-agent: *
 Allow: /
 # Postcard QR redirect endpoint — tracking URLs, not content.
 Disallow: /c/
-# Sponsor click redirect — counts a click and forwards; not content.
+# Sponsor click redirect and view counter — not content.
 Disallow: /go/
+Disallow: /i/
 
 Sitemap: https://painbeacon.com/sitemap.xml
