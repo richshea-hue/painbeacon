@@ -99,8 +99,11 @@ export const SITE = {
     // Brand sponsorship (data/sponsors.json) — sold, not self-serve. Prices
     // render on /advertise/; the sale closes by conversation and invoice.
     sponsor: {
+      // A state group is a metro's states sold together (VA + MD + DC).
       price: '$750', period: '/mo', term: 'Month to month, 30 days notice',
       commit: { label: '3 months prepaid', price: '$1,800', per: '$600/mo' },
+      // One state on its own, for a business that only serves one.
+      single: { price: '$400', period: '/mo', commit: { label: '3 months prepaid', price: '$1,000', per: '$333/mo' } },
     },
   },
 };

@@ -58,13 +58,19 @@ const mail = `mailto:contactus@painbeacon.com?subject=${encodeURIComponent('Spon
     <div class="rate">
       <div>
         <p class="rate-price">{sp.price}<span class="rate-per">{sp.period}</span></p>
-        <p class="rate-note">Per state group (a metro's states are sold together). {sp.term}.</p>
+        <p class="rate-note">Per state group — a metro's states sold together, such as Virginia, Maryland and DC. {sp.term}. Or {sp.commit.price} for {sp.commit.label} ({sp.commit.per}).</p>
       </div>
       <div>
-        <p class="rate-price">{sp.commit.price}<span class="rate-per"> · {sp.commit.label}</span></p>
-        <p class="rate-note">{sp.commit.per}. Founding sponsors also get a share of the fee reinvested in local search ads pointed at the pages they sponsor — ask.</p>
+        <p class="rate-price">{sp.single.price}<span class="rate-per">{sp.single.period}</span></p>
+        <p class="rate-note">One state on its own. Or {sp.single.commit.price} for {sp.single.commit.label} ({sp.single.commit.per}). Founding sponsors also get a share of the fee reinvested in local search ads pointed at the pages they sponsor — ask.</p>
       </div>
     </div>
+    <p>
+      One card per page, and one sponsor per category per state — a law firm, a medical
+      equipment supplier and a real estate agent can share Virginia; two law firms cannot.
+      Each sponsor also chooses which kinds of page carry the card (area lists, clinic
+      profiles, state hubs, guides), so the card sits where its reader is.
+    </p>
 
     <h2>How we keep it fair</h2>
     <p>
