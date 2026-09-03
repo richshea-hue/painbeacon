@@ -11,9 +11,14 @@ import { sponsorFor, sponsorHref } from '../lib/sponsors.js';
 const { placement, state, article, pageKey = Astro.url.pathname } = Astro.props;
 const s = sponsorFor({ placement, state, article, pageKey });
 const href = s ? sponsorHref(s, pageKey) : '';
+// View counter: a 1×1 image request to functions/i/[id].js, one per render.
+// Not a script, not a cookie, not a third party. The report shows views next
+// to clicks so a sponsor sees a rate, not a bare count.
+const pixel = s ? `/i/${encodeURIComponent(s.id)}/?p=${encodeURIComponent(pageKey)}` : '';
 ---
 {s && (
   <aside class="sponsor" aria-label={`Advertisement from ${s.name}`}>
+    <img class="sponsor-px" src={pixel} width="1" height="1" alt="" aria-hidden="true" loading="eager" decoding="async" />
     <div class="sponsor-top">
       <span class="sponsor-tag">Advertisement</span>
       <span class="sponsor-fine">Sponsors never influence <a href="/how-we-rank/">rankings</a> or editorial.</span>
@@ -35,6 +40,7 @@ const href = s ? sponsorHref(s, pageKey) : '';
 
 <style>
   .sponsor {
+    position: relative;
     margin: 2rem 0 1rem;
     padding: 0.9rem 1.2rem 1.1rem;
     background: var(--card);
@@ -42,6 +48,7 @@ const href = s ? sponsorHref(s, pageKey) : '';
     border-top: 3px solid var(--amber);
     border-radius: var(--radius);
   }
+  .sponsor-px { position: absolute; width: 1px; height: 1px; left: 0; top: 0; opacity: 0; pointer-events: none; }
   .sponsor-top {
     display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.35rem 0.9rem;
     margin-bottom: 0.7rem;

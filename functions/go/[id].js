@@ -3,7 +3,7 @@
 // Every SponsorCard link points at https://painbeacon.com/go/<sponsor-id>/?p=<page>
 //
 // On click: counts the click in Supabase (server-side, so it counts with JS off
-// and ships no pixel or script — the privacy page depends on that), then 302s
+// and ships no script — the privacy page depends on that), then 302s
 // to the sponsor's landing page with UTM tags so the sponsor sees us in their
 // own analytics. Unknown or inactive sponsor → home. Supabase down → still
 // redirect; a lost count is better than a dead link.
@@ -26,7 +26,7 @@ export async function onRequestGet(context) {
 
   if (env.SUPABASE_URL && env.SUPABASE_ANON_KEY) {
     try {
-      await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/log_sponsor_click`, {
+      await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/log_sponsor_event`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -35,6 +35,7 @@ export async function onRequestGet(context) {
         },
         body: JSON.stringify({
           p_sponsor: id,
+          p_event: 'click',
           p_path: page || null,
           p_referrer: (context.request.headers.get('referer') || '').slice(0, 300) || null,
         }),

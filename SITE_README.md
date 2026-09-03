@@ -151,11 +151,23 @@ clinic pages, after the byline on articles. No sponsor → nothing renders.
   or dates. Set it on the Pages **Preview** environment only, so a branch
   preview can show a prospect their card on the real pages; production never
   sets it.
-- Zero tracking scripts. Clicks go through `/go/<id>/` (`functions/go/[id].js`),
-  which counts server-side via the `log_sponsor_click` RPC (create it with
-  `sponsor_clicks_table.sql`) and 302s to the sponsor's URL with UTM tags. The
-  destination comes from the JSON, never the query string. `/go/` is disallowed
-  in `robots.txt` like `/c/`.
+- Zero tracking scripts, no cookies. Two Pages Functions count events through
+  the `log_sponsor_event` RPC (create it once with `sponsor_events_table.sql`;
+  the functions read `SUPABASE_URL` / `SUPABASE_ANON_KEY` from the Pages env):
+  - `/i/<id>/?p=<page>` (`functions/i/[id].js`) — a 1×1 GIF the card embeds,
+    one request per render, logged as a `view`. No-store, so caching can't eat
+    the count. Bots that fetch images are counted; the report says so.
+  - `/go/<id>/?p=<page>` (`functions/go/[id].js`) — the card's links, logged as
+    a `click`, then a 302 to the sponsor's URL with UTM tags (`utm_source=
+    painbeacon`, `utm_medium=sponsor`, `utm_campaign=<id>`, `utm_content=<page>`)
+    so the sponsor's own analytics attribute the visit. The destination comes
+    from the JSON, never the query string.
+  Both paths are disallowed in `robots.txt` like `/c/`. The privacy page's
+  "Advertising" paragraph describes exactly this; keep the two in step.
+- The sponsor's report: `node --env-file=.env scripts/sponsor-report.mjs
+  --sponsor samakow-law [--since 2026-09-03 --until 2026-10-03] [--out report.md]`
+  prints views, clicks, click-through rate, a daily table and the top pages.
+  Needs `SUPABASE_SERVICE_ROLE_KEY` (the anon key cannot read the ledger).
 - The card always carries the "Sponsors never influence rankings or editorial"
   line and `rel="sponsored nofollow"`. Amber top rule = brand sponsor; teal pill
   = Featured clinic. Keep the two distinguishable.
