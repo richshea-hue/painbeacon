@@ -66,7 +66,7 @@ open PR — never to write around it.
 - [x] Red flags: how to spot a pill mill before you book (Choosing a Clinic) — 2026-07-30
 - [x] How we rank pain clinics — and why nobody can buy a spot (Inside the Rankings) — 2026-08-18
 - [x] Epidural steroid injections: what the evidence actually says (Treatments Explained) — 2026-08-26
-- [ ] Sciatica: when to see a pain specialist vs. wait it out (Patient Guides)
+- [x] Sciatica: when to see a pain specialist vs. wait it out (Patient Guides) — 2026-09-02
 - [ ] Pain management without opioids: what modern clinics actually offer (Treatments Explained)
 - [ ] Spinal cord stimulators: who they're for and what a trial involves (Treatments Explained)
 - [ ] Questions to ask before agreeing to any pain procedure (Patient Guides)

@@ -241,6 +241,46 @@
       "note": "DUPLICATE SHOOT, must be replaced: this is the same photo session as the home hero and news/how-to-choose-a-pain-clinic hero (same room, same doctor and patient, different frame). Caught 2026-08-22 by the perceptual check in verify-images.mjs at dHash distance 12; the Pexels id and byte hashes all differ, so no exact check could see it. Waived only so the existing page keeps building - swap in an unrelated photo and delete this waiver."
     },
     {
+      "page": "news/sciatica-when-to-see-a-specialist",
+      "role": "hero",
+      "pexels_id": 8313199,
+      "src_url": "https://www.pexels.com/photo/8313199/",
+      "photographer": null,
+      "source_md5": "52d4ccd41239d84979b38b90e4a175a2",
+      "files": [
+        {
+          "path": "/images/news/sciatica-when-to-see-a-specialist/patient-describing-sciatica-pain-to-doctor-hero.jpg",
+          "md5": "2c3ea77db65107c85e2bf7174dfa5f8e",
+          "bytes": 63853
+        },
+        {
+          "path": "/images/news/sciatica-when-to-see-a-specialist/patient-describing-sciatica-pain-to-doctor-thumb.jpg",
+          "md5": "478440f298dcc43bec57769eea3e233d",
+          "bytes": 22139
+        },
+        {
+          "path": "/images/news/sciatica-when-to-see-a-specialist/patient-describing-sciatica-pain-to-doctor-share.jpg",
+          "md5": "6a14f41a95ae247202a4a99c9e3b1c0f",
+          "bytes": 61180
+        }
+      ]
+    },
+    {
+      "page": "news/sciatica-when-to-see-a-specialist",
+      "role": "inline",
+      "pexels_id": 8417431,
+      "src_url": "https://www.pexels.com/photo/8417431/",
+      "photographer": null,
+      "source_md5": "810c62f68014a3f35781f10988a01b74",
+      "files": [
+        {
+          "path": "/images/news/sciatica-when-to-see-a-specialist/staying-active-walking-with-sciatica.jpg",
+          "md5": "2a961fbb8dd52db919046259ac23911b",
+          "bytes": 115549
+        }
+      ]
+    },
+    {
       "page": "news/spot-a-pill-mill-red-flags",
       "role": "hero",
       "pexels_id": null,
