@@ -64,6 +64,10 @@ const mail = `mailto:contactus@painbeacon.com?subject=${encodeURIComponent('Spon
         <p class="rate-price">{sp.single.price}<span class="rate-per">{sp.single.period}</span></p>
         <p class="rate-note">One state on its own. Or {sp.single.commit.price} for {sp.single.commit.label} ({sp.single.commit.per}). Founding sponsors also get a share of the fee reinvested in local search ads pointed at the pages they sponsor — ask.</p>
       </div>
+      <div>
+        <p class="rate-price">{sp.national.price}<span class="rate-per">{sp.national.period}</span></p>
+        <p class="rate-note">Every state, one sponsor per category nationwide. Or {sp.national.commit.price} for {sp.national.commit.label} ({sp.national.commit.per}). For brands, device makers, research networks and national firms.</p>
+      </div>
     </div>
     <p>
       One card per page, and one sponsor per category per state — a law firm, a medical
@@ -86,7 +90,7 @@ const mail = `mailto:contactus@painbeacon.com?subject=${encodeURIComponent('Spon
   </div>
 
   <style>
-    .rate { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:.9rem; margin:1rem 0 1.5rem; }
+    .rate { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:.9rem; margin:1rem 0 1.5rem; }
     .rate > div { border:1px solid var(--line,#e3ddcf); border-top:3px solid var(--amber,#b86f2e); border-radius:4px;
       background:var(--card,#fff); padding:1rem 1.2rem; }
     .rate-price { font-family:var(--mono,monospace); font-size:1.5rem; font-weight:600; color:var(--teal-deep,#0a4f46); margin:0 0 .3rem; }

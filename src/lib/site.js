@@ -104,6 +104,9 @@ export const SITE = {
       commit: { label: '3 months prepaid', price: '$1,800', per: '$600/mo' },
       // One state on its own, for a business that only serves one.
       single: { price: '$400', period: '/mo', commit: { label: '3 months prepaid', price: '$1,000', per: '$333/mo' } },
+      // Every state (states: [] in sponsors.json) — OTC brands, device makers,
+      // trial recruiters, national firms. Category exclusivity is nationwide.
+      national: { price: '$2,000', period: '/mo', commit: { label: '3 months prepaid', price: '$4,800', per: '$1,600/mo' } },
     },
   },
 };
