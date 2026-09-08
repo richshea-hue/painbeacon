@@ -222,6 +222,15 @@ that are free for **claimed and verified** listings. The gate:
 functions (Settings → Environment variables, production and preview). Rotating
 it voids every link and moves the file path in one deploy.
 
+**Free for a limited time.** Tokens carry their issue date
+(`<npi>.<yyyymmdd>.<sig>`). To end the free period, set `KIT_FREE_UNTIL=YYYY-MM-DD`
+on the Pages project (functions): tokens issued on or before that date keep
+working at the `verified` tier; tokens issued after it need `enhanced` or
+`featured`, and the endpoint tells them so with a link to the tiers. Undated
+legacy tokens count as issued before any cutoff. Nothing on the site names a
+date on purpose — the page says "launch period" and promises early verifiers
+keep the kit, which this mechanism is what makes true.
+
 ## Page structure (matches the brief)
 
 | Route | Page |

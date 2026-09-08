@@ -2,12 +2,18 @@
 // Repo path: functions/practice-kit/download.js  →  GET /practice-kit/download?t=<token>
 //
 // The kit (five front-desk forms, see /practice-kit/) is free for claimed and
-// verified listings. The link in the verification email carries a signed
-// per-clinic token from scripts/kit-link.mjs. On each request this:
+// verified listings FOR A LIMITED TIME. The link in the verification email
+// carries a signed per-clinic token from scripts/kit-link.mjs, stamped with
+// its issue date. On each request this:
 //   1. verifies the token against KIT_SECRET (no secret → 503, bad token → 403);
 //   2. checks the listing's LIVE tier in clinics_public, so a link stops working
 //      if a listing is ever moved back to free (Supabase down → fail open, the
-//      signature is the real gate);
+//      signature is the real gate). Which tiers qualify depends on the token's
+//      issue date and KIT_FREE_UNTIL (YYYY-MM-DD, optional): a token issued on
+//      or before that date keeps working at `verified`; one issued after it
+//      needs `enhanced` or `featured`. Unset = the free period is still open.
+//      So ending the free period is one env var, and every practice that
+//      verified during it keeps its kit, as the page promises;
 //   3. counts the download (best effort, log_kit_download RPC — see
 //      kit_downloads_table.sql) and streams the zip from its secret path
 //      through ASSETS with a download disposition.
@@ -17,7 +23,16 @@
 // derives the file path from it).
 import { verifyToken, kitAssetPath, KIT_FILENAME } from '../_lib/kit.js';
 
-const ALLOWED_TIERS = new Set(['verified', 'enhanced', 'featured']);
+const FREE_PERIOD_TIERS = new Set(['verified', 'enhanced', 'featured']);
+const PAID_TIERS = new Set(['enhanced', 'featured']);
+
+// Tiers this token may download at. Legacy (undated) tokens predate any cutoff.
+function allowedTiers(env, issued) {
+  const cutoff = (env.KIT_FREE_UNTIL || '').replace(/-/g, '');
+  if (!/^\d{8}$/.test(cutoff)) return FREE_PERIOD_TIERS;
+  if (!issued || issued <= cutoff) return FREE_PERIOD_TIERS;
+  return PAID_TIERS;
+}
 
 function page(status, title, body) {
   const html = `<!doctype html><html lang="en"><head><meta charset="utf-8">
@@ -44,7 +59,8 @@ export async function onRequestGet(context) {
       '<p>The download isn’t switched on for this site right now. If you were sent this link, please reply to that email and we’ll sort it out.</p>');
   }
 
-  const npi = await verifyToken(env.KIT_SECRET, token);
+  const verified = await verifyToken(env.KIT_SECRET, token);
+  const npi = verified && verified.npi;
   if (!npi) {
     return page(403, 'This link isn’t valid',
       '<p>Download links are sent to practices once their listing is claimed and verified, and each one is specific to that practice. If yours was cut off in an email, try copying the whole address. If it still doesn’t work, reply to the email it came in and we’ll send a fresh one.</p>');
@@ -58,9 +74,12 @@ export async function onRequestGet(context) {
       if (r.ok) {
         const rows = await r.json();
         const tier = rows[0] && rows[0].listing_tier;
-        if (!rows.length || !ALLOWED_TIERS.has(tier)) {
-          return page(403, 'This listing isn’t verified',
-            '<p>The kit is for practices whose PainBeacon listing is claimed and verified. This listing isn’t showing as verified right now. If you think that’s wrong, reply to the email your link came in and we’ll take a look.</p>');
+        if (!rows.length || !allowedTiers(env, verified.issued).has(tier)) {
+          const paidOnly = !allowedTiers(env, verified.issued).has('verified');
+          return page(403, paidOnly ? 'The free period has ended' : 'This listing isn’t verified',
+            paidOnly
+              ? '<p>The Practice Kit was free for practices that verified during PainBeacon’s launch period. It is now included with the Enhanced and Featured listing tiers. <a href="/for-practices/#upgrade">See the tiers</a>, or reply to the email your link came in if you verified during the free period and think this is wrong.</p>'
+              : '<p>The kit is for practices whose PainBeacon listing is claimed and verified. This listing isn’t showing as verified right now. If you think that’s wrong, reply to the email your link came in and we’ll take a look.</p>');
         }
       }
     } catch (_e) {

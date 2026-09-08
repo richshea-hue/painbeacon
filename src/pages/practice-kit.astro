@@ -53,8 +53,14 @@ const forms = [
     <h1>The Practice Kit</h1>
     <p class="lede">
       Five front-desk forms, written from what patients do before they call a pain
-      clinic. Editable Word files, ready to fill in and post. Free for practices with
-      a claimed and verified PainBeacon listing.
+      clinic. Editable Word files, ready to fill in and post. <strong>Free for a
+      limited time</strong> to practices with a claimed and verified PainBeacon
+      listing. Verify while it is free and your kit stays yours.
+    </p>
+    <p class="kit-window">
+      The kit is free during PainBeacon’s launch period. After that it becomes part of
+      the paid Enhanced and Featured tiers. Practices verified before the change keep
+      their download link at no charge, for as long as the listing stays verified.
     </p>
 
     <p class="kit-cta">
@@ -112,8 +118,9 @@ const forms = [
       <li>
         <strong>We verify, then we send the link.</strong> We confirm you represent
         the practice, mark the listing verified, and email you a download link for
-        the kit. The link is specific to your practice and works as long as the
-        listing stays verified.
+        the kit. The link is specific to your practice, dated to when you verified,
+        and works as long as the listing stays verified, including after the free
+        period ends.
       </li>
     </ol>
     <p class="kit-already">
@@ -121,12 +128,14 @@ const forms = [
       the practices page</a> and we’ll send it.
     </p>
 
-    <h2>Why it’s free</h2>
+    <h2>Why it’s free right now</h2>
     <p>
       PainBeacon lists every pain practice in the country and only earns anything
       when a practice chooses to upgrade. A directory is only worth using when the
-      listings are right, so anything that gets a practice to check its own
-      information is worth giving away. The audit checklist includes us.
+      listings are right, so during the launch period anything that gets a practice
+      to check its own information is worth giving away. The audit checklist includes
+      us. When the launch period ends, the kit moves into the paid tiers; the
+      practices that verified early are the ones who keep it free.
     </p>
 
     <h2>What it isn’t</h2>
@@ -163,6 +172,8 @@ const forms = [
     .kit-a em { color:var(--ink-faint,#7c8a87); font-style:normal; }
     .kit-steps { padding-left:1.3rem; display:grid; gap:.6rem; }
     .kit-steps li { line-height:1.55; }
+    .kit-window { font-size:.92rem; color:var(--ink-soft,#4c5b59); border-left:3px solid var(--amber,#b86f2e);
+      padding:.4rem .9rem; margin:.25rem 0 1.25rem; }
     .kit-already { font-size:.92rem; color:var(--ink-soft,#4c5b59); }
   </style>
 </Base>
