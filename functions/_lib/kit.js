@@ -38,19 +38,52 @@ async function hmac(secret, msg) {
   return crypto.subtle.sign('HMAC', key, enc.encode(msg));
 }
 
-/** `<npi>.<24-char signature>` — the token that goes in the download link. */
-export async function signNpi(secret, npi) {
+/** Today as YYYYMMDD (UTC) — the issue date stamped into new tokens. */
+export function todayStamp(d = new Date()) {
+  return d.toISOString().slice(0, 10).replace(/-/g, '');
+}
+
+/**
+ * `<npi>.<yyyymmdd>.<24-char signature>` — the token that goes in the download
+ * link. The issue date is signed along with the NPI, so the kit can later move
+ * to the paid tiers for NEW verifications while every practice that verified
+ * during the free period keeps its link (see KIT_FREE_UNTIL in download.js).
+ * That is what makes "free for a limited time — verify now and keep it" a
+ * promise the code enforces rather than a slogan.
+ */
+export async function signNpi(secret, npi, issued = todayStamp()) {
+  const sig = b64url(await hmac(secret, `kit:${npi}:${issued}`)).slice(0, 24);
+  return `${npi}.${issued}.${sig}`;
+}
+
+/** Legacy `<npi>.<sig>` form from before the issue date was added. */
+async function signLegacy(secret, npi) {
   const sig = b64url(await hmac(secret, `kit:${npi}`)).slice(0, 24);
   return `${npi}.${sig}`;
 }
 
-/** Returns the NPI when the token verifies, otherwise null. Constant-time compare. */
-export async function verifyToken(secret, token) {
-  const m = /^(\d{10})\.([A-Za-z0-9_-]{24})$/.exec(token || '');
-  if (!m) return null;
-  const expected = await signNpi(secret, m[1]);
-  if (expected.length !== token.length) return null;
+function sameToken(expected, token) {
+  if (expected.length !== token.length) return false;
   let diff = 0;
   for (let i = 0; i < token.length; i++) diff |= expected.charCodeAt(i) ^ token.charCodeAt(i);
-  return diff === 0 ? m[1] : null;
+  return diff === 0;
+}
+
+/**
+ * Returns `{ npi, issued }` when the token verifies, otherwise null. `issued`
+ * is `YYYYMMDD` for dated tokens and null for legacy ones (which predate the
+ * cutoff by construction). Constant-time compare.
+ */
+export async function verifyToken(secret, token) {
+  const dated = /^(\d{10})\.(\d{8})\.([A-Za-z0-9_-]{24})$/.exec(token || '');
+  if (dated) {
+    const expected = await signNpi(secret, dated[1], dated[2]);
+    return sameToken(expected, token) ? { npi: dated[1], issued: dated[2] } : null;
+  }
+  const legacy = /^(\d{10})\.([A-Za-z0-9_-]{24})$/.exec(token || '');
+  if (legacy) {
+    const expected = await signLegacy(secret, legacy[1]);
+    return sameToken(expected, token) ? { npi: legacy[1], issued: null } : null;
+  }
+  return null;
 }
