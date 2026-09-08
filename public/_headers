@@ -10,3 +10,9 @@
 
 /pain-clinics/*
   Cache-Control: public, max-age=3600, s-maxage=86400
+
+# Practice Kit file store — served only through the gated download endpoint
+# (functions/practice-kit/download.js). Never index, never cache.
+/practice-kit/files/*
+  X-Robots-Tag: noindex
+  Cache-Control: private, no-store

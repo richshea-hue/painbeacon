@@ -196,6 +196,32 @@ Google also offers an interactive button that loads a script from
 `news.google.com`; we use the plain link instead, so the site still ships no
 third-party JavaScript beyond Google Fonts.
 
+### The Practice Kit (gated download)
+
+`/practice-kit/` pitches five front-desk forms (listing audit, Google Business
+Profile checklist, review protocol, new-patient phone script, insurance sheet)
+that are free for **claimed and verified** listings. The gate:
+
+- Sources are `resources/practice-kit/*.docx` (committed). `npm run build` runs
+  `scripts/build-practice-kit.mjs`, which zips them to
+  `public/practice-kit/files/<secret dir>/painbeacon-practice-kit.zip`. The dir
+  name is derived from `KIT_SECRET`, and `*.zip` is gitignored, so the file is
+  never at a guessable URL and never in git.
+- `functions/practice-kit/download.js` answers `/practice-kit/download?t=<token>`:
+  verifies the token against `KIT_SECRET`, checks the listing's live tier in
+  `clinics_public` (a link dies if a listing goes back to `free`), logs the
+  download (`kit_downloads_table.sql`, run once), and streams the zip through
+  `ASSETS`. No secret → 503; bad token → 403. `robots.txt` and `_headers` keep
+  the endpoint and file store out of indexes.
+- Links go out by hand in the verification email. After approving a claim in
+  `/dashboard`, mint one with `npm run kit:link -- <npi>` (reads `KIT_SECRET`
+  from `.env`; prints the clinic's name and tier so you can see who you're
+  sending it to). There is no self-serve unlock on purpose.
+
+`KIT_SECRET` must be set on the Cloudflare Pages project for **both** build and
+functions (Settings → Environment variables, production and preview). Rotating
+it voids every link and moves the file path in one deploy.
+
 ## Page structure (matches the brief)
 
 | Route | Page |

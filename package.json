@@ -4,7 +4,9 @@
   "version": "0.1.0",
   "scripts": {
     "dev": "astro dev",
-    "build": "node scripts/us-english.mjs && astro build && node scripts/area-cards.mjs",
+    "build": "node scripts/us-english.mjs && node scripts/build-practice-kit.mjs && astro build && node scripts/area-cards.mjs",
+    "kit:build": "node --env-file=.env scripts/build-practice-kit.mjs",
+    "kit:link": "node --env-file=.env scripts/kit-link.mjs",
     "lint:spelling": "node scripts/us-english.mjs",
     "fix:spelling": "node scripts/us-english.mjs --fix",
     "preview": "astro preview"

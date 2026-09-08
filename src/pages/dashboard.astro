@@ -367,13 +367,13 @@ const TIERS = ['free', 'verified', 'enhanced', 'featured']; // shared tier list 
           const clinicPatch = { listing_tier: tier };
           if (row.website) clinicPatch.website = row.website;
           if (row.work_email) clinicPatch.contact_email = row.work_email;
-          if (!confirm('Approve "' + (row.clinic_name || npi) + '"?\n\n• tier -> ' + tier + '\n• website -> ' + (row.website || '(none)') + '\n• contact email -> ' + (row.work_email || '(none)') + '\n\nThen click "Rebuild site" to push it live.')) return;
+          if (!confirm('Approve "' + (row.clinic_name || npi) + '"?\n\n• tier -> ' + tier + '\n• website -> ' + (row.website || '(none)') + '\n• contact email -> ' + (row.work_email || '(none)') + '\n\nThen click "Rebuild site" to push it live, and send the Practice Kit link (npm run kit:link -- ' + npi + ').')) return;
           btn.disabled = true; btn.textContent = '…';
           const r1 = await sb.from('clinics').update(clinicPatch).eq('npi', npi);
           if (r1.error) { btn.disabled = false; btn.textContent = '✓ Approve'; alert('Clinic update failed: ' + r1.error.message); return; }
           const r2 = await sb.from('claims').update({ status: 'verified' }).eq('id', id);
           if (r2.error) { alert('Clinic updated, but marking the claim failed: ' + r2.error.message); }
-          const d = $('cd-' + id); if (d) { d.hidden = false; d.textContent = 'approved ✓ — rebuild to publish'; }
+          const d = $('cd-' + id); if (d) { d.hidden = false; d.textContent = 'approved ✓ — rebuild to publish · send the kit link: npm run kit:link -- ' + npi; }
           const rowEl = $('claim-' + id); if (rowEl) { rowEl.classList.remove('new'); rowEl.classList.add('resolved'); }
           const stSel = document.querySelector(`select[data-claim="${id}"]`); if (stSel) stSel.value = 'verified';
           btn.textContent = '✓ Approved'; renderClaimsPill();
