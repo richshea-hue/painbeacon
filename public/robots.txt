@@ -5,5 +5,9 @@ Disallow: /c/
 # Sponsor click redirect and view counter — not content.
 Disallow: /go/
 Disallow: /i/
+# Practice Kit — the download endpoint is token-gated and the file store is
+# private. The public page is /practice-kit/.
+Disallow: /practice-kit/download
+Disallow: /practice-kit/files/
 
 Sitemap: https://painbeacon.com/sitemap.xml

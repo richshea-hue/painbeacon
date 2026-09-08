@@ -1,0 +1,168 @@
+---
+import Base from '../layouts/Base.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { breadcrumbLd } from '../lib/schema.js';
+
+// The Practice Kit: five front-desk forms, free for claimed-and-verified
+// listings. This is the public pitch. The files sit at a secret path under
+// /practice-kit/files/ and are served only by functions/practice-kit/download.js,
+// which checks a per-clinic signed token (scripts/kit-link.mjs mints one) and
+// the listing's live tier. The link goes out by hand in the verification email.
+// There is no self-serve unlock on purpose: the kit is the reason to claim.
+const crumbs = [
+  { name: 'Home', href: '/' },
+  { name: 'For practices', href: '/for-practices/' },
+  { name: 'Practice Kit' },
+];
+
+const forms = [
+  {
+    title: 'Online Listing Audit Checklist',
+    when: 'Quarterly · 30 minutes',
+    what: 'Every place a patient looks you up, from the NPI registry to your insurer’s “find a doctor” tool, and the five fields that decide whether they call.',
+  },
+  {
+    title: 'Google Business Profile Checklist',
+    when: 'One afternoon, then 15 minutes a month',
+    what: 'The panel Google shows when someone searches your name. Setup, photos, the Q&A tab nobody watches, and the suggested edits that go live if you don’t reject them.',
+  },
+  {
+    title: 'Patient Review Request Protocol',
+    when: 'Every check-out',
+    what: 'How to ask everyone the same way, and how to answer every review without confirming anyone was a patient. Five response templates written to stay inside HIPAA and the FTC’s review rule.',
+  },
+  {
+    title: 'New Patient Phone Script',
+    when: 'Every new-patient call',
+    what: 'Answers the three questions callers actually have, insurance, referral, and how soon, in the first two minutes. One steady line for the medication question.',
+  },
+  {
+    title: 'Accepted Insurance and Referral Sheet',
+    when: 'Update when a contract changes',
+    what: 'One patient-facing sheet for the website, the desk, and the phone: plans, referrals, prior authorization, and what a visit costs, so nobody guesses.',
+  },
+];
+---
+<Base title="The Practice Kit — five front-desk forms for pain clinics"
+      description="Five editable front-desk forms for pain practices, written from what patients do before they call: a listing audit, a Google Business Profile checklist, a review protocol, a new-patient phone script, and an insurance sheet. Free with a claimed and verified PainBeacon listing."
+      jsonld={breadcrumbLd(crumbs)}>
+  <div class="wrap narrow prose">
+    <Breadcrumbs items={crumbs} />
+
+    <p class="eyebrow">For practices</p>
+    <h1>The Practice Kit</h1>
+    <p class="lede">
+      Five front-desk forms, written from what patients do before they call a pain
+      clinic. Editable Word files, ready to fill in and post. Free for practices with
+      a claimed and verified PainBeacon listing.
+    </p>
+
+    <p class="kit-cta">
+      <a class="btn" href="/pain-clinics/?src=kit">Find your practice</a>
+      <a class="btn ghost" href="/for-practices/">How claiming works</a>
+    </p>
+
+    <h2>What’s inside</h2>
+    <ol class="kit-list">
+      {forms.map((f, i) => (
+        <li class="kit-item">
+          <div class="kit-num">{i + 1}</div>
+          <div>
+            <h3>{f.title}</h3>
+            <p class="kit-when">{f.when}</p>
+            <p>{f.what}</p>
+          </div>
+        </li>
+      ))}
+    </ol>
+
+    <h2>A page from the phone script</h2>
+    <p>
+      By the time a person calls a pain clinic they have usually been hurting for
+      months and have three questions they need answered before they will book. The
+      script answers them in the order callers ask, and keeps everything clinical for
+      the visit.
+    </p>
+    <div class="kit-excerpt" aria-label="Excerpt from the New Patient Phone Script">
+      <p class="kit-q">“Do you take my insurance?”</p>
+      <p class="kit-a">Which plan do you have? <em>[Listen.]</em> Yes, we are in network with
+        <em>[plan]</em>. / We are not in network with <em>[plan]</em>, but I can tell you what a
+        visit costs and what patients usually get back from their plan. / Let me check
+        that one and call you back within the hour.</p>
+      <p class="kit-q">“Do I need a referral?”</p>
+      <p class="kit-a">That depends on your plan. If you do, your primary care office can
+        send it to us, and I can pencil you in now so you keep your spot.</p>
+      <p class="kit-q">“How soon can I be seen?”</p>
+      <p class="kit-a">Our next new-patient opening is <em>[date]</em>. If you can come on
+        short notice, I can put you on our cancellation list and call you if something
+        opens sooner.</p>
+    </div>
+
+    <h2>How to get it</h2>
+    <ol class="kit-steps">
+      <li>
+        <strong>Find your practice.</strong> Search by state and city, or by name.
+        Every pain practice in the country is already listed from public federal
+        provider records, so you are almost certainly here.
+      </li>
+      <li>
+        <strong>Claim it.</strong> Two minutes, free. We ask who you are and how to
+        reach you. None of it is published.
+      </li>
+      <li>
+        <strong>We verify, then we send the link.</strong> We confirm you represent
+        the practice, mark the listing verified, and email you a download link for
+        the kit. The link is specific to your practice and works as long as the
+        listing stays verified.
+      </li>
+    </ol>
+    <p class="kit-already">
+      Already verified and don’t have a link? <a href="/for-practices/#talk">Tell us on
+      the practices page</a> and we’ll send it.
+    </p>
+
+    <h2>Why it’s free</h2>
+    <p>
+      PainBeacon lists every pain practice in the country and only earns anything
+      when a practice chooses to upgrade. A directory is only worth using when the
+      listings are right, so anything that gets a practice to check its own
+      information is worth giving away. The audit checklist includes us.
+    </p>
+
+    <h2>What it isn’t</h2>
+    <p>
+      Nothing in the kit is legal, compliance, billing, or medical advice, and there
+      are no clinical or controlled-substance forms in it. Those need a lawyer and a
+      physician behind them. Every form says so at the bottom, and every one is meant
+      to be adapted to your state and reviewed by your own advisors before you use it.
+    </p>
+
+    <p class="kit-cta">
+      <a class="btn" href="/pain-clinics/?src=kit">Find your practice</a>
+    </p>
+  </div>
+
+  <style>
+    .kit-cta { display:flex; flex-wrap:wrap; gap:.6rem; margin:1.4rem 0 .4rem; }
+    .kit-list { list-style:none; padding:0; margin:1rem 0 0; display:grid; gap:.8rem; }
+    .kit-item { display:grid; grid-template-columns:2.4rem 1fr; gap:.9rem; align-items:start;
+      border:1px solid var(--line,#e3ddcf); border-radius:14px; background:var(--card,#fffefb);
+      padding:1rem 1.1rem; }
+    .kit-item h3 { margin:0 0 .15rem; font-size:1.05rem; }
+    .kit-item p { margin:0; font-size:.95rem; line-height:1.5; }
+    .kit-when { color:var(--ink-faint,#7c8a87); font-size:.8rem !important; margin-bottom:.35rem !important;
+      text-transform:uppercase; letter-spacing:.4px; }
+    .kit-num { width:2.4rem; height:2.4rem; border-radius:50%; display:grid; place-items:center;
+      background:var(--teal-wash,#eaf6f4); color:var(--teal-deep,#0a4f46); font-weight:700; }
+    .kit-excerpt { border-left:3px solid var(--teal,#0e6e62); background:var(--paper-2,#efeadd);
+      border-radius:0 12px 12px 0; padding:1rem 1.2rem; margin:1rem 0 1.4rem; }
+    .kit-excerpt p { margin:0; }
+    .kit-q { font-weight:700; color:var(--teal-deep,#0a4f46); margin-top:.7rem !important; }
+    .kit-q:first-child { margin-top:0 !important; }
+    .kit-a { font-size:.95rem; line-height:1.55; }
+    .kit-a em { color:var(--ink-faint,#7c8a87); font-style:normal; }
+    .kit-steps { padding-left:1.3rem; display:grid; gap:.6rem; }
+    .kit-steps li { line-height:1.55; }
+    .kit-already { font-size:.92rem; color:var(--ink-soft,#4c5b59); }
+  </style>
+</Base>
