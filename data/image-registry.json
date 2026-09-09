@@ -241,6 +241,46 @@
       "note": "DUPLICATE SHOOT, must be replaced: this is the same photo session as the home hero and news/how-to-choose-a-pain-clinic hero (same room, same doctor and patient, different frame). Caught 2026-08-22 by the perceptual check in verify-images.mjs at dHash distance 12; the Pexels id and byte hashes all differ, so no exact check could see it. Waived only so the existing page keeps building - swap in an unrelated photo and delete this waiver."
     },
     {
+      "page": "news/pain-management-without-opioids",
+      "role": "hero",
+      "pexels_id": 4506163,
+      "src_url": "https://www.pexels.com/photo/4506163/",
+      "photographer": null,
+      "source_md5": "b1f6a030f56d96a72e53c8fab559391e",
+      "files": [
+        {
+          "path": "/images/news/pain-management-without-opioids/physical-therapist-guiding-resistance-band-exercise-hero.jpg",
+          "md5": "f8f4b34654e8df89fb28f6ec2b2c1ebb",
+          "bytes": 56452
+        },
+        {
+          "path": "/images/news/pain-management-without-opioids/physical-therapist-guiding-resistance-band-exercise-thumb.jpg",
+          "md5": "fdaef1d0aa8cd31379e7fd24f68ba6f8",
+          "bytes": 23886
+        },
+        {
+          "path": "/images/news/pain-management-without-opioids/physical-therapist-guiding-resistance-band-exercise-share.jpg",
+          "md5": "dbc90538dda9dc17e3b2363308b5cae0",
+          "bytes": 60932
+        }
+      ]
+    },
+    {
+      "page": "news/pain-management-without-opioids",
+      "role": "inline",
+      "pexels_id": 19440815,
+      "src_url": "https://www.pexels.com/photo/19440815/",
+      "photographer": null,
+      "source_md5": "4eaff3156e5c472f199a9b12ed072c46",
+      "files": [
+        {
+          "path": "/images/news/pain-management-without-opioids/clinician-explaining-spine-model-to-patient.jpg",
+          "md5": "746bcc021b0bf366bbd4975cf8137345",
+          "bytes": 112072
+        }
+      ]
+    },
+    {
       "page": "news/sciatica-when-to-see-a-specialist",
       "role": "hero",
       "pexels_id": 8313199,
