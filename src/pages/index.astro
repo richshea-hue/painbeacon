@@ -6,6 +6,8 @@ import { rankClinics } from '../lib/ranking.js';
 import { getDesertStats } from '../lib/deserts.js';
 import { websiteLd } from '../lib/schema.js';
 import { getArticlesNewestFirst } from '../lib/articles.js';
+import { getMetroIndex } from '../lib/metros.js';
+import { metroLabel } from '../lib/metro-defs.js';
 
 const clinics = await getClinics();
 // Count and group PRIMARY practices only, so duplicates folded by dedup never
@@ -71,7 +73,18 @@ for (const [, list] of groupBy(routable, (c) => c.zoneSlug)) {
     entries.set(label, { label, href: `/pain-clinics/${c.stateSlug}/${c.zoneUrlSlug}/`, n: list.length });
   }
 }
-const cityIndex = [...entries.values()].sort((a, b) => b.n - a.n);
+// Metro areas join the index too, linking to their own page rather than the
+// map. `alts` carries the metro's nicknames (DMV, Northern Virginia, Twin
+// Cities...) so those searches land on the metro page first.
+const metroIndex = await getMetroIndex();
+const metroEntries = [...metroIndex.values()].map(({ metro, items }) => ({
+  label: `${metroLabel(metro)} metro`,
+  href: `/metro/${metro.slug}/`,
+  n: items.length,
+  alts: metro.aliases,
+  metro: true,
+}));
+const cityIndex = [...metroEntries, ...entries.values()].sort((a, b) => b.n - a.n);
 
 const total = primaries.length;
 ---
@@ -156,6 +169,9 @@ const total = primaries.length;
             <span class="label">{z.label}</span><span class="n">{z.n}</span>
           </a></li>
         ))}
+        <li><a class="tile" href="/metro/">
+          <span class="label">Metro areas →</span><span class="n">{metroIndex.size}</span>
+        </a></li>
         <li><a class="tile" href="/pain-clinics/">
           <span class="label">All states →</span><span class="n">{states.length}</span>
         </a></li>
@@ -514,10 +530,19 @@ const total = primaries.length;
     // search starts with geographic context. The zone pages remain the SEO
     // landing pages; the map links onward to them.
     const mapHref = (query) => `/map/?q=${encodeURIComponent(query)}`;
+    // Metro entries link to their own page; everything else to the map.
+    const hrefOf = (c) => (c.metro && c.href ? c.href : mapHref(c.label));
     function render(list) {
       out.innerHTML = list.slice(0, 8).map((c) =>
-        `<li><a class="tile" href="${mapHref(c.label)}"><span class="label">${c.label}</span><span class="n">${c.n}</span></a></li>`
+        `<li><a class="tile" href="${hrefOf(c)}"><span class="label">${c.label}</span><span class="n">${c.n}</span></a></li>`
       ).join('');
+    }
+    // Direct label matches, with metro nickname matches ("DMV", "Northern
+    // Virginia") placed first: the metro page is the better answer to those.
+    function search(v) {
+      const hits = placeFilter(v, idx, (c) => c.label || '');
+      const nick = idx.filter((c) => c.alts && !hits.includes(c) && c.alts.some((a) => placeMatches(v, a)));
+      return [...nick, ...hits];
     }
     function hint(html) { out.innerHTML = `<li class="search-hint">${html}</li>`; }
     // Site-wide search logger lives on window.pbTrack (defined by the chat
@@ -575,7 +600,7 @@ const total = primaries.length;
       // Token-prefix matching with filler dropped and nicknames expanded, so
       // "Washington DC", "DC metro" and "Northern Virginia" all find places
       // (place-query.js). Direct matches lead; alias matches follow.
-      render(placeFilter(v, idx, (c) => c.label || ''));
+      render(search(v));
     });
 
     // Enter: fire the ZIP lookup immediately (e.g. after a paste); any other
@@ -588,9 +613,11 @@ const total = primaries.length;
       if (isZipLike(v) && digits.length >= 5) { e.preventDefault(); goToZip(digits, 'hero'); return; }
       if (v) {
         e.preventDefault();
-        const matched = idx.some((c) => placeMatches(v, c.label || ''));
+        const results = search(v);
+        const matched = results.length > 0;
         track({ source: 'hero', query: v, kind: 'city', zip3: null, matched, zone: null });
-        window.location.href = mapHref(v);
+        // A metro is the best answer when it leads the list; otherwise the map.
+        window.location.href = results[0] && results[0].metro ? results[0].href : mapHref(v);
       }
     });
 

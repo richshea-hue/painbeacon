@@ -264,6 +264,30 @@ on `/how-we-rank/` are read from that same file, so the published methodology ca
 never drift from the actual ordering. Signals not yet in the data (insurance
 breadth, procedure count) are documented as "expanding," not faked.
 
+## Metro pages and place search
+
+`/metro/` and `/metro/[slug]/` (2026-09-09). A metro is an anchor point and a
+radius in miles in `src/lib/metro-defs.js`, a twin of the FertilityRecord copy
+(change both). Membership is computed at build time from clinic coordinates
+(`src/lib/metros.js`); a clinic without coordinates borrows its city. That is
+why the Washington, DC page holds DC, Northern Virginia and the Maryland
+suburbs with no knowledge of how zones are named. The page lists the zones
+inside the metro by state, then the top 25 of a metro-wide ranking. Overlaps
+are allowed on purpose. State pages list the metros reaching into them, and a
+zone page links up to the metro holding at least half its clinics.
+
+A brand sponsor renders on a metro page only if it has bought every state the
+metro covers, or is national (`sponsorForStates` in `src/lib/sponsors.js`):
+the rate card sells a metro as its states together, so a single-state sponsor
+must not get the three-state page for the price of one.
+
+Search boxes go through `src/lib/place-query.js` (also a twin): both sides are
+normalized (punctuation, D.C., state names, filler like "metro" and "area"),
+tokens match as prefixes in any order, and nicknames and regions expand
+(DMV, NoVA, Twin Cities, Bay Area). The homepage index carries each metro
+with its aliases, so "Northern Virginia" leads with the DC metro page.
+`npm run test:place` and `node --test src/lib/metro-defs.test.mjs` pin it.
+
 ## Where to edit
 
 - Brand, domain, reviewer, tripwire → `src/lib/site.js`

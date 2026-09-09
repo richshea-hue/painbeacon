@@ -7,9 +7,13 @@
 // Visual rule: Featured clinics get the teal pill inside the list; a brand
 // sponsor gets the amber rule and the plain "Advertisement" label. Keep the two
 // paid products distinguishable at a glance.
-import { sponsorFor, sponsorHref } from '../lib/sponsors.js';
-const { placement, state, article, pageKey = Astro.url.pathname } = Astro.props;
-const s = sponsorFor({ placement, state, article, pageKey });
+import { sponsorFor, sponsorForStates, sponsorHref } from '../lib/sponsors.js';
+// `states` (an array) is the metro-page form: the sponsor must cover every
+// state listed, or be national. `state` is the single-state form.
+const { placement, state, states, article, pageKey = Astro.url.pathname } = Astro.props;
+const s = Array.isArray(states)
+  ? sponsorForStates({ placement, states, pageKey })
+  : sponsorFor({ placement, state, article, pageKey });
 const href = s ? sponsorHref(s, pageKey) : '';
 // View counter: a 1×1 image request to functions/i/[id].js, one per render.
 // Not a script, not a cookie, not a third party. The report shows views next

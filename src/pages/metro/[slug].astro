@@ -1,0 +1,145 @@
+---
+// Metro landing page: every clinic within the metro's radius, across state
+// lines, with the zone pages inside it and the top of the metro-wide ranking.
+//
+// Why it exists: the directory is split by state, and the places people
+// search for are not. "Washington DC" is DC, Northern Virginia and the
+// Maryland suburbs; this is the one page that holds all three. Membership is
+// a radius from downtown (src/lib/metro-defs.js), so it needs no knowledge of
+// how zones are named and cannot drift from them.
+import Base from '../../layouts/Base.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import ClinicCard from '../../components/ClinicCard.astro';
+import ClinicMap from '../../components/ClinicMap.astro';
+import SponsorCard from '../../components/SponsorCard.astro';
+import { getMetroIndex } from '../../lib/metros.js';
+import { metroLabel, metroArea } from '../../lib/metro-defs.js';
+import { groupBy, stateName, titleCase } from '../../lib/data.js';
+import { rankClinics } from '../../lib/ranking.js';
+import { breadcrumbLd, itemListLd } from '../../lib/schema.js';
+
+export async function getStaticPaths() {
+  const index = await getMetroIndex();
+  return [...index.values()].map(({ metro, items }) => ({
+    params: { slug: metro.slug },
+    props: { metro, clinics: items },
+  }));
+}
+
+const { metro, clinics } = Astro.props;
+const label = metroLabel(metro);
+const area = metroArea(metro);
+const ranked = rankClinics(clinics);
+
+// Same rule as zone pages: one paid Featured slot above the list, excluded
+// from it, so paid placement never mixes with the objective ranking.
+const featured = ranked.filter((c) => c.listing_tier === 'featured').slice(0, 1);
+const featuredNpis = new Set(featured.map((c) => c.npi));
+const TOP = 25;
+const top = ranked.filter((c) => !featuredNpis.has(c.npi)).slice(0, TOP);
+
+// Areas inside the metro, grouped by state in the metro's own state order.
+const byState = groupBy(clinics, (c) => c.state);
+const stateOrder = [...metro.states, ...[...byState.keys()].sort()]
+  .filter((s, i, arr) => byState.has(s) && arr.indexOf(s) === i);
+const sections = stateOrder.map((st) => {
+  const list = byState.get(st);
+  const zones = [...groupBy(list.filter((c) => c.zoneSlug), (c) => c.zoneSlug).values()]
+    .map((z) => ({
+      href: `/pain-clinics/${z[0].stateSlug}/${z[0].zoneUrlSlug}/`,
+      label: z[0].zoneLabel,
+      count: z.length,
+    }))
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+  return { st, name: stateName(st), count: list.length, zones };
+});
+const stateNames = sections.map((s) => s.name);
+const statesText =
+  stateNames.length > 1
+    ? `${stateNames.slice(0, -1).join(', ')} and ${stateNames[stateNames.length - 1]}`
+    : stateNames[0] || '';
+const areaCount = sections.reduce((n, s) => n + s.zones.length, 0);
+const anchorCity = metro.name.split(/[,–]/)[0].trim();
+
+const mapMarkers = ranked
+  .filter((c) => c.latitude != null && c.longitude != null)
+  .map((c) => ({
+    lat: c.latitude,
+    lng: c.longitude,
+    name: titleCase(c.name),
+    slug: c.slug,
+    street: [c.address_1 && titleCase(c.address_1), c.address_2 && titleCase(c.address_2)]
+      .filter(Boolean)
+      .join(', '),
+    address: `${c.cityLabel}, ${c.state}`,
+  }));
+
+const crumbs = [
+  { name: 'Home', href: '/' },
+  { name: 'Metro areas', href: '/metro/' },
+  { name: label, href: `/metro/${metro.slug}/` },
+];
+---
+<Base title={`Pain clinics in ${area}`}
+      description={`${clinics.length} pain medicine clinics within ${metro.radiusMi} miles of downtown ${anchorCity}, across ${statesText}. Areas inside the metro and the top-ranked clinics, on objective, published criteria.`}
+      jsonld={[breadcrumbLd(crumbs), itemListLd(ranked, `Pain clinics in ${area}`)]}>
+  <div class="wrap">
+    <Breadcrumbs items={crumbs} />
+    <h1>Pain clinics in {area}</h1>
+    <p class="lede">
+      {clinics.length.toLocaleString()} clinics within {metro.radiusMi} miles of downtown {anchorCity},
+      across {statesText}. {areaCount} areas inside the metro, each with its own ranked page, and the
+      top {Math.min(TOP, top.length)} clinics in the metro by our
+      <a href="/how-we-rank/"> ranking methodology</a>.
+    </p>
+
+    <ClinicMap markers={mapMarkers} />
+
+    {sections.map((s) => (
+      <section class="metro-state">
+        <h2>{s.name} <span class="count">{s.count.toLocaleString()} clinics</span></h2>
+        <ul class="tile-grid">
+          {s.zones.map((z) => (
+            <li><a class="tile" href={z.href}>
+              <span class="label">{z.label}</span><span class="n">{z.count}</span>
+            </a></li>
+          ))}
+        </ul>
+      </section>
+    ))}
+
+    {featured.length > 0 && (
+      <section class="featured-slot">
+        <div class="featured-head">
+          <span class="featured-pill">Featured</span>
+          <span class="featured-note">Sponsored placement · <a href="/how-we-rank/">independent of our ranking</a></span>
+        </div>
+        <ul class="clinic-list">
+          {featured.map((c) => <ClinicCard clinic={c} />)}
+        </ul>
+      </section>
+    )}
+
+    <h2 id="top">Top {Math.min(TOP, top.length)} in {area}</h2>
+    <p class="metro-note">
+      Ranked across the whole metro, so a clinic's position here can differ from its position on
+      its own area page. Same criteria, bigger field.
+    </p>
+    <ul class="clinic-list">
+      {top.map((c, i) => <ClinicCard clinic={c} rank={i + 1} />)}
+    </ul>
+
+    {/* A brand sponsor appears on a metro page only when it has bought every
+        state the metro covers, or is national. A single-state sponsor keeps
+        to its state pages. */}
+    <SponsorCard placement="state" states={metro.states} />
+  </div>
+</Base>
+
+<style>
+  .metro-state { margin: 1.75rem 0 0; }
+  .metro-state h2 { margin-bottom: 0.6rem; }
+  .metro-state .count { font-weight: 400; font-size: 0.85em; color: var(--ink-soft); margin-left: 0.4rem; }
+  #top { margin-top: 2.25rem; }
+  .metro-note { color: var(--ink-soft); font-size: 0.95rem; margin: -0.25rem 0 1rem; }
+</style>

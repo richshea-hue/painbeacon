@@ -7,6 +7,8 @@ import SponsorCard from '../../../components/SponsorCard.astro';
 import { getClinics, groupBy, stateName, titleCase } from '../../../lib/data.js';
 import { rankClinics } from '../../../lib/ranking.js';
 import { breadcrumbLd, itemListLd } from '../../../lib/schema.js';
+import { getMetroIndex } from '../../../lib/metros.js';
+import { metroLabel, bestMetroFor } from '../../../lib/metro-defs.js';
 
 export async function getStaticPaths() {
   const clinics = await getClinics();
@@ -29,6 +31,11 @@ const c0 = clinics[0];
 const name = stateName(c0.state);
 const zoneLabel = c0.zoneLabel;
 const ranked = rankClinics(clinics);
+
+// The metro this area belongs to, when at least half its clinics fall inside
+// one. Links the state-bound zone page up to the cross-state metro page.
+const best = bestMetroFor(await getMetroIndex(), clinics);
+const metro = best && best.n * 2 >= clinics.length ? best.entry.metro : null;
 
 // Featured = paid placement, capped at one per ZONE (exclusivity). Shown in a
 // labeled, clearly-sponsored slot ABOVE the ranked list and excluded from it,
@@ -73,6 +80,7 @@ const crumbs = [
     <p class="lede">
       {clinics.length} {clinics.length === 1 ? 'clinic' : 'clinics'} in this area, ordered by our
       <a href="/how-we-rank/"> ranking methodology</a>.
+      {metro && <> Part of the <a href={`/metro/${metro.slug}/`}>{metroLabel(metro)} metro area</a>.</>}
     </p>
 
     <ClinicMap markers={mapMarkers} />
