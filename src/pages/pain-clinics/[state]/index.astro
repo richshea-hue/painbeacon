@@ -4,6 +4,8 @@ import Breadcrumbs from '../../../components/Breadcrumbs.astro';
 import SponsorCard from '../../../components/SponsorCard.astro';
 import { getClinics, groupBy, stateName } from '../../../lib/data.js';
 import { breadcrumbLd, itemListLd } from '../../../lib/schema.js';
+import { getMetroIndex } from '../../../lib/metros.js';
+import { metroLabel } from '../../../lib/metro-defs.js';
 
 export async function getStaticPaths() {
   const clinics = await getClinics();
@@ -26,6 +28,14 @@ const byZone = groupBy(clinics.filter((c) => c.zoneSlug), (c) => c.zoneSlug);
 const zones = [...byZone.entries()]
   .map(([, list]) => ({ urlSlug: list[0].zoneUrlSlug, label: list[0].zoneLabel, count: list.length }))
   .sort((a, b) => a.label.localeCompare(b.label));
+
+// Metro areas reaching into this state, with the count of this state's
+// clinics inside each (the DC metro shows its Virginia count on the Virginia
+// page). Cross-state metros are the pages a state page cannot be.
+const metros = [...(await getMetroIndex()).values()]
+  .filter(({ byState }) => byState.has(abbr))
+  .map(({ metro, byState }) => ({ slug: metro.slug, label: metroLabel(metro), n: byState.get(abbr) }))
+  .sort((a, b) => b.n - a.n);
 
 const crumbs = [
   { name: 'Home', href: '/' },
@@ -51,6 +61,19 @@ const crumbs = [
         </a></li>
       ))}
     </ul>
+    {metros.length > 0 && (
+      <section class="state-metros">
+        <h2>Metro areas</h2>
+        <p class="lede">Metro pages gather clinics across state lines. The count is this state's share.</p>
+        <ul class="tile-grid">
+          {metros.map((m) => (
+            <li><a class="tile" href={`/metro/${m.slug}/`}>
+              <span class="label">{m.label} metro</span><span class="n">{m.n}</span>
+            </a></li>
+          ))}
+        </ul>
+      </section>
+    )}
     <SponsorCard placement="state" state={abbr} />
   </div>
 </Base>

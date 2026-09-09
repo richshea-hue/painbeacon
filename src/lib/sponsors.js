@@ -86,6 +86,29 @@ export function sponsorFor({ placement, state, article, pageKey }, today = new D
   return ordered[hash(String(pageKey || '')) % ordered.length];
 }
 
+/**
+ * The sponsor for a page that spans several states (a metro page). A brand
+ * shows here only when it is national or has bought EVERY state the page
+ * covers: the rate card sells a metro as its states together, and a
+ * single-state sponsor appearing on the three-state page would get the
+ * group for the price of one.
+ */
+export function sponsorForStates({ placement, states, pageKey }, today = new Date()) {
+  if (!PLACEMENTS.includes(placement)) return null;
+  const want = (Array.isArray(states) ? states : []).map((x) => String(x).toUpperCase());
+  const matches = allSponsors().filter((s) => {
+    if (!isLive(s, today)) return false;
+    if (!Array.isArray(s.placements) || !s.placements.includes(placement)) return false;
+    const have = Array.isArray(s.states) ? s.states.map((x) => String(x).toUpperCase()) : [];
+    if (!have.length) return true; // national
+    return want.length > 0 && want.every((w) => have.includes(w));
+  });
+  if (!matches.length) return null;
+  if (matches.length === 1) return matches[0];
+  const ordered = [...matches].sort((a, b) => a.id.localeCompare(b.id));
+  return ordered[hash(String(pageKey || '')) % ordered.length];
+}
+
 // Outbound href: always through /go/<id>, never the raw URL, so the click is
 // counted server-side (functions/go/[id].js) with no script on the page.
 export function sponsorHref(s, pageKey = '') {

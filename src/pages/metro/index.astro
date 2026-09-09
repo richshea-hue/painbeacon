@@ -1,0 +1,55 @@
+---
+// Index of metro landing pages, biggest first.
+import Base from '../../layouts/Base.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import { getMetroIndex } from '../../lib/metros.js';
+import { metroLabel } from '../../lib/metro-defs.js';
+import { stateName } from '../../lib/data.js';
+import { breadcrumbLd } from '../../lib/schema.js';
+
+const index = await getMetroIndex();
+const metros = [...index.values()]
+  .map(({ metro, items, byState }) => ({
+    slug: metro.slug,
+    label: metroLabel(metro),
+    n: items.length,
+    states: [...byState.keys()].map((s) => stateName(s)).join(', '),
+  }))
+  .sort((a, b) => b.n - a.n);
+const total = metros.reduce((n, m) => n + m.n, 0);
+
+const crumbs = [
+  { name: 'Home', href: '/' },
+  { name: 'Metro areas', href: '/metro/' },
+];
+---
+<Base title="Pain clinics by metro area"
+      description={`Pain clinics in ${metros.length} U.S. metro areas, gathered across state lines: Washington DC with its Virginia and Maryland suburbs, the Bay Area, Dallas–Fort Worth and more.`}
+      jsonld={breadcrumbLd(crumbs)}>
+  <div class="wrap">
+    <Breadcrumbs items={crumbs} />
+    <h1>Pain clinics by metro area</h1>
+    <p class="lede">
+      {metros.length} metro areas. A metro page gathers every clinic within a set distance of
+      downtown, whichever state it sits in, so the Washington, DC page holds the District, Northern
+      Virginia and the Maryland suburbs together. Looking for a single state or area? Start from
+      <a href="/pain-clinics/">all states</a>.
+    </p>
+    <ul class="tile-grid">
+      {metros.map((m) => (
+        <li><a class="tile" href={`/metro/${m.slug}/`} title={m.states}>
+          <span class="label">{m.label}</span><span class="n">{m.n.toLocaleString()}</span>
+        </a></li>
+      ))}
+    </ul>
+    <p class="metro-foot">
+      Metro areas overlap where cities do (Baltimore sits at the edge of the Washington radius), so
+      a clinic can appear on two metro pages. Counts are primary practices, the same number the
+      state pages use. {total.toLocaleString()} clinic listings across all metros.
+    </p>
+  </div>
+</Base>
+
+<style>
+  .metro-foot { color: var(--ink-soft); font-size: 0.92rem; margin-top: 1.5rem; }
+</style>

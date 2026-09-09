@@ -1,5 +1,6 @@
 import { getArticles } from '../lib/articles.js';
 import { getClinics, groupBy } from '../lib/data.js';
+import { getMetroIndex } from '../lib/metros.js';
 import { SITE } from '../lib/site.js';
 import { ALL_TOPICS, MIN_CLINICS_FOR_TOPIC_PAGE } from '../lib/topics.js';
 
@@ -24,6 +25,11 @@ export async function GET() {
     const c0 = list[0];
     urls.add(`/pain-clinics/${c0.stateSlug}/${c0.zoneUrlSlug}/`);
   }
+
+  // Metro pages: /metro/ and /metro/[slug]/ — mirrors src/pages/metro/[slug].astro,
+  // which builds one page per metro with at least one clinic.
+  urls.add('/metro/');
+  for (const slug of (await getMetroIndex()).keys()) urls.add(`/metro/${slug}/`);
 
   // Topic × city pages: /[topic]/[city]/
   // Only where the city clears the thin-page threshold, matching the gating in
