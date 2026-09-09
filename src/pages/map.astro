@@ -345,6 +345,12 @@ const crumbs = [
     }
   </style>
 
+  <!-- The inline map script cannot import modules; hand it the shared place
+       matcher on window instead. -->
+  <script>
+    import * as PlaceQuery from '../lib/place-query.js';
+    window.PlaceQuery = PlaceQuery;
+  </script>
   <script is:inline>
     // Self-contained loader for the national map. Leaflet 1.9.4 +
     // Leaflet.markercluster 1.5.3 are vendored under /vendor/leaflet/ (copied
@@ -606,14 +612,21 @@ const crumbs = [
             return { cities: [], clinics: [], zip: { q: zq, idxs: hit, near: near }, state: null };
           }
 
-          // State by abbreviation or full name.
+          // State by abbreviation or full name. The shared matcher also folds
+          // "DC metro" and "Virginia" to a state, so those land here too.
+          var PQ = window.PlaceQuery || null;
           var ab = null;
           if (/^[a-z]{2}$/.test(s) && byState[s.toUpperCase()]) ab = s.toUpperCase();
           if (!ab && NAME_TO_ABBR[s]) ab = NAME_TO_ABBR[s];
+          if (!ab && PQ) { var sq = PQ.stateOf(s); if (sq && byState[sq]) ab = sq; }
           if (ab) return { cities: [], clinics: [], zip: null, state: ab };
 
-          var cities = [];
-          for (var ci = 0; ci < cityList.length && cities.length < 5; ci++) {
+          // Cities: token-prefix match in any order, punctuation and filler
+          // ignored, nicknames and regions expanded (place-query.js), so
+          // "Washington DC", "NoVA" and "Bay Area" all find places. The plain
+          // substring test is only the fallback if the bridge has not loaded.
+          var cities = PQ ? PQ.placeFilter(s, cityList, function (c) { return c; }).slice(0, 5) : [];
+          if (!PQ) for (var ci = 0; ci < cityList.length && cities.length < 5; ci++) {
             if (cityList[ci].toLowerCase().indexOf(s) !== -1) cities.push(cityList[ci]);
           }
           var clinics = [];
