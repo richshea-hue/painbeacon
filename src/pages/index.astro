@@ -504,6 +504,7 @@ const total = primaries.length;
   </style>
   <script type="application/json" id="city-index" set:html={JSON.stringify(cityIndex)}></script>
   <script>
+    import { placeFilter, placeMatches } from '../lib/place-query.js';
     const idx = JSON.parse(document.getElementById('city-index').textContent);
     const q = document.getElementById('q');
     const out = document.getElementById('results');
@@ -571,7 +572,10 @@ const total = primaries.length;
         else hint('Enter all 5 digits of your ZIP…');
         return;
       }
-      render(idx.filter((c) => (c.label || '').toLowerCase().includes(v.toLowerCase())));
+      // Token-prefix matching with filler dropped and nicknames expanded, so
+      // "Washington DC", "DC metro" and "Northern Virginia" all find places
+      // (place-query.js). Direct matches lead; alias matches follow.
+      render(placeFilter(v, idx, (c) => c.label || ''));
     });
 
     // Enter: fire the ZIP lookup immediately (e.g. after a paste); any other
@@ -584,7 +588,7 @@ const total = primaries.length;
       if (isZipLike(v) && digits.length >= 5) { e.preventDefault(); goToZip(digits, 'hero'); return; }
       if (v) {
         e.preventDefault();
-        const matched = idx.some((c) => (c.label || '').toLowerCase().includes(v.toLowerCase()));
+        const matched = idx.some((c) => placeMatches(v, c.label || ''));
         track({ source: 'hero', query: v, kind: 'city', zip3: null, matched, zone: null });
         window.location.href = mapHref(v);
       }

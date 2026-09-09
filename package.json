@@ -9,7 +9,8 @@
     "kit:link": "node --env-file=.env scripts/kit-link.mjs",
     "lint:spelling": "node scripts/us-english.mjs",
     "fix:spelling": "node scripts/us-english.mjs --fix",
-    "preview": "astro preview"
+    "preview": "astro preview",
+    "test:place": "node --test src/lib/place-query.test.mjs"
   },
   "dependencies": {
     "@astrojs/rss": "^4.0.19",
