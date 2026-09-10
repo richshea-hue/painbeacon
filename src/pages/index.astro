@@ -90,19 +90,44 @@ const total = primaries.length;
 ---
 <Base description={SITE.description} jsonld={websiteLd()}>
   <section class="hero-dark">
-    <picture class="hero-photo">
-      <source media="(max-width: 980px)" type="image/webp" srcset="/brand/hero-clinic-band.webp" />
-      <source media="(max-width: 980px)" srcset="/brand/hero-clinic-band.jpg" />
-      <source type="image/webp" srcset="/brand/hero-clinic-wide.webp" />
-      <img
-        src="/brand/hero-clinic-wide.jpg"
-        width="1600"
-        height="720"
-        alt="A board-certified pain specialist listening to a patient during a clinic consultation"
-        fetchpriority="high"
-        decoding="async"
-      />
-    </picture>
+    <div class="hero-photo">
+      <picture>
+        <source media="(max-width: 980px)" type="image/webp" srcset="/brand/hero-clinic-band.webp" />
+        <source media="(max-width: 980px)" srcset="/brand/hero-clinic-band.jpg" />
+        <source type="image/webp" srcset="/brand/hero-clinic-wide.webp" />
+        <img
+          src="/brand/hero-clinic-wide.jpg"
+          width="1600"
+          height="720"
+          alt="A board-certified pain specialist listening to a patient during a clinic consultation"
+          fetchpriority="high"
+          decoding="async"
+        />
+      </picture>
+      {/* The same consultation as the still, in motion — Pexels 7579331 is the
+          video side of the shoot the hero photo came from (cottonbro studio).
+          The photo stays underneath as the instant paint and the fallback: the
+          video fades in over it only once it is actually playing, and the
+          script below never even loads it on phones (the band crop is a
+          different composition and 3MB is real money on cell data), under
+          prefers-reduced-motion, or when the browser advertises Save-Data. */}
+      <video class="hero-video" muted loop playsinline preload="none" aria-hidden="true">
+        <source src="/videos/brand/hero-clinic-consultation.mp4" type="video/mp4" />
+      </video>
+    </div>
+    <script is:inline>
+      (() => {
+        const v = document.querySelector('.hero-dark .hero-video');
+        if (!v) return;
+        const conn = navigator.connection || {};
+        const ok = matchMedia('(min-width: 981px)').matches
+          && !matchMedia('(prefers-reduced-motion: reduce)').matches
+          && !conn.saveData;
+        if (!ok) { v.remove(); return; }
+        v.addEventListener('playing', () => v.classList.add('is-playing'), { once: true });
+        v.play().catch(() => {});
+      })();
+    </script>
     <div class="wrap">
       <div class="inner">
         <p class="eyebrow">{total.toLocaleString()} pain clinics · {states.length} states and territories</p>
@@ -129,6 +154,16 @@ const total = primaries.length;
         <span>Built on the <b>federal NPI registry</b></span>
         <span><b>Verified</b> reviews &amp; credentials</span>
       </div>
+
+      {/* Pexels API guidelines require crediting the artist and linking Pexels
+          wherever their footage runs. Photo and video are one shoot, so one
+          line covers both. */}
+      <p class="hero-credit">
+        Photo &amp; video:
+        <a href="https://www.pexels.com/@cottonbro?utm_source=painbeacon&utm_medium=referral" rel="noopener">cottonbro studio</a>
+        {' on '}
+        <a href="https://www.pexels.com/video/a-female-doctor-talking-to-a-patient-7579331/?utm_source=painbeacon&utm_medium=referral" rel="noopener">Pexels</a>
+      </p>
     </div>
   </section>
 

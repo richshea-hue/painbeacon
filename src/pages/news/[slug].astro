@@ -75,24 +75,7 @@ const shares = [
       <p class="lede">{d.dek}</p>
     </header>
 
-    {d.heroVideo ? (
-      <>
-        {/* The photo stays the poster frame, so the Unsplash hotlink is still
-            served (and counted) here, and anything that can't play video —
-            reader modes, slow connections, reduced motion below — shows the
-            photograph the credits describe. */}
-        <video class="article-hero-img" autoplay muted loop playsinline preload="metadata"
-               poster={heroImg} width="1600" height="900" aria-label={heroAlt}>
-          <source src={d.heroVideo} type="video/mp4" />
-        </video>
-        <script is:inline>
-          if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
-            const v = document.querySelector('video.article-hero-img');
-            if (v) { v.removeAttribute('autoplay'); v.pause(); }
-          }
-        </script>
-      </>
-    ) : heroImg ? (
+    {heroImg ? (
       <img class="article-hero-img" src={heroImg} alt={heroAlt} width="1600" height="900" loading="eager" fetchpriority="high" />
     ) : (
       <img class="article-hero-img" src={image} alt={imageAlt} width="1200" height="1200" loading="eager" />
@@ -109,30 +92,16 @@ const shares = [
           live in the hero's alt text — alt is a description for screen reader
           users and cannot carry a link, so credit there would be both worse for
           them and non-compliant. */}
-      {((d.heroCreditName && d.heroCreditProvider) || d.heroVideoCreditName) && (
+      {d.heroCreditName && d.heroCreditProvider && (
         <p class="photo-credit">
-          {d.heroCreditName && d.heroCreditProvider && (
-            <>
-              Photography:{' '}
-              {d.heroCreditProfile
-                ? <a href={`${d.heroCreditProfile}${utm}`} rel="noopener">{d.heroCreditName}</a>
-                : d.heroCreditName}
-              {' on '}
-              {d.heroCreditPhoto
-                ? <a href={`${d.heroCreditPhoto}${utm}`} rel="noopener">{d.heroCreditProvider}</a>
-                : <a href={`${providerHome[d.heroCreditProvider]}${utm}`} rel="noopener">{d.heroCreditProvider}</a>}
-            </>
-          )}
-          {d.heroVideoCreditName && (
-            <>
-              {d.heroCreditName && d.heroCreditProvider ? ' · ' : ''}Video:{' '}
-              {d.heroVideoCreditProfile
-                ? <a href={`${d.heroVideoCreditProfile}${utm}`} rel="noopener">{d.heroVideoCreditName}</a>
-                : d.heroVideoCreditName}
-              {' on '}
-              <a href={`${d.heroVideoCreditPage || providerHome.Pexels}${utm}`} rel="noopener">Pexels</a>
-            </>
-          )}
+          Photography:{' '}
+          {d.heroCreditProfile
+            ? <a href={`${d.heroCreditProfile}${utm}`} rel="noopener">{d.heroCreditName}</a>
+            : d.heroCreditName}
+          {' on '}
+          {d.heroCreditPhoto
+            ? <a href={`${d.heroCreditPhoto}${utm}`} rel="noopener">{d.heroCreditProvider}</a>
+            : <a href={`${providerHome[d.heroCreditProvider]}${utm}`} rel="noopener">{d.heroCreditProvider}</a>}
         </p>
       )}
     </article>
