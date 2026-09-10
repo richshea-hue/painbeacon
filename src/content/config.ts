@@ -51,6 +51,18 @@ const articles = defineCollection({
     heroCreditProfile: z.string().optional(), // photographer's profile page
     heroCreditPhoto: z.string().optional(), // the photo's own page
     heroCreditProvider: z.enum(['Unsplash', 'Pexels']).optional(),
+    // Hero video (optional): plays muted/looped in place of the hero image on
+    // the article page only. The hero PHOTO must stay set — it remains the
+    // poster frame, og:image, thumb, and RSS enclosure, none of which can be a
+    // video. Self-hosted mp4 under public/videos/ (≤ ~10MB; Cloudflare Pages
+    // caps files at 25MB): Pexels is the only video source and its license
+    // allows re-hosting, but the API guidelines still require the credit links
+    // below. Unsplash has no video product, so heroVideo never collides with
+    // the heroRemote hotlinking rule.
+    heroVideo: z.string().optional(),
+    heroVideoCreditName: z.string().optional(),
+    heroVideoCreditProfile: z.string().optional(), // videographer's Pexels profile
+    heroVideoCreditPage: z.string().optional(), // the video's own Pexels page
   }),
 });
 
