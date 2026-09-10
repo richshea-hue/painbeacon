@@ -5,7 +5,7 @@
       "role": "hero",
       "pexels_id": null,
       "src_url": null,
-      "photographer": null,
+      "photographer": "cottonbro studio",
       "source_md5": null,
       "files": [
         {
@@ -30,7 +30,23 @@
         }
       ],
       "waived": true,
-      "note": "KNOWN OVERLAP, waived: same shoot/source as news/how-to-choose-a-pain-clinic hero (different crop). Replace the home hero with a fresh photo to clear this. Backfilled 2026-08-01."
+      "note": "KNOWN OVERLAP, waived: same shoot/source as news/how-to-choose-a-pain-clinic hero (different crop). Replace the home hero with a fresh photo to clear this. Backfilled 2026-08-01. Source identified 2026-09-10 by perceptual match: cottonbro studio, Pexels 7579823 (or an adjacent frame of that shoot) — id left null because how-we-rank-pain-clinics (inline) already registers 7579823 and the id-duplicate check has no waiver; the shoot-level dhash waiver covers this known overlap."
+    },
+    {
+      "page": "home-hero",
+      "role": "hero-video",
+      "pexels_id": 7579331,
+      "src_url": "https://www.pexels.com/video/a-female-doctor-talking-to-a-patient-7579331/",
+      "photographer": "cottonbro studio",
+      "source_md5": null,
+      "files": [
+        {
+          "path": "/videos/brand/hero-clinic-consultation.mp4",
+          "md5": "388779e4553bbe56705735f6a4c4a2cc",
+          "bytes": 572737
+        }
+      ],
+      "note": "hero VIDEO (mp4, not an image) — same cottonbro shoot as the hero photo, chosen deliberately, so the same-shoot dedup waiver on the hero entry covers it. Pulled via the Pexels API 2026-09-10, then trimmed to the 2s-9s segment (loop endpoints matched at dHash distance 0) and re-encoded to 1920w CRF27 (~560KB) for page weight; source_md5 is null because the shipped file is a derivative, not the download. Credit rendered in the hero."
     },
     {
       "page": "news/does-insurance-cover-pain-management",

@@ -358,12 +358,22 @@ hr.rule { border: 0; border-top: 1px solid var(--line); margin: 2.5rem 0; }
 /* Hero photograph. The radial gradient above stays as the base layer so the
    band still looks designed if the image is slow or fails. */
 .hero-dark .hero-photo { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.hero-dark .hero-photo picture { position: absolute; inset: 0; }
 .hero-dark .hero-photo img {
   width: 100%; height: 100%; object-fit: cover;
   /* Hold the clinician right-of-center, clear of the headline column. */
   object-position: 68% 28%;
   user-select: none;
 }
+/* The hero video sits over the photo and fades in only once it is actually
+   playing (script adds .is-playing), so the still remains the first paint and
+   the only thing some visitors ever get — phones, reduced motion, Save-Data. */
+.hero-dark .hero-photo video {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; object-position: 68% 28%;
+  opacity: 0; transition: opacity 0.9s ease;
+}
+.hero-dark .hero-photo video.is-playing { opacity: 1; }
 /* Scrim. White display type over a photo needs a real gradient behind it —
    the copy column sits over the near-opaque end, the clinician stays readable
    at the open end. */
@@ -384,6 +394,9 @@ hr.rule { border: 0; border-top: 1px solid var(--line); margin: 2.5rem 0; }
       rgba(10, 44, 56, 0.32) 100%);
 }
 .hero-dark .inner { position: relative; z-index: 2; padding: 3.75rem 0 2.75rem; max-width: 42rem; }
+.hero-dark .hero-credit { position: relative; z-index: 2; margin: 0.4rem 0 0; padding-bottom: 0.6rem;
+  font-size: 0.72rem; color: rgba(207, 224, 222, 0.55); }
+.hero-dark .hero-credit a { color: rgba(207, 224, 222, 0.78); }
 .hero-dark .eyebrow { color: #5fd8c8; }
 .hero-dark h1 { color: #ffffff; font-weight: 800; letter-spacing: -0.015em; }
 .hero-dark h1 .hl { color: #2fd4bf; }
