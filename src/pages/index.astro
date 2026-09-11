@@ -111,7 +111,7 @@ const total = primaries.length;
           script below never even loads it on phones (the band crop is a
           different composition and 3MB is real money on cell data), under
           prefers-reduced-motion, or when the browser advertises Save-Data. */}
-      <video class="hero-video" muted loop playsinline preload="none" aria-hidden="true">
+      <video class="hero-video" muted loop playsinline preload="none" aria-hidden="true" width="1600" height="720">
         <source src="/videos/brand/hero-clinic-consultation.mp4" type="video/mp4" />
       </video>
     </div>
@@ -124,8 +124,16 @@ const total = primaries.length;
           && !matchMedia('(prefers-reduced-motion: reduce)').matches
           && !conn.saveData;
         if (!ok) { v.remove(); return; }
-        v.addEventListener('playing', () => v.classList.add('is-playing'), { once: true });
-        v.play().catch(() => {});
+        // Hold-then-fade, same rhythm as bestraces' hero: the photograph
+        // stands until the page has fully loaded plus a beat, and only then
+        // does the video begin — so first paint is never competing with a
+        // media download and the still gets its moment before it moves.
+        const start = () => setTimeout(() => {
+          v.addEventListener('playing', () => v.classList.add('is-playing'), { once: true });
+          v.play().catch(() => {});
+        }, 2500);
+        if (document.readyState === 'complete') start();
+        else addEventListener('load', start, { once: true });
       })();
     </script>
     <div class="wrap">
