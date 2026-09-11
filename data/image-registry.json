@@ -42,11 +42,11 @@
       "files": [
         {
           "path": "/videos/brand/hero-clinic-consultation.mp4",
-          "md5": "388779e4553bbe56705735f6a4c4a2cc",
-          "bytes": 572737
+          "md5": "bbf3773e653599fad009de9144e6012c",
+          "bytes": 966137
         }
       ],
-      "note": "hero VIDEO (mp4, not an image) — same cottonbro shoot as the hero photo, chosen deliberately, so the same-shoot dedup waiver on the hero entry covers it. Pulled via the Pexels API 2026-09-10, then trimmed to the 2s-9s segment (loop endpoints matched at dHash distance 0) and re-encoded to 1920w CRF27 (~560KB) for page weight; source_md5 is null because the shipped file is a derivative, not the download. Credit rendered in the hero."
+      "note": "hero VIDEO (mp4, not an image) — same cottonbro shoot as the hero photo, chosen deliberately, so the same-shoot dedup waiver on the hero entry covers it. Pulled via the Pexels API 2026-09-10, then trimmed to the 1.5s-21.5s segment (loop endpoints matched at dHash distance 2), cropped at encode time to the hero photograph's exact 1600x720 framing so the crossfade does not jump, CRF27 (~950KB); the 7s cut restarted too often and read as jerky) and re-encoded to 1920w CRF27 (~1.8MB) for page weight; source_md5 is null because the shipped file is a derivative, not the download. Credit rendered in the hero."
     },
     {
       "page": "news/does-insurance-cover-pain-management",
