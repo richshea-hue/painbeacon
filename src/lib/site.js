@@ -98,6 +98,23 @@ export const SITE = {
     },
     // Brand sponsorship (data/sponsors.json) — sold, not self-serve. Prices
     // render on /advertise/; the sale closes by conversation and invoice.
+    // LADDER RULE — national must never undercut the markets it contains.
+    // National was $2,000/mo against $750 per state group, which put the
+    // break-even at 2.67 groups: three metros cost $2,250 and the entire
+    // country cost $2,000, so the pilot quarter we pitch (three metros,
+    // $5,400 prepaid) was $600 MORE than every page in the United States.
+    // Any buyer doing the arithmetic reads that as a rate card nobody
+    // thought about. National is now 4x the group rate, so the ladder only
+    // ever climbs: buy markets one at a time up to three, and at four it is
+    // a wash, past four take national.
+    //
+    // Two things keep it honest when these numbers change:
+    //   1. national.price >= 4 x price (and national.commit >= 4 x commit).
+    //   2. Every tier takes the SAME prepaid discount (20% here), which is
+    //      what makes the break-even identical monthly and prepaid. Discount
+    //      one tier harder than another and the inversion comes back in the
+    //      prepaid column only, where it is easy to miss.
+    // scripts/check-rate-ladder.mjs asserts both at build time.
     sponsor: {
       // A state group is a metro's states sold together (VA + MD + DC).
       price: '$750', period: '/mo', term: 'Month to month, 30 days notice',
@@ -105,8 +122,10 @@ export const SITE = {
       // One state on its own, for a business that only serves one.
       single: { price: '$400', period: '/mo', commit: { label: '3 months prepaid', price: '$1,000', per: '$333/mo' } },
       // Every state (states: [] in sponsors.json) — OTC brands, device makers,
-      // trial recruiters, national firms. Category exclusivity is nationwide.
-      national: { price: '$2,000', period: '/mo', commit: { label: '3 months prepaid', price: '$4,800', per: '$1,600/mo' } },
+      // trial recruiters, national firms. Category exclusivity is nationwide,
+      // which is the expensive part: it locks out every competitor in the
+      // category on all ~14,500 clinic pages for the term.
+      national: { price: '$3,000', period: '/mo', commit: { label: '3 months prepaid', price: '$7,200', per: '$2,400/mo' } },
     },
   },
 };
