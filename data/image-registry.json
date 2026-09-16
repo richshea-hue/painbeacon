@@ -337,6 +337,46 @@
       ]
     },
     {
+      "page": "news/spinal-cord-stimulator-trial",
+      "role": "hero",
+      "pexels_id": 2182972,
+      "src_url": "https://www.pexels.com/photo/2182972/",
+      "photographer": null,
+      "source_md5": "d55b523bbad2ae2acedad6583da5a62a",
+      "files": [
+        {
+          "path": "/images/news/spinal-cord-stimulator-trial/doctor-explaining-spine-imaging-to-patient-hero.jpg",
+          "md5": "a53d66dfb0be133cc7af14ff7ffa4133",
+          "bytes": 73854
+        },
+        {
+          "path": "/images/news/spinal-cord-stimulator-trial/doctor-explaining-spine-imaging-to-patient-thumb.jpg",
+          "md5": "dbb5742e43c55f27a9d4034562569cb7",
+          "bytes": 31514
+        },
+        {
+          "path": "/images/news/spinal-cord-stimulator-trial/doctor-explaining-spine-imaging-to-patient-share.jpg",
+          "md5": "b46715738ed101d9c6c9d78247c3c860",
+          "bytes": 87388
+        }
+      ]
+    },
+    {
+      "page": "news/spinal-cord-stimulator-trial",
+      "role": "inline",
+      "pexels_id": 4226207,
+      "src_url": "https://www.pexels.com/photo/4226207/",
+      "photographer": null,
+      "source_md5": "bd3b20250c9c45933f50867f8ef12af6",
+      "files": [
+        {
+          "path": "/images/news/spinal-cord-stimulator-trial/physician-reviewing-spine-x-ray-films.jpg",
+          "md5": "674ef05b518d1603e0fb602dff6789ba",
+          "bytes": 60936
+        }
+      ]
+    },
+    {
       "page": "news/spot-a-pill-mill-red-flags",
       "role": "hero",
       "pexels_id": null,
