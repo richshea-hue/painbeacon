@@ -88,11 +88,17 @@ export const SITE = {
   // (5kQ4gBgGl97W… at $29, 3cI5kF1Lresg… at $299) charge the OLD prices —
   // archive them in Stripe once the new ones exist, never re-paste them.
   //
-  // Four links, and the amount each one must charge:
-  //   enhanced.url          $50/mo recurring
-  //   enhanced.commit.url   $135 one-time
-  //   featured.url          $500/mo recurring
-  //   featured.commit.url   $1,350 one-time
+  // Four links, the amount each charges, and what it buys:
+  //   enhanced.url          $50/mo recurring        1 month, renewing
+  //   enhanced.commit.url   $135 one-time           4 months of service
+  //   featured.url          $500/mo recurring       1 month, renewing
+  //   featured.commit.url   $1,350 one-time         4 months of service
+  //
+  // The prepaid links bill three months' list price and deliver four, so the
+  // `per` figures below are the total over FOUR months, not three. Stripe sees
+  // a one-time charge and nothing more: the bonus month exists only because
+  // someone honors it when setting the listing's end date by hand. Change the
+  // months of service and scripts/check-payment-links.mjs must change with it.
   //
   // EVERY link needs a required custom field asking for the practice name and
   // NPI, because nothing here is automatic. There is no Stripe webhook and no
@@ -119,11 +125,11 @@ export const SITE = {
       // sit here promised a trial checkout never gave. Re-add it only alongside
       // a trial configured on the link itself.
       price: '$50', period: '/mo', note: '', url: '',
-      commit: { label: '3 months prepaid', price: '$135', per: '$45/mo', url: '' },
+      commit: { label: '4 months, paying for 3', price: '$135', per: '$33.75/mo', url: '' },
     },
     featured: {
       price: '$500', period: '/mo', note: '', url: '',
-      commit: { label: '3 months prepaid', price: '$1,350', per: '$450/mo', url: '' },
+      commit: { label: '4 months, paying for 3', price: '$1,350', per: '$337.50/mo', url: '' },
     },
     // Brand sponsorship (data/sponsors.json) — sold, not self-serve. Prices
     // render on /advertise/; the sale closes by conversation and invoice.

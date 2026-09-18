@@ -27,6 +27,14 @@ import { SITE } from '../src/lib/site.js';
 const LINK_HOST = 'https://buy.stripe.com/';
 const TEST_MARKER = '/test_';
 
+// Months of service a prepaid listing link delivers. It bills three months'
+// list price and runs four: the bonus month is a standing offer, honored by
+// hand when the listing's end date is set, because a one-time charge creates
+// no subscription and Stripe knows nothing about it. The `per` figure shown
+// beside each prepaid price is therefore the total spread over FOUR months.
+// Change the offer and change this number with it.
+const PREPAID_MONTHS = 4;
+
 // Links retired in September 2026. They still resolve and still charge the old
 // prices, which is exactly what makes them dangerous to have lying around in a
 // notes file or an old commit. Never re-paste these.
@@ -34,6 +42,15 @@ const RETIRED = [
   { id: '5kQ4gBgGl97W', was: '$29/mo Enhanced' },
   { id: '3cI5kF1Lresg', was: '$299/mo Featured' },
 ];
+
+// Reads the first dollar figure out of a display string: '$135', '$33.75/mo'.
+const money = (v, where) => {
+  const m = String(v).match(/([\d,]+(?:\.\d+)?)/);
+  const n = m ? Number(m[1].replace(/,/g, '')) : NaN;
+  if (!Number.isFinite(n) || n <= 0) throw new Error(`${where}: cannot read a price from ${JSON.stringify(v)}`);
+  return n;
+};
+const usd = (n) => `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 const slots = [];
 for (const tier of ['enhanced', 'featured']) {
@@ -70,6 +87,24 @@ for (const s of live) {
   if (seen.has(url)) {
     errors.push(`${s.name} and ${seen.get(url)} are the same link, so they cannot both charge what the page says (${s.charges} vs the other row). Each price needs its own Payment Link.`);
   } else seen.set(url, s.name);
+}
+
+// The advertised per-month figure has to be the prepaid total over the months
+// of service actually delivered. Nothing else checks this: the page prints
+// whatever string is in `per`, so a stale figure just quietly misprices the
+// offer — which is exactly what happens when the bonus month is added and the
+// old three-month division is left behind.
+for (const tier of ['enhanced', 'featured']) {
+  const c = SITE.pricing[tier].commit;
+  const total = money(c.price, `pricing.${tier}.commit.price`);
+  const per = money(c.per, `pricing.${tier}.commit.per`);
+  const expected = total / PREPAID_MONTHS;
+  if (Math.abs(per - expected) > 0.01) {
+    errors.push(
+      `pricing.${tier}.commit.per says ${usd(per)}/mo, but ${usd(total)} over ${PREPAID_MONTHS} months of service is ${usd(expected)}/mo. ` +
+        `Either the figure is stale or the months of service changed.`,
+    );
+  }
 }
 
 if (errors.length) {
