@@ -27,13 +27,17 @@ import { SITE } from '../src/lib/site.js';
 const LINK_HOST = 'https://buy.stripe.com/';
 const TEST_MARKER = '/test_';
 
-// Months of service a prepaid listing link delivers. It bills three months'
-// list price and runs four: the bonus month is a standing offer, honored by
-// hand when the listing's end date is set, because a one-time charge creates
-// no subscription and Stripe knows nothing about it. The `per` figure shown
-// beside each prepaid price is therefore the total spread over FOUR months.
-// Change the offer and change this number with it.
-const PREPAID_MONTHS = 4;
+// Months of service a prepaid listing link delivers, derived from the launch
+// offer rather than hardcoded. While the offer runs, prepaid bills three
+// months' list price and runs four; the bonus month exists only because
+// someone honors it when setting the listing's end date, since a one-time
+// charge creates no subscription and Stripe knows nothing about it.
+//
+// Deriving it is what makes ending the offer a single coherent change. Flip
+// active:false in site.js and this expects price/3 immediately, so leaving the
+// labels saying "4 months" or the per figures at $33.75 fails the build rather
+// than selling four months at the three-month price.
+const PREPAID_MONTHS = SITE.pricing.launchOffer.active ? 4 : 3;
 
 // Links retired in September 2026. They still resolve and still charge the old
 // prices, which is exactly what makes them dangerous to have lying around in a

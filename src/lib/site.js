@@ -118,6 +118,30 @@ export const SITE = {
   // two slots. It cannot tell whether a live link charges the right amount —
   // confirm that in Stripe when you create it.
   pricing: {
+    // The bonus month on a prepaid listing is a LAUNCH OFFER, not the standing
+    // rate. Prepaid bills three months' list price and runs four — 32.5% below
+    // list, against 10% for an ordinary prepay — which is worth it while the
+    // problem is getting the first paying customers and cash for ads, and is
+    // not worth it forever.
+    //
+    // `until` is deliberately empty. There is no one to give notice to yet, and
+    // naming a date before we know what converts would either rush us into
+    // killing a working offer or trap us in one that is not. Fill it in as
+    // YYYY-MM-DD when there is a reason, and every place the offer appears
+    // starts printing the deadline.
+    //
+    // ENDING IT is one change, and the build checks you did all of it: set
+    // active:false, put the commit labels back to '3 months prepaid', and put
+    // the per figures back to price/3 ($45/mo and $450/mo).
+    // scripts/check-payment-links.mjs derives the months of service from
+    // `active`, so a half-finished reversion fails the build instead of
+    // quietly selling four months at the three-month price. Anyone already in
+    // a prepaid term keeps the four months they bought — /terms/ says so.
+    launchOffer: {
+      active: true,
+      label: 'Launch offer',
+      until: '',
+    },
     enhanced: {
       // note renders as a badge under the price on /for-practices/. It must
       // describe what the Payment Link in `url` actually does: the 2026-09-18

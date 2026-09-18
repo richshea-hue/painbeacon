@@ -4,6 +4,13 @@ import Breadcrumbs from '../components/Breadcrumbs.astro';
 import { breadcrumbLd } from '../lib/schema.js';
 import { SITE } from '../lib/site.js';
 
+// Launch-offer badge beside each prepaid price. Renders only while the offer
+// is active, and only names a deadline once one is set (see site.js).
+const lo = SITE.pricing.launchOffer;
+const loUntil = lo.until
+  ? new Date(`${lo.until}T12:00:00Z`).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' })
+  : '';
+
 const crumbs = [{ name: 'Home', href: '/' }, { name: 'For practices', href: '/for-practices/' }];
 
 // Practice inquiry form writes to the same `claims` table via the PUBLIC anon
@@ -83,7 +90,8 @@ const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || '';
         <p class="tier-commit">
           Or <strong>{SITE.pricing.enhanced.commit.price}</strong> for {SITE.pricing.enhanced.commit.label}
           <span class="tier-per">({SITE.pricing.enhanced.commit.per})</span>
-          {SITE.pricing.enhanced.commit.url && <> · <a href={SITE.pricing.enhanced.commit.url} target="_blank" rel="noopener">Prepay 3 months</a></>}
+          {lo.active && <span class="tier-flag">{lo.label}{loUntil ? ` · through ${loUntil}` : ''}</span>}
+          {SITE.pricing.enhanced.commit.url && <> · <a href={SITE.pricing.enhanced.commit.url} target="_blank" rel="noopener">Prepay now</a></>}
         </p>
         <p class="tier-note">Make your profile the most complete one in your area.</p>
       </div>
@@ -105,7 +113,8 @@ const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || '';
         <p class="tier-commit">
           Or <strong>{SITE.pricing.featured.commit.price}</strong> for {SITE.pricing.featured.commit.label}
           <span class="tier-per">({SITE.pricing.featured.commit.per})</span>
-          {SITE.pricing.featured.commit.url && <> · <a href={SITE.pricing.featured.commit.url} target="_blank" rel="noopener">Prepay 3 months</a></>}
+          {lo.active && <span class="tier-flag">{lo.label}{loUntil ? ` · through ${loUntil}` : ''}</span>}
+          {SITE.pricing.featured.commit.url && <> · <a href={SITE.pricing.featured.commit.url} target="_blank" rel="noopener">Prepay now</a></>}
         </p>
         <p class="tier-note">Labeled as advertising — kept separate from ranking. Areas sell one at a time; ask whether yours is open.</p>
       </div>
@@ -209,6 +218,9 @@ const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || '';
     .tier-note { font-size:.8rem; color:var(--ink-faint,#7c8a87); margin:0; }
     .tier-commit { font-size:.86rem; color:var(--ink-soft,#4c5b59); margin:0 0 .6rem; line-height:1.45; }
     .tier-commit strong { font-family:var(--mono,monospace); color:var(--teal-deep,#0a4f46); }
+    .tier-flag { display:inline-block; font-size:.7rem; font-weight:700; letter-spacing:.04em;
+      text-transform:uppercase; color:var(--amber,#b86f2e); border:1px solid var(--amber,#b86f2e);
+      border-radius:2px; padding:0 .3rem; margin-left:.15rem; vertical-align:1px; }
     .pq { border:1px solid var(--line,#e3ddcf); border-radius:14px; background:var(--card,#fff);
       padding:1.1rem 1.2rem; margin:1rem 0; position:relative; }
     .pq-form { display:flex; flex-direction:column; gap:.7rem; }
