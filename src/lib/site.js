@@ -148,12 +148,12 @@ export const SITE = {
       // link charges $50 immediately, so the '30-day free trial' that used to
       // sit here promised a trial checkout never gave. Re-add it only alongside
       // a trial configured on the link itself.
-      price: '$50', period: '/mo', note: '', url: '',
-      commit: { label: '4 months, paying for 3', price: '$135', per: '$33.75/mo', url: '' },
+      price: '$50', period: '/mo', note: '', url: 'https://buy.stripe.com/bJeaEZdu92Jyb9DaHReAg05',
+      commit: { label: '4 months, paying for 3', price: '$135', per: '$33.75/mo', url: 'https://buy.stripe.com/bJeeVfdu9ck82D75nxeAg06' },
     },
     featured: {
-      price: '$500', period: '/mo', note: '', url: '',
-      commit: { label: '4 months, paying for 3', price: '$1,350', per: '$337.50/mo', url: '' },
+      price: '$500', period: '/mo', note: '', url: 'https://buy.stripe.com/fZufZjcq5doc1z303deAg07',
+      commit: { label: '4 months, paying for 3', price: '$1,350', per: '$337.50/mo', url: 'https://buy.stripe.com/00wcN72Pv4RGb9DaHReAg08' },
     },
     // Brand sponsorship (data/sponsors.json) — sold, not self-serve. Prices
     // render on /advertise/; the sale closes by conversation and invoice.
