@@ -24,7 +24,10 @@ import { SITE } from '../src/lib/site.js';
 // it, national is the honest recommendation. Four means three metros can never
 // beat the country, which is the case that bit us.
 const MIN_GROUPS = 4;
-const MONTHS = 3; // every commit on the card is a three-month prepay
+// Sponsor prepaid terms bill and run three months. (Listing tiers are the odd
+// ones out: they bill three and run four — see scripts/check-payment-links.mjs.
+// Nothing here touches those.)
+const MONTHS = 3;
 const CENTS = 0.005;
 
 // Reads the first dollar figure out of a display string: '$750', '$1,800',
