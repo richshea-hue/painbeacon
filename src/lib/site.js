@@ -87,6 +87,30 @@ export const SITE = {
   // Payment Link says, so change both together. The pre-2026-09 links
   // (5kQ4gBgGl97W… at $29, 3cI5kF1Lresg… at $299) charge the OLD prices —
   // archive them in Stripe once the new ones exist, never re-paste them.
+  //
+  // Four links, and the amount each one must charge:
+  //   enhanced.url          $50/mo recurring
+  //   enhanced.commit.url   $135 one-time
+  //   featured.url          $500/mo recurring
+  //   featured.commit.url   $1,350 one-time
+  //
+  // EVERY link needs a required custom field asking for the practice name and
+  // NPI, because nothing here is automatic. There is no Stripe webhook and no
+  // checkout function in this repo: a payment lands in Stripe and that is all
+  // that happens. Someone then finds the clinic in /dashboard/, sets
+  // listing_tier by hand, and rebuilds the site. Without that field a payment
+  // arrives with an email address and no way to tell which of ~14,500 clinics
+  // just bought, and the buyer waits while we work it out.
+  //
+  // Do NOT put the outreach "Founding Featured — 4 months" link ($500 once,
+  // scripts/outreach/README.md) in any slot below. It is a different offer at
+  // a different price and belongs only in those emails; dropping it here would
+  // sell four months for the price the page calls one.
+  //
+  // scripts/check-payment-links.mjs runs at build time and rejects a test-mode
+  // link, a retired link, a non-Payment-Link URL, and the same link pasted in
+  // two slots. It cannot tell whether a live link charges the right amount —
+  // confirm that in Stripe when you create it.
   pricing: {
     enhanced: {
       price: '$50', period: '/mo', note: '30-day free trial', url: '',
