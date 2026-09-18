@@ -113,7 +113,12 @@ export const SITE = {
   // confirm that in Stripe when you create it.
   pricing: {
     enhanced: {
-      price: '$50', period: '/mo', note: '30-day free trial', url: '',
+      // note renders as a badge under the price on /for-practices/. It must
+      // describe what the Payment Link in `url` actually does: the 2026-09-18
+      // link charges $50 immediately, so the '30-day free trial' that used to
+      // sit here promised a trial checkout never gave. Re-add it only alongside
+      // a trial configured on the link itself.
+      price: '$50', period: '/mo', note: '', url: '',
       commit: { label: '3 months prepaid', price: '$135', per: '$45/mo', url: '' },
     },
     featured: {

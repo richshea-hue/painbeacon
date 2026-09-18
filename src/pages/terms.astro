@@ -1,0 +1,181 @@
+---
+// Terms of service. Written to match what the rest of the site already
+// promises — /for-practices/, /advertise/, /how-we-rank/ and
+// /ownership-disclosure/ — rather than generic boilerplate. If you change a
+// commitment on one of those pages, change it here too; terms that contradict
+// the marketing page are worse than no terms at all.
+//
+// NOT REVIEWED BY COUNSEL as of 2026-09-18. This is an honest, plain-language
+// description of how the business actually operates, which is the right
+// starting point, but have a lawyer read it before it carries real weight —
+// particularly the liability, refund and governing-law sections.
+import Base from '../layouts/Base.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { breadcrumbLd } from '../lib/schema.js';
+import { SITE } from '../lib/site.js';
+
+const crumbs = [{ name: 'Home', href: '/' }, { name: 'Terms', href: '/terms/' }];
+const updated = '2026-09-18';
+const sp = SITE.pricing.sponsor;
+---
+<Base title="Terms of service"
+      description="The terms that apply to using PainBeacon, claiming a practice listing, buying a paid listing, and sponsoring pages."
+      jsonld={breadcrumbLd(crumbs)}>
+  <div class="wrap narrow prose">
+    <Breadcrumbs items={crumbs} />
+    <h1>Terms of service</h1>
+    <p class="lede">
+      Plain language, and only what is actually true of how we operate. Last updated {updated}.
+      These terms cover everyone: people reading the directory, practices claiming or buying a
+      listing, and businesses sponsoring pages.
+    </p>
+
+    <h2>Who we are, and what this is not</h2>
+    <p>
+      {SITE.name} is an independent directory and information service run by {SITE.legalName}.
+      We are <strong>not a medical provider</strong>, we do not deliver care, and nothing on
+      this site is medical advice. Listings are not endorsements or referrals. Choosing a
+      clinician is your decision, made with a clinician — never on the strength of a directory
+      entry alone. If you have a medical emergency, call 911.
+    </p>
+
+    <h2>The directory itself</h2>
+    <p>
+      Clinic records are built from public sources, principally the federal NPI registry, and
+      from information practices give us. Public data goes stale: an address, a phone number,
+      or a set of hours may be wrong, and a clinician may have moved or retired. We correct what
+      we learn about, and we invite corrections at
+      <a href={`mailto:contactus@${SITE.url.replace('https://', '')}`}>contactus@painbeacon.com</a>,
+      but we cannot promise any record is current or complete. Verify anything that matters
+      directly with the practice.
+    </p>
+    <p>
+      <strong>Every practice is listed for free and always will be.</strong> No practice pays to
+      appear in the directory, and no practice can pay to be removed from it in order to hide a
+      record that is accurate.
+    </p>
+
+    <h2>Rankings are never for sale</h2>
+    <p>
+      This is the one that matters most, so it is a term and not just a marketing line. We rank
+      clinics on objective, published criteria, set out in full at
+      <a href="/how-we-rank/">how we rank</a>. <strong>No payment of any kind — a paid listing,
+      a sponsorship, or anything else — changes a clinic's rank, its position in any list, or
+      what we write.</strong> Paid placements are labeled and sit outside ranked lists. If we
+      ever become affiliated with a listed clinic, that is disclosed on the listing and at
+      <a href="/ownership-disclosure/">ownership disclosure</a>, and the criteria do not bend
+      to favor it.
+    </p>
+
+    <h2>Claiming a practice</h2>
+    <p>
+      Claiming and verification are free. When you claim a listing you are telling us you are
+      authorized to act for that practice, and we confirm that before any change goes live. We
+      may ask for evidence, and we may decline or reverse a claim we cannot verify. You are
+      responsible for what you submit being accurate and for having the right to use it.
+    </p>
+
+    <h2>Paid listings</h2>
+    <p>
+      Enhanced and Featured are described at <a href="/for-practices/">for practices</a>, and
+      the price shown there is the price charged. Specifically:
+    </p>
+    <ul>
+      <li>
+        <strong>Verification comes first.</strong> We verify you represent the practice before an
+        upgraded listing goes live. If we cannot verify it, we refund you in full.
+      </li>
+      <li>
+        <strong>Monthly plans</strong> renew automatically until you cancel. Cancel any time and
+        it runs to the end of the period you have paid for. We do not refund part-months.
+      </li>
+      <li>
+        <strong>Prepaid terms</strong> run three months from the day the listing goes live, not
+        from the day you pay, and renew month to month afterward at the then-current price.
+      </li>
+      <li>
+        <strong>Featured is one practice per area.</strong> Where an area is already taken, it is
+        not available at any price until it opens up. Availability is not guaranteed and is not
+        reserved by payment alone.
+      </li>
+      <li>
+        <strong>What a paid listing buys is presentation, not performance.</strong> More room,
+        better placement outside the rankings, and a badge. We do not promise traffic, calls,
+        bookings, patients, or a ranking position, and none of those is a condition of the fee.
+      </li>
+    </ul>
+
+    <h2>Sponsorships</h2>
+    <p>
+      Businesses that are not clinics can sponsor pages by state; the rates and rules are at
+      <a href="/advertise/">advertise</a>. Sponsorship terms are {sp.term.toLowerCase()}, or prepaid by the
+      quarter. Each sponsor gets category exclusivity in the states it buys,
+      for the term it has paid for. Cards are labeled “Advertisement,” carry the line that
+      sponsors never influence rankings or editorial, and sit outside every ranked list.
+    </p>
+    <p>
+      Creative is subject to our approval, and we decline copy that makes a medical claim.
+      Advertising must comply with the rules of the states it appears in — attorney advertising
+      and health advertising in particular — and that compliance is the sponsor's
+      responsibility, not ours. We may pause or remove creative that puts us or a reader at risk.
+    </p>
+
+    <h2>Content you give us</h2>
+    <p>
+      You keep ownership of what you submit. You give us permission to display, resize and
+      distribute it as part of the directory and its syndicated feeds, for as long as your
+      listing runs and for a reasonable period afterward in archives and caches we do not
+      control. You confirm you have the right to give us that permission. We may decline or
+      remove anything that is inaccurate, misleading, unlawful, makes a medical claim, or
+      would breach a professional advertising rule.
+    </p>
+
+    <h2>Payment</h2>
+    <p>
+      Card payments are processed by Stripe under their terms; we never see or store card
+      numbers. Sponsorships and some listings are invoiced instead. Prices can change with
+      notice on the relevant page, and a change never affects a prepaid term already running.
+      You are responsible for any taxes that apply to your purchase where we are not required
+      to collect them.
+    </p>
+
+    <h2>Ending it</h2>
+    <p>
+      You can cancel at any time, as described above. We can decline, pause, or end a paid
+      listing or sponsorship — for a breach of these terms, a failed verification, or creative
+      we will not run. If we end a paid arrangement for any reason other than your breach, we
+      refund the unused portion of what you prepaid. Removing a paid upgrade does not remove
+      the free listing, which stays as an ordinary directory record.
+    </p>
+
+    <h2>No warranty, and what we are liable for</h2>
+    <p>
+      The site is provided as is. We do not warrant that it will be uninterrupted, error-free,
+      or that any information in it is accurate or current. To the fullest extent the law
+      allows, {SITE.legalName} is not liable for indirect, incidental, or consequential
+      damages, or for lost profits, revenue, patients or goodwill. Where we are liable, our
+      total liability is limited to what you paid us in the twelve months before the claim.
+      Nothing here limits liability that cannot be limited by law.
+    </p>
+
+    <h2>Privacy</h2>
+    <p>
+      How we handle information is set out at <a href="/privacy/">privacy</a>, which is part of
+      these terms. The short version: the site runs no tracking scripts and sets no advertising
+      cookies, and we intend to keep it that way.
+    </p>
+
+    <h2>Changes, law, and reaching us</h2>
+    <p>
+      We may update these terms; the date at the top changes when we do, and a material change
+      to a paid arrangement will not apply to a term you have already prepaid. These terms are
+      governed by the laws of the Commonwealth of Virginia, without regard to its conflict of
+      laws rules, and any dispute belongs in the state or federal courts located in Virginia.
+    </p>
+    <p>
+      Questions, corrections, or a complaint about anything above:
+      <a href={`mailto:contactus@${SITE.url.replace('https://', '')}`}>contactus@painbeacon.com</a>.
+      We read everything that arrives there.
+    </p>
+  </div>
+</Base>
