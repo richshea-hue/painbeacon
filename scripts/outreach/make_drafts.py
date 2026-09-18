@@ -11,8 +11,8 @@ Variants (pick with --variant; the claim/profile links carry ?src=em-<variant>
 so the dashboard shows which pitch produced each claim):
   fix-info           "here's what patients see for you — is it right?"
   badge-backlink     free Verified badge + followed link to their site
-  founding-featured  ONE clinic per market: 4 months Featured for the price
-                     of one ($500), recycled into local Google ads
+  founding-featured  ONE clinic per market, at the launch offer the site
+                     already publishes (read from src/lib/site.js)
   confirm-update     "we just found your hours/website via Google" — input is
                      scripts/outreach/build_confirm_targets.py's output
                      (rows carry an updated_fields column: hours, website,
@@ -40,6 +40,52 @@ import os
 import re
 import sys
 from urllib.parse import urlsplit
+import json
+import subprocess
+import textwrap
+
+REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
+def pricing():
+    """Read the Featured numbers out of src/lib/site.js.
+
+    Never retype a price into this file. /for-practices/ renders from that
+    same object, so a figure typed here drifts the moment the page changes —
+    and the recipient of this email can open the page and see both. Featured
+    moved twice in one day on 2026-09-18 (the founding deal was $500 for four
+    months while the site advertised $1,350 for the same thing), which is
+    exactly the failure this avoids.
+
+    Shelling out to node is the honest way to read a JS module from Python:
+    no second copy of the numbers, no regex guessing at source text.
+    """
+    expr = ("import {SITE} from './src/lib/site.js';"
+            "const p = SITE.pricing;"
+            "console.log(JSON.stringify({featured: p.featured, launch: p.launchOffer}));")
+    try:
+        out = subprocess.run(["node", "--input-type=module", "-e", expr],
+                             cwd=REPO, capture_output=True, text=True, timeout=30)
+    except FileNotFoundError:
+        sys.exit("[error] node is not on PATH. make_drafts.py reads prices from "
+                 "src/lib/site.js so the email can never quote a figure the site "
+                 "contradicts. Install node or run this from the repo.")
+    if out.returncode != 0:
+        sys.exit(f"[error] could not read prices from src/lib/site.js:\n{out.stderr.strip()}")
+    p = json.loads(out.stdout)
+    money = lambda v: float(re.sub(r"[^0-9.]", "", str(v)))
+    months = 4 if p["launch"]["active"] else 3
+    monthly = money(p["featured"]["price"])
+    prepaid = money(p["featured"]["commit"]["price"])
+    usd = lambda n: f"${n:,.0f}" if float(n).is_integer() else f"${n:,.2f}"
+    return {
+        "months": months,
+        "pay_for": months - 1 if p["launch"]["active"] else months,
+        "prepaid": usd(prepaid),
+        "full": usd(monthly * months),
+        "monthly": usd(monthly),
+        "launch": p["launch"]["active"],
+    }
 
 VARIANTS = ("fix-info", "badge-backlink", "founding-featured", "confirm-update")
 
@@ -56,7 +102,7 @@ def title_name(raw):
     return n if n.isupper() is False else n.title()
 
 
-def render(variant, row, from_name, postal):
+def render(variant, row, from_name, postal, price):
     clinic = title_name(row["name"])
     market = row.get("zone_name") or row.get("city") or "your area"
     src = f"em-{variant}"
@@ -173,16 +219,29 @@ PainBeacon — painbeacon.com"""
 
     else:  # founding-featured
         subject = f"Founding Featured spot for pain care in {market}"
+        # The whole sentence is conditional, not just the figures: "while
+        # we're launching" is a lie the day the launch offer ends, and this
+        # file will not be the thing anyone remembers to edit that day.
+        offer = (f"While we're launching it's {price['months']} months for the price of "
+                 f"{price['pay_for']} — {price['prepaid']} instead of {price['full']}."
+                 if price["launch"] else
+                 f"It's {price['prepaid']} for {price['months']} months prepaid, "
+                 f"or {price['monthly']} a month.")
+        # The body is hard-wrapped plain text; an interpolated sentence is not,
+        # so wrap it to match rather than shipping one 90-column line.
+        offer = textwrap.fill(offer, 70)
         body = f"""Hi {clinic} team,
 
 PainBeacon lists every pain clinic in {market} — here's your profile:
 {profile}
 
-We're a new directory, so we're offering ONE practice per market a
-founding partner deal: 4 months of Featured placement for the price of
-one ($500 total, normally $500/month). We then put that entire amount
-into Google ads for local pain-clinic searches, pointed at the {market}
-pages — where you'd sit at the top, clearly marked Featured.
+Featured is one practice per market: the top slot on every {market} page
+on the site, clearly marked as advertising.
+
+{offer}
+
+A large portion of that goes straight back into geo-targeted marketing
+in {market}, pointed at the pages your listing sits on.
 
 Featured never changes rankings (those stay independent and published),
 and claiming your listing stays free either way:
@@ -225,6 +284,10 @@ def main():
     outdir = os.path.join(args.outdir, args.variant)
     os.makedirs(outdir, exist_ok=True)
 
+    # Read once, before drafting: every email quotes the same figures, and
+    # they come from src/lib/site.js rather than from this file.
+    price = pricing()
+
     drafted = 0
     call_rows = []
     for row in rows:
@@ -238,7 +301,7 @@ def main():
             continue
         if args.max and drafted >= args.max:
             break
-        subject, body = render(args.variant, row, args.from_name, args.postal)
+        subject, body = render(args.variant, row, args.from_name, args.postal, price)
         path = os.path.join(outdir, f"{row['slug']}.txt")
         with open(path, "w", encoding="utf-8") as f:
             f.write(f"To: {email}\nSubject: {subject}\n\n{body}\n")
