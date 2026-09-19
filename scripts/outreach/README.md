@@ -9,9 +9,12 @@ produced it.
 
 Three steps.
 
-```bash
-export SUPABASE_URL=...  SUPABASE_ANON_KEY=...   # public values, same as site build
+Credentials come from the repo's `.env` automatically — the Python scripts
+load it themselves, the same file `node --env-file=.env` uses. You need
+`SUPABASE_URL` and `SUPABASE_ANON_KEY` in there (both public; the anon key can
+only read the public view). Nothing to export first, on any shell.
 
+```bash
 # 1. Pick pilot markets, build the target list (review-count sorted)
 python scripts/outreach/build_targets.py --list-markets --top 25
 python scripts/outreach/build_targets.py --markets phoenix-az,mesa-az --out scripts/outreach/out/targets.csv
@@ -78,15 +81,24 @@ scale the winner.
 
 ## Founding-Featured mechanics
 
-- **The deal:** one practice per market, 4 months of Featured for $500 total
-  (normally $500/mo — the price in `site.js`; keep the two in step). Create a dedicated one-time Stripe Payment Link named
-  "Founding Featured — 4 months" so it doesn't collide with the monthly
-  subscription link in `site.js`.
-- **The flywheel:** the $500 goes straight into Google Ads for
-  "[city] pain clinic"-type searches pointed at that market's PainBeacon
-  pages. The featured clinic sits on top, clearly labeled. Real patients
-  arrive → the clinic sees value → renews at full price; the ads also seed
-  the site's own traffic and analytics.
+- **The deal:** one practice per market, at the launch offer the site already
+  publishes — four months of Featured for the price of three, $1,350 instead
+  of $2,000. The draft never contains a typed price: `make_drafts.py` reads
+  `SITE.pricing.featured` and `SITE.pricing.launchOffer` out of
+  `src/lib/site.js` and phrases the offer from them, so raising a price or
+  ending the launch offer changes the emails with no second edit. It also
+  means the recipient can open /for-practices/ and see the same numbers.
+  (Until 2026-09-18 this was a separate $500-for-four-months deal, which
+  became untenable the day the site started publishing $1,350 for exactly
+  that. Undercutting your own published price by 63% in cold email is a
+  problem the first time two clinics in one metro compare notes.)
+- **The flywheel:** a large portion of the money goes back into geo-targeted
+  marketing in that market, pointed at the pages the clinic's listing sits
+  on. The featured clinic sits on top, clearly labeled. Real patients arrive
+  → the clinic sees value → renews; the ads also seed the site's own traffic
+  and analytics. Say "a large portion", not "all of it": the exact split is a
+  judgement call per market, and a promise that specific is one you have to
+  be able to evidence.
 - **Integrity lines that keep us honest (and match /how-we-rank/):** Featured
   is labeled advertising, never changes rankings, and one-per-market
   exclusivity is honored — track sold markets in a simple list before
