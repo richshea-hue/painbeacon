@@ -42,8 +42,26 @@ Env vars (set as GitHub Actions secrets / workflow inputs):
   LIMIT                   max Google calls this run (default 700 — most of the
                           shared Enterprise free tier)
   DRY_RUN                 "1" = count candidates only
+  ZONES                   OPTIONAL — comma-separated zone_slugs; spend this
+                          run on those markets only (e.g. washington-dc,
+                          arlington-va). Unset = the whole directory.
+  STATES                  OPTIONAL — comma-separated 2-letter states, same
+                          idea at state granularity (e.g. DC,VA,MD). Combines
+                          with ZONES as AND, so set one or the other.
   CLOUDFLARE_DEPLOY_HOOK  OPTIONAL — POSTed after a run that wrote new
                           websites, so the site rebuild picks them up
+
+TARGETING — why ZONES/STATES exist:
+  Candidates come back in npi.asc order, which is arbitrary with respect to
+  geography, so an untargeted run scatters its calls across the country. At
+  ~1,000 shared calls a month against ~12,500 clinics that is a year of
+  runs before any single market is well covered, and outreach into a market
+  needs the websites in THAT market — website coverage in the top 60 markets
+  was 3.5% when this was written, which is not enough to email anyone.
+  Pointing one run at a metro fills that metro instead of everywhere at once.
+  Nothing else changes: the same per-clinic rules, the same billing, the same
+  never-re-fetch guarantees. Always DRY_RUN=1 first — it applies the same
+  filter and tells you how many candidates the market actually has, for free.
 """
 
 import os
@@ -63,6 +81,44 @@ import requests
 # websites get the bigger share because they feed the outreach pipeline).
 LIMIT = int(os.environ.get("LIMIT") or os.environ.get("MAX_CALLS") or "700")
 DRY_RUN = os.environ.get("DRY_RUN", "") == "1"
+
+
+def _csv_env(name, upper=False):
+    """Parse a comma-separated env var into a clean list. Empty -> []."""
+    raw = os.environ.get(name, "") or ""
+    out = []
+    for part in raw.split(","):
+        part = part.strip().strip('"').strip("'")
+        if part:
+            out.append(part.upper() if upper else part)
+    return out
+
+
+ZONES = _csv_env("ZONES")
+STATES = _csv_env("STATES", upper=True)
+
+
+def target_filter():
+    """PostgREST params restricting a run to certain markets. Empty = all.
+
+    Values are double-quoted: PostgREST splits an in.(...) list on commas, so
+    an unquoted value containing one would silently become two filters.
+    """
+    params = {}
+    if ZONES:
+        params["zone_slug"] = "in.(" + ",".join(f'"{z}"' for z in ZONES) + ")"
+    if STATES:
+        params["state"] = "in.(" + ",".join(f'"{s}"' for s in STATES) + ")"
+    return params
+
+
+def target_label():
+    bits = []
+    if ZONES:
+        bits.append(f"zones={','.join(ZONES)}")
+    if STATES:
+        bits.append(f"states={','.join(STATES)}")
+    return "  ".join(bits) if bits else "whole directory"
 BATCH_SIZE = 500                # Supabase page size
 SLEEP_BETWEEN_CALLS = 0.10      # ~10 QPS, well under Google's per-second limit
 GOOGLE_TIMEOUT = 15
@@ -131,6 +187,28 @@ def clean_website(raw):
 # ---------------------------------------------------------------------------
 # Supabase
 # ---------------------------------------------------------------------------
+def check_targeting(resp):
+    """Turn a 400 caused by ZONES/STATES into something readable.
+
+    PostgREST answers an unknown column with a generic 400, which through
+    raise_for_status() reads as a server error and sends you looking at
+    Supabase. If a filter is set, it is by far the likeliest cause: the
+    column may be named differently on `clinics` than on the clinics_public
+    view the outreach scripts read.
+    """
+    if resp.status_code != 400 or not (ZONES or STATES):
+        return
+    detail = resp.text.strip()[:300]
+    sys.exit(
+        f"[fatal] Supabase rejected the targeting filter ({target_label()}).\n"
+        f"        {detail}\n"
+        f"        If this names a missing column, `clinics` does not have it "
+        f"under that name —\n"
+        f"        check the column list in Supabase and adjust, or clear "
+        f"ZONES/STATES to run untargeted."
+    )
+
+
 def sb_count_candidates():
     url = f"{SUPABASE_URL}/rest/v1/clinics"
     params = {
@@ -139,9 +217,11 @@ def sb_count_candidates():
         "website": "is.null",
         "primary_npi": "is.null",
         "limit": "1",
+        **target_filter(),
     }
     headers = dict(SB_HEADERS, Prefer="count=exact", Range="0-0")
     r = requests.get(url, headers=headers, params=params, timeout=SUPABASE_TIMEOUT)
+    check_targeting(r)
     r.raise_for_status()
     content_range = r.headers.get("Content-Range", "/0")
     return int(content_range.split("/")[-1])
@@ -156,8 +236,12 @@ def sb_get_candidates(limit):
         "primary_npi": "is.null",
         "limit": str(limit),
         "order": "npi.asc",
+        # Same filter as the count above. If these two ever diverge, a dry run
+        # reports one population and the real run bills against another.
+        **target_filter(),
     }
     r = requests.get(url, headers=SB_HEADERS, params=params, timeout=SUPABASE_TIMEOUT)
+    check_targeting(r)
     r.raise_for_status()
     return r.json()
 
@@ -207,6 +291,7 @@ def main():
     started = datetime.now(timezone.utc).isoformat()
     total = sb_count_candidates()
     print(f"[{started}] backfill_websites: start  LIMIT={LIMIT}  DRY_RUN={DRY_RUN}")
+    print(f"  target: {target_label()}")
     print(f"  candidates (google_place_id set, website null, primary only): {total}")
 
     if DRY_RUN:
