@@ -12,7 +12,15 @@ Three steps.
 Credentials come from the repo's `.env` automatically — the Python scripts
 load it themselves, the same file `node --env-file=.env` uses. You need
 `SUPABASE_URL` and `SUPABASE_ANON_KEY` in there (both public; the anon key can
-only read the public view). Nothing to export first, on any shell.
+only read the public view). On a project migrated to Supabase's 2026 key
+format there is no anon key — use `SUPABASE_PUBLISHABLE_KEY=sb_publishable_...`
+instead and the scripts take it. Nothing to export first, on any shell.
+
+If one of these still reports a variable "is not set", the message now lists
+what it actually read out of `.env`; a name missing from that list is a
+parsing problem in the file, not a missing value. `python scripts/outreach/test_env.py`
+checks the loader against the shapes that have bitten us (Notepad's UTF-8 BOM,
+CRLF line endings, quoted values, inline comments, a pasted `export`).
 
 ```bash
 # 1. Pick pilot markets, build the target list (review-count sorted)
