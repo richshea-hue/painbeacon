@@ -68,4 +68,20 @@ def need(*names):
     )
 
 
+def auth_headers(key):
+    """Headers for a Supabase REST call, correct for both key formats.
+
+    Legacy keys are JWTs (they start with "eyJ") and are accepted in both the
+    apikey header and an Authorization Bearer header. The 2026 keys
+    (sb_publishable_... and sb_secret_...) are sent on apikey only and are
+    NOT valid as a Bearer token, so sending both fails for a project that has
+    migrated — which looks like an auth problem and is really a header
+    problem. Send Bearer only when the key is actually a JWT.
+    """
+    headers = {"apikey": key}
+    if key.startswith("eyJ"):
+        headers["Authorization"] = f"Bearer {key}"
+    return headers
+
+
 load_env()

@@ -43,7 +43,7 @@ import re
 
 import requests
 
-from _env import need  # noqa: E402  (loads the repo's .env on import)
+from _env import auth_headers, need  # noqa: E402  (loads the repo's .env on import)
 
 SITE_URL = "https://painbeacon.com"
 PAGE = 1000
@@ -65,8 +65,8 @@ ADDRESS_FIELDS = ("address_1", "city", "state", "postal_code")
 
 def fetch_all():
     base = need("SUPABASE_URL").rstrip("/")
-    key = need("SUPABASE_SERVICE_KEY", "SUPABASE_SERVICE_ROLE_KEY")
-    headers = {"apikey": key, "Authorization": f"Bearer {key}"}
+    key = need("SUPABASE_SERVICE_KEY", "SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_SECRET_KEY")
+    headers = auth_headers(key)
     sel = ("npi,slug,name,address_1,city,state,postal_code,zone_slug,zone_name,"
            "phone,website,hours,aggregate_rating,review_count,listing_tier,"
            "sync_note,primary_npi")
