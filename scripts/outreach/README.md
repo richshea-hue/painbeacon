@@ -9,9 +9,12 @@ produced it.
 
 Three steps.
 
-```bash
-export SUPABASE_URL=...  SUPABASE_ANON_KEY=...   # public values, same as site build
+Credentials come from the repo's `.env` automatically — the Python scripts
+load it themselves, the same file `node --env-file=.env` uses. You need
+`SUPABASE_URL` and `SUPABASE_ANON_KEY` in there (both public; the anon key can
+only read the public view). Nothing to export first, on any shell.
 
+```bash
 # 1. Pick pilot markets, build the target list (review-count sorted)
 python scripts/outreach/build_targets.py --list-markets --top 25
 python scripts/outreach/build_targets.py --markets phoenix-az,mesa-az --out scripts/outreach/out/targets.csv

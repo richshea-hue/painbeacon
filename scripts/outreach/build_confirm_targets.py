@@ -32,16 +32,18 @@ Unlike build_targets.py (anon key + clinics_public view, for ad-hoc local
 runs), this reads the base `clinics` table with the service key so it can run
 unattended on a schedule and see internal columns like sync_note.
 
-Env: SUPABASE_URL, SUPABASE_SERVICE_KEY
+Env: SUPABASE_URL, SUPABASE_SERVICE_KEY (or SUPABASE_SERVICE_ROLE_KEY).
+     Read from the repo's .env automatically; no export needed.
 """
 
 import argparse
 import csv
 import os
 import re
-import sys
 
 import requests
+
+from _env import need  # noqa: E402  (loads the repo's .env on import)
 
 SITE_URL = "https://painbeacon.com"
 PAGE = 1000
@@ -59,17 +61,11 @@ TRACKED = ["name", "address_1", "city", "state", "postal_code", "phone",
 ADDRESS_FIELDS = ("address_1", "city", "state", "postal_code")
 
 
-def env(name):
-    v = os.environ.get(name, "").strip()
-    if not v:
-        print(f"[fatal] {name} not set", file=sys.stderr)
-        sys.exit(1)
-    return v
 
 
 def fetch_all():
-    base = env("SUPABASE_URL").rstrip("/")
-    key = env("SUPABASE_SERVICE_KEY")
+    base = need("SUPABASE_URL").rstrip("/")
+    key = need("SUPABASE_SERVICE_KEY", "SUPABASE_SERVICE_ROLE_KEY")
     headers = {"apikey": key, "Authorization": f"Bearer {key}"}
     sel = ("npi,slug,name,address_1,city,state,postal_code,zone_slug,zone_name,"
            "phone,website,hours,aggregate_rating,review_count,listing_tier,"

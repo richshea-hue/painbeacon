@@ -26,28 +26,25 @@ Output CSV columns:
 import argparse
 import csv
 import os
-import sys
 from collections import Counter, defaultdict
 
 import requests
+
+# Loads the repo's .env on import, the way `node --env-file=.env` does for
+# the JS scripts. Without it these die on a machine where nobody exported
+# anything by hand — which is every machine, in practice.
+from _env import need  # noqa: E402
 
 SITE_URL = "https://painbeacon.com"
 PAGE = 1000
 TIMEOUT = 30
 
 
-def env(name):
-    v = os.environ.get(name, "").strip()
-    if not v:
-        print(f"[fatal] {name} not set (public anon values — same as the site build)",
-              file=sys.stderr)
-        sys.exit(1)
-    return v
 
 
 def fetch_all():
-    base = env("SUPABASE_URL").rstrip("/")
-    key = env("SUPABASE_ANON_KEY")
+    base = need("SUPABASE_URL").rstrip("/")
+    key = need("SUPABASE_ANON_KEY")
     headers = {"apikey": key, "Authorization": f"Bearer {key}"}
     sel = ("npi,slug,name,city,state,zone_slug,zone_name,phone,website,"
            "aggregate_rating,review_count,listing_tier,primary_npi")
