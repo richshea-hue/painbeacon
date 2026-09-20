@@ -87,7 +87,8 @@ def pricing():
         "launch": p["launch"]["active"],
     }
 
-VARIANTS = ("fix-info", "badge-backlink", "founding-featured", "confirm-update")
+VARIANTS = ("fix-info", "badge-backlink", "founding-featured",
+            "confirm-update", "launch-feedback")
 
 
 def host_of(url):
@@ -102,9 +103,27 @@ def title_name(raw):
     return n if n.isupper() is False else n.title()
 
 
+def market_label(zone_name, city):
+    """The market as a person in it would say it.
+
+    zone_name is the site's internal label — "Alexandria Area, VA",
+    "Fort Myers Area, FL" — which is right for a page title and wrong in a
+    sentence. Nobody in Alexandria calls their market "Alexandria Area, VA",
+    and the pitch repeats it four times, so left alone it is the clearest
+    signal in the email that no one typed it. Drop the state suffix (we are
+    writing TO someone in that state) and the "Area" qualifier.
+
+    src/lib/data.js does the same strip for the site's own zone labels.
+    """
+    label = (zone_name or city or "").strip()
+    label = re.sub(r",\s*[A-Z]{2}\s*$", "", label)      # "Alexandria Area, VA" -> "Alexandria Area"
+    label = re.sub(r"\s+Area$", "", label)               # "Alexandria Area"     -> "Alexandria"
+    return label or "your area"
+
+
 def render(variant, row, from_name, postal, price):
     clinic = title_name(row["name"])
-    market = row.get("zone_name") or row.get("city") or "your area"
+    market = market_label(row.get("zone_name"), row.get("city"))
     src = f"em-{variant}"
     profile = f"{row['profile_url']}?src={src}"
     claim = f"{row['claim_url']}&src={src}"
@@ -217,7 +236,7 @@ it wrong? Claiming your listing is free and does both:
 {from_name}
 PainBeacon — painbeacon.com"""
 
-    else:  # founding-featured
+    elif variant == "founding-featured":
         subject = f"Founding Featured spot for pain care in {market}"
         # The whole sentence is conditional, not just the figures: "while
         # we're launching" is a lie the day the launch offer ends, and this
@@ -232,7 +251,8 @@ PainBeacon — painbeacon.com"""
         offer = textwrap.fill(offer, 70)
         body = f"""Hi {clinic} team,
 
-PainBeacon lists every pain clinic in {market} — here's your profile:
+PainBeacon lists every pain clinic in {market} we can find in the
+federal NPI registry — here's your profile:
 {profile}
 
 Featured is one practice per market: the top slot on every {market} page
@@ -251,6 +271,48 @@ One spot for {market}, first come first served. Interested?
 
 {from_name}
 PainBeacon — painbeacon.com"""
+
+    elif variant == "launch-feedback":
+        # The first-batch email. founding-featured leads with the paid tier,
+        # which is a lot to ask of a practice that has never heard of the site
+        # and cannot yet be shown traffic. This one asks for the free thing —
+        # claim your own listing — and for feedback, which is the only thing a
+        # directory this new can honestly say it needs. No price: it invites a
+        # conversation where the traffic question can be answered properly
+        # instead of being dodged in a cold email.
+        #
+        # It does not mention the paid tier AT ALL. Asking for feedback and
+        # pitching a product in the same breath reads as a sale wearing a
+        # feedback costume, and the ask is what this email is for. Selling
+        # happens in the reply, where there is a person to answer; that is
+        # what founding-featured is for.
+        #
+        # Written to be SENT BY HAND, a few at a time, from a real mailbox.
+        # Generating it is only about getting each clinic's profile and claim
+        # URLs right; the voice is meant to read as one person writing.
+        subject = f"PainBeacon — your {market} listing"
+        body = f"""Hi {clinic} team,
+
+I just launched PainBeacon, an independent directory of pain clinics
+built from the federal NPI registry. Your practice is in it:
+{profile}
+
+Claiming it is free and takes a couple of minutes — you get a Verified
+badge, a link to your own site, and you can correct anything that is out
+of date:
+{claim}
+
+We are brand new, so I would genuinely like your feedback. If something
+on your listing is wrong, or there is something you would want from a
+directory like this, just let me know.
+
+{from_name}
+PainBeacon — painbeacon.com"""
+
+    else:
+        raise ValueError(
+            f"{variant!r} is in VARIANTS but has no body in render(). "
+            f"Add a branch above.")
 
     footer = f"""
 
