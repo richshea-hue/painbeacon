@@ -440,7 +440,7 @@ hr.rule { border: 0; border-top: 1px solid var(--line); margin: 2.5rem 0; }
     /* 8rem, down from 12: at the taller size the band was the last thing
        before the lead-callout card and pushed it further down a page whose
        job is to get someone searching. It still reads as a photograph at
-       this height — the clinician stays centred — and it now works as the
+       this height — the clinician stays centered — and it now works as the
        seam between the dark hero and the light page below. */
     height: 8rem; border-top: 1px solid rgba(95, 216, 200, 0.18);
     overflow: hidden;
