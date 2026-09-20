@@ -281,6 +281,12 @@ PainBeacon — painbeacon.com"""
         # conversation where the traffic question can be answered properly
         # instead of being dodged in a cold email.
         #
+        # It does not mention the paid tier AT ALL. Asking for feedback and
+        # pitching a product in the same breath reads as a sale wearing a
+        # feedback costume, and the ask is what this email is for. Selling
+        # happens in the reply, where there is a person to answer; that is
+        # what founding-featured is for.
+        #
         # Written to be SENT BY HAND, a few at a time, from a real mailbox.
         # Generating it is only about getting each clinic's profile and claim
         # URLs right; the voice is meant to read as one person writing.
@@ -299,9 +305,6 @@ of date:
 We are brand new, so I would genuinely like your feedback. If something
 on your listing is wrong, or there is something you would want from a
 directory like this, just let me know.
-
-There is also a paid way to stand out in {market} if you are ever
-interested. Happy to explain it.
 
 {from_name}
 PainBeacon — painbeacon.com"""
