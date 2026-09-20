@@ -429,8 +429,16 @@ hr.rule { border: 0; border-top: 1px solid var(--line); margin: 2.5rem 0; }
   .hero-dark { display: flex; flex-direction: column; }
   .hero-dark .wrap { order: 1; }
   .hero-dark .hero-photo {
-    position: static; order: 2; z-index: 2;
+    /* relative, NOT static: the picture and video inside keep `position:
+       absolute; inset: 0` from the desktop rule, and absolute resolves
+       against the nearest POSITIONED ancestor. Static here sent them past
+       this band to .hero-dark itself, so the photo covered the whole hero —
+       headline, lede and the search box with it — instead of filling the
+       12rem strip below the copy. Keeping it positioned is what confines
+       them to the band. */
+    position: relative; order: 2; z-index: 2;
     height: 12rem; border-top: 1px solid rgba(95, 216, 200, 0.18);
+    overflow: hidden;
   }
   .hero-dark .hero-photo img { object-position: 50% 24%; }
   /* Nothing left to scrim but the base gradient. */
@@ -438,6 +446,11 @@ hr.rule { border: 0; border-top: 1px solid var(--line); margin: 2.5rem 0; }
 }
 @media (max-width: 480px) {
   .hero-dark .hero-photo { height: 10rem; }
+  /* The search box is the only thing on this page that starts a task, so it
+     has to be on the first screen. At 3.75rem of lead-in it fell just below
+     the fold on a 320x568 phone — the copy above it is fixed, so the padding
+     is what gives. Measured at 320, 360, 375 and 390 wide. */
+  .hero-dark .inner { padding-top: 1.75rem; padding-bottom: 2rem; }
 }
 
 .cta-band { background: #0f2e3a; color: var(--paper); margin-top: 3rem; }
