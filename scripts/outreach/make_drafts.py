@@ -102,9 +102,27 @@ def title_name(raw):
     return n if n.isupper() is False else n.title()
 
 
+def market_label(zone_name, city):
+    """The market as a person in it would say it.
+
+    zone_name is the site's internal label — "Alexandria Area, VA",
+    "Fort Myers Area, FL" — which is right for a page title and wrong in a
+    sentence. Nobody in Alexandria calls their market "Alexandria Area, VA",
+    and the pitch repeats it four times, so left alone it is the clearest
+    signal in the email that no one typed it. Drop the state suffix (we are
+    writing TO someone in that state) and the "Area" qualifier.
+
+    src/lib/data.js does the same strip for the site's own zone labels.
+    """
+    label = (zone_name or city or "").strip()
+    label = re.sub(r",\s*[A-Z]{2}\s*$", "", label)      # "Alexandria Area, VA" -> "Alexandria Area"
+    label = re.sub(r"\s+Area$", "", label)               # "Alexandria Area"     -> "Alexandria"
+    return label or "your area"
+
+
 def render(variant, row, from_name, postal, price):
     clinic = title_name(row["name"])
-    market = row.get("zone_name") or row.get("city") or "your area"
+    market = market_label(row.get("zone_name"), row.get("city"))
     src = f"em-{variant}"
     profile = f"{row['profile_url']}?src={src}"
     claim = f"{row['claim_url']}&src={src}"
@@ -232,7 +250,8 @@ PainBeacon — painbeacon.com"""
         offer = textwrap.fill(offer, 70)
         body = f"""Hi {clinic} team,
 
-PainBeacon lists every pain clinic in {market} — here's your profile:
+PainBeacon lists every pain clinic in {market} we can find in the
+federal NPI registry — here's your profile:
 {profile}
 
 Featured is one practice per market: the top slot on every {market} page
