@@ -454,9 +454,22 @@ hr.rule { border: 0; border-top: 1px solid var(--line); margin: 2.5rem 0; }
   /* The search box is the only thing on this page that starts a task, so it
      has to be on the first screen. At 3.75rem of lead-in it fell just below
      the fold on a 320x568 phone — the copy above it is fixed, so the padding
-     is what gives. Measured at 320, 360, 375 and 390 wide. */
-  .hero-dark .inner { padding-top: 1.75rem; padding-bottom: 2rem; }
+     is what gives. Measured at 320, 360, 375 and 390 wide.
+
+     padding-bottom is 0.9rem to match .hero-trust's padding-top exactly, so
+     the rule above the trust strip sits midway between the paragraph and the
+     first line of it. At 2rem the gap above the rule was 32px against 15px
+     below, which read as the rule belonging to the trust strip rather than
+     separating the two. */
+  .hero-dark .inner { padding-top: 1.25rem; padding-bottom: 0.9rem; }
 }
+
+/* The lead-callout section under the hero. This lives here rather than in an
+   inline style on the section so the phone breakpoint can tighten it: on a
+   phone the card is the first thing below the hero photo band, and every
+   pixel above it is a pixel of the card that does not make the first screen. */
+.lead-section { padding-block: 2rem 0.5rem; }
+@media (max-width: 480px) { .lead-section { padding-block: 1rem 0.5rem; } }
 
 .cta-band { background: #0f2e3a; color: var(--paper); margin-top: 3rem; }
 .cta-band .wrap { display: flex; align-items: center; flex-wrap: wrap; gap: 1.25rem; padding-top: 2rem; padding-bottom: 2rem; }
