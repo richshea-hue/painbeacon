@@ -87,7 +87,8 @@ def pricing():
         "launch": p["launch"]["active"],
     }
 
-VARIANTS = ("fix-info", "badge-backlink", "founding-featured", "confirm-update")
+VARIANTS = ("fix-info", "badge-backlink", "founding-featured",
+            "confirm-update", "launch-feedback")
 
 
 def host_of(url):
@@ -235,7 +236,7 @@ it wrong? Claiming your listing is free and does both:
 {from_name}
 PainBeacon — painbeacon.com"""
 
-    else:  # founding-featured
+    elif variant == "founding-featured":
         subject = f"Founding Featured spot for pain care in {market}"
         # The whole sentence is conditional, not just the figures: "while
         # we're launching" is a lie the day the launch offer ends, and this
@@ -270,6 +271,45 @@ One spot for {market}, first come first served. Interested?
 
 {from_name}
 PainBeacon — painbeacon.com"""
+
+    elif variant == "launch-feedback":
+        # The first-batch email. founding-featured leads with the paid tier,
+        # which is a lot to ask of a practice that has never heard of the site
+        # and cannot yet be shown traffic. This one asks for the free thing —
+        # claim your own listing — and for feedback, which is the only thing a
+        # directory this new can honestly say it needs. No price: it invites a
+        # conversation where the traffic question can be answered properly
+        # instead of being dodged in a cold email.
+        #
+        # Written to be SENT BY HAND, a few at a time, from a real mailbox.
+        # Generating it is only about getting each clinic's profile and claim
+        # URLs right; the voice is meant to read as one person writing.
+        subject = f"PainBeacon — your {market} listing"
+        body = f"""Hi {clinic} team,
+
+I just launched PainBeacon, an independent directory of pain clinics
+built from the federal NPI registry. Your practice is in it:
+{profile}
+
+Claiming it is free and takes a couple of minutes — you get a Verified
+badge, a link to your own site, and you can correct anything that is out
+of date:
+{claim}
+
+We are brand new, so I would genuinely like your feedback. If something
+on your listing is wrong, or there is something you would want from a
+directory like this, just let me know.
+
+There is also a paid way to stand out in {market} if you are ever
+interested. Happy to explain it.
+
+{from_name}
+PainBeacon — painbeacon.com"""
+
+    else:
+        raise ValueError(
+            f"{variant!r} is in VARIANTS but has no body in render(). "
+            f"Add a branch above.")
 
     footer = f"""
 
