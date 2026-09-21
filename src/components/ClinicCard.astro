@@ -1,8 +1,17 @@
 ---
-import { titleCase } from '../lib/data.js';
+import { isPainPrimary, titleCase } from '../lib/data.js';
 const { clinic, rank } = Astro.props;
 const c = clinic;
 const interventional = (c.all_taxonomy_codes || '').includes('208VP0014X');
+// Show what the practice actually is whenever pain medicine is not its primary
+// registration — even when it also claims the interventional code. 856 listed
+// clinics are in exactly that position, and the old `!interventional` test hid
+// the practice type for every one of them: a chiropractor or a medical-supply
+// company read as an interventional pain provider and nothing else. Where pain
+// medicine IS the primary registration the interventional badge already says
+// it, so the extra tag would only repeat itself.
+const showPracticeType = Boolean(c.primary_taxonomy_desc)
+  && (!isPainPrimary(c) || !interventional);
 const stars = c.aggregate_rating ? '★'.repeat(Math.round(Number(c.aggregate_rating))) : '';
 ---
 <li class="clinic">
@@ -17,7 +26,7 @@ const stars = c.aggregate_rating ? '★'.repeat(Math.round(Number(c.aggregate_ra
     <div class="tags">
       {['verified', 'enhanced', 'featured'].includes(c.listing_tier) && <span class="tag verified">✓ Verified</span>}
       {interventional && <span class="tag intervention">Interventional pain</span>}
-      {c.primary_taxonomy_desc && !interventional && <span class="tag">{c.primary_taxonomy_desc.split(' - ').pop()}</span>}
+      {showPracticeType && <span class="tag">{c.primary_taxonomy_desc.split(' - ').pop()}</span>}
       {c.website && <span class="tag">Website</span>}
     </div>
   </div>
