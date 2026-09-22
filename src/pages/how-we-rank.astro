@@ -51,11 +51,79 @@ const rows = Object.entries(RANK_WEIGHTS).map(([k, v]) => ({ label: labels[k], p
       website and phone number — a basic marker of accessibility.</p>
 
     <hr class="rule" />
+    <h2>Who is ranked</h2>
+    <p>
+      A practice appears in the directory because the federal NPI registry shows a pain
+      taxonomy among the codes it has declared. Some of those records are not places
+      that treat pain — medical-supply and equipment companies, dispensing sites,
+      laboratories, technologists. They stay listed, because the record is real and the
+      address may be exactly what someone is looking for, but they take no rank among
+      clinics that treat patients. You will find them below the ranked list on an area
+      page, and filtering that page to their discipline ranks them against each other,
+      which is the only comparison that means anything for them.
+    </p>
+    <p>
+      That exclusion reads a practice's <em>primary</em> registration — the single code
+      it registered itself under. A pain clinic that also dispenses braces is still a
+      pain clinic and still ranks; only a record whose own registration says
+      &ldquo;supplier&rdquo; is held out.
+    </p>
+    <p>
+      Every card names the practice type whenever pain medicine is not the practice's
+      primary registration, so a chiropractor or a supplier says so before you call.
+    </p>
+
+    <hr class="rule" />
+    <h2>Filtering by discipline</h2>
+    <p>
+      An area page can be narrowed to a discipline — chiropractic, physical therapy,
+      podiatry, neurology, medical supply, and so on. Those chips read
+      <em>every</em> taxonomy code a practice has declared, not just its primary one,
+      because half the directory declares more than one: a practice registered as both
+      an interventional pain provider and a chiropractor is findable under both, which
+      is what someone searching for a chiropractor actually needs.
+    </p>
+    <p class="muted">
+      Only disciplines with at least one practice on that page are offered, and each
+      chip carries its count, so you can see whether it will narrow anything before you
+      spend a tap on it.
+    </p>
+
+    <hr class="rule" />
+    <h2>Insurance</h2>
+    <p>
+      An area page can also be narrowed to clinics that accept Medicare, and that
+      switch works alongside the discipline chips rather than replacing them — so
+      &ldquo;chiropractic, accepts Medicare&rdquo; is a question you can ask.
+    </p>
+    <p>
+      The signal comes from the federal CMS Medicare Fee-For-Service provider
+      enrollment file, or from the clinic itself where it has claimed its listing
+      and told us directly; the clinic's own answer always wins, because it knows
+      its billing better than a registry lookup does.
+    </p>
+    <p>
+      <strong>A clinic missing from that federal file is never shown as refusing
+      Medicare.</strong> A practice can bill under a group identifier, or have
+      enrolled since the file was last refreshed, and we cannot tell those apart
+      from genuine non-enrollment — so we mark only what we can confirm, and the
+      filter offers no opposite. Whatever it says, check your specific plan with
+      the clinic before you book.
+    </p>
+    <p class="muted">
+      We do not publish commercial-plan networks. No free public source lists which
+      practices are in-network for a given insurer, network status changes contract
+      by contract, and a wrong answer there costs a patient real money — so until
+      clinics tell us themselves, we would rather offer nothing than a guess.
+    </p>
+
+    <hr class="rule" />
     <h2>What we're still adding</h2>
     <p class="muted">
-      As data coverage expands, we will fold in insurance breadth and the range of
-      procedures offered. We publish changes to this methodology rather than adjusting
-      rankings silently.</p>
+      As data coverage expands, we will fold in the range of procedures offered and
+      the conditions each practice treats. Insurance and discipline are filters, not
+      ranking signals — accepting Medicare has never moved a clinic up. We publish
+      changes to this methodology rather than adjusting rankings silently.</p>
 
     <hr class="rule" />
     <h2>Independence</h2>

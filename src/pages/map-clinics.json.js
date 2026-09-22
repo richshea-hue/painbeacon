@@ -2,7 +2,7 @@
 // PRIMARY clinic that has coordinates, as a compact array-of-arrays:
 //
 //   [lat, lng, "Clinic Name", "clinic-slug", "City, ST", "02906",
-//    score, tier, rating, reviews, "480-1020|480-1020|...|"]
+//    score, tier, rating, reviews, "480-1020|480-1020|...|", disc, medicare]
 //
 //   score   0-100 rank from src/lib/ranking.js, rounded — lets the map's
 //           results list order itself with no second request
@@ -11,6 +11,15 @@
 //   rating  aggregate rating (0 when unrated), reviews review count
 //   hours   7 '|'-separated Mon..Sun parts, each "openMin-closeMin" or empty;
 //           "" when the clinic has no published hours
+//   disc    bitmask of the practice disciplines this record declared across
+//           all fifteen NPPES taxonomy slots, over DISCIPLINES order in
+//           src/lib/practice-type.js. The map's Practice <select> is rendered
+//           from that same array in the same build, so the bit indices here
+//           and the option values there cannot drift apart.
+//   medicare 1 when we can confirm Medicare acceptance, 0 when we cannot.
+//           Deliberately NOT a tri-state: a miss in the federal enrollment
+//           file is not evidence of refusal, so the map offers "Accepts
+//           Medicare" and no opposite. See src/lib/insurance.js.
 //
 // Kept deliberately lean — this file is fetched by the map page for every
 // visitor, and at directory scale the field names would outweigh the data.
@@ -22,6 +31,8 @@
 
 import { getClinics, titleCase } from '../lib/data.js';
 import { scoreClinic } from '../lib/ranking.js';
+import { disciplineMask } from '../lib/practice-type.js';
+import { acceptsMedicare } from '../lib/insurance.js';
 
 const round5 = (n) => Math.round(n * 1e5) / 1e5;
 
@@ -93,6 +104,8 @@ export async function GET() {
       Number(c.aggregate_rating) || 0,
       Number(c.review_count) || 0,
       encodeHours(c.hours),
+      disciplineMask(c),
+      acceptsMedicare(c) === true ? 1 : 0,
     ])
     .filter((r) => Number.isFinite(r[0]) && Number.isFinite(r[1]));
 
