@@ -1,43 +1,46 @@
 ---
 /**
- * Practice-type filter for a clinic list.
+ * Discipline filter for a clinic list.
  *
- * Two jobs. It narrows a long city list to the kind of practice someone
- * actually wants — physiatry rather than anesthesiology, say — and it is where
- * the unranked records become rankable: medical-supply and service entities sit
- * below the ranked list unnumbered, because they do not treat pain and should
- * not take a place among clinics that do, but choose that group and they are
- * ranked 1..N against each other, which is the only comparison that means
- * anything for them.
+ * Two jobs. It narrows a long area list to the kind of practice someone
+ * actually wants — a chiropractor, a physiatrist, a podiatrist — and it is
+ * where the unranked records become rankable: medical-supply and service
+ * entities sit below the ranked list unnumbered, because they do not treat
+ * pain and should not take a place among clinics that do, but choose that
+ * discipline and they are ranked 1..N against each other, which is the only
+ * comparison that means anything for them.
+ *
+ * Chips come from every taxonomy slot a practice declared, not just its
+ * primary one, so a practice that does two things appears under both. Half of
+ * the directory declares codes spanning more than one discipline.
  *
  * Progressive enhancement: the row is hidden until the script runs, so a
- * visitor without JavaScript gets the full ranked list and the "also
- * registered" group below it, both complete, and never sees a control that
- * does nothing.
+ * visitor without JavaScript gets the full ranked list and the "also listed"
+ * group below it, both complete, and never sees a control that does nothing.
  */
-import { PRACTICE_GROUPS, practiceGroup } from '../lib/practice-type.js';
+import { DISCIPLINES, disciplinesOf } from '../lib/practice-type.js';
 
 const { clinics, unranked = [] } = Astro.props;
 
-// Only offer groups that are actually on this page, with their counts. An empty
-// filter is worse than no filter.
+// Only offer disciplines that are actually on this page, with their counts. An
+// empty filter is worse than no filter, and the count is what tells a reader
+// whether a chip will narrow anything before they spend a tap on it.
 const counts = new Map();
 for (const c of [...clinics, ...unranked]) {
-  const k = practiceGroup(c);
-  counts.set(k, (counts.get(k) || 0) + 1);
+  for (const k of disciplinesOf(c)) counts.set(k, (counts.get(k) || 0) + 1);
 }
-const groups = PRACTICE_GROUPS.filter((g) => counts.get(g.key));
+const shown = DISCIPLINES.filter((d) => counts.get(d.key));
 const total = clinics.length + unranked.length;
 ---
-{groups.length > 1 && (
+{shown.length > 1 && (
   <div class="practice-filter" hidden data-practice-filter>
     <span class="pf-label">Show</span>
-    <button type="button" class="pf-chip is-on" data-group="all" aria-pressed="true">
+    <button type="button" class="pf-chip is-on" data-discipline="all" aria-pressed="true">
       All <span class="pf-n">{total}</span>
     </button>
-    {groups.map((g) => (
-      <button type="button" class="pf-chip" data-group={g.key} aria-pressed="false">
-        {g.label} <span class="pf-n">{counts.get(g.key)}</span>
+    {shown.map((d) => (
+      <button type="button" class="pf-chip" data-discipline={d.key} aria-pressed="false">
+        {d.label}{' '}<span class="pf-n">{counts.get(d.key)}</span>
       </button>
     ))}
   </div>
@@ -73,74 +76,82 @@ const total = clinics.length + unranked.length;
     // runs where it sits — so at parse time the list below does not exist yet
     // and every querySelector for it comes back null. Wait for the document.
     const start = () => {
-    const row = document.querySelector('[data-practice-filter]');
-    if (!row) return;
-    const ranked = document.querySelector('[data-ranked-list]');
-    const also = document.querySelector('[data-also-section]');
-    if (!ranked) return;
-    row.hidden = false;
+      const row = document.querySelector('[data-practice-filter]');
+      if (!row) return;
+      const ranked = document.querySelector('[data-ranked-list]');
+      const also = document.querySelector('[data-also-section]');
+      if (!ranked) return;
+      row.hidden = false;
 
-    const cardsIn = (root) => (root ? Array.from(root.querySelectorAll('li.clinic')) : []);
-    const rankedCards = cardsIn(ranked);
-    const alsoCards = cardsIn(also ? also.querySelector('ul') : null);
+      const cardsIn = (root) => (root ? Array.from(root.querySelectorAll('li.clinic')) : []);
+      const rankedCards = cardsIn(ranked);
+      const alsoCards = cardsIn(also ? also.querySelector('ul') : null);
 
-    // Server-rendered ranks, so "All" can restore exactly what was published
-    // rather than a number this script invented.
-    const published = new Map();
-    for (const li of rankedCards) {
-      const slot = li.querySelector('.rank-badge');
-      if (slot) published.set(li, slot.textContent.trim());
-    }
+      // A card carries every discipline it declared, so matching is a token
+      // test rather than an equality test — a practice can be in several.
+      const has = (li, key) => (li.dataset.disciplines || '').split(' ').includes(key);
 
-    const number = (cards) => {
-      let n = 0;
-      for (const li of cards) {
+      // Server-rendered ranks, so "All" can restore exactly what was published
+      // rather than a number this script invented.
+      // Both lists, not just the ranked one: the "also listed" cards are
+      // published with an EMPTY rank, and restoring that emptiness is what
+      // stops a filter's numbering from sticking to them under All.
+      const published = new Map();
+      for (const li of [...rankedCards, ...alsoCards]) {
         const slot = li.querySelector('.rank-badge');
-        if (slot) slot.textContent = String(++n);
-      }
-    };
-
-    function apply(group) {
-      const all = group === 'all';
-      let shown = [];
-
-      for (const li of rankedCards) {
-        const match = all || li.dataset.group === group;
-        li.hidden = !match;
-        if (match) shown.push(li);
-      }
-      for (const li of alsoCards) {
-        const match = !all && li.dataset.group === group;
-        li.hidden = !match;
+        if (slot) published.set(li, slot.textContent.trim());
       }
 
-      if (all) {
-        // Put the published ranks back and show the unranked group again.
-        for (const li of rankedCards) {
+      const number = (cards) => {
+        let n = 0;
+        for (const li of cards) {
           const slot = li.querySelector('.rank-badge');
-          if (slot) slot.textContent = published.get(li) ?? '';
+          if (slot) slot.textContent = String(++n);
         }
-        if (also) also.hidden = false;
-      } else {
-        const alsoShown = alsoCards.filter((li) => !li.hidden);
-        // One group at a time, so the visible cards are the whole comparison —
-        // number them from 1 whichever list they came from.
-        number(shown.length ? shown : alsoShown);
-        if (also) also.hidden = alsoShown.length === 0;
-        if (alsoShown.length) number(alsoShown);
+      };
+
+      function apply(key) {
+        const all = key === 'all';
+        const shown = [];
+
+        for (const li of rankedCards) {
+          const match = all || has(li, key);
+          li.hidden = !match;
+          if (match) shown.push(li);
+        }
+        for (const li of alsoCards) {
+          li.hidden = all ? false : !has(li, key);
+        }
+
+        if (all) {
+          // Put the published ranks back and show the unranked group again.
+          for (const li of published.keys()) {
+            const slot = li.querySelector('.rank-badge');
+            if (slot) slot.textContent = published.get(li) ?? '';
+          }
+          if (also) also.hidden = false;
+        } else {
+          const alsoShown = alsoCards.filter((li) => !li.hidden);
+          // One discipline at a time, so the visible cards are the whole
+          // comparison — number each list from 1. The two stay separate: a
+          // supply company being ranked among supply companies is the point,
+          // and merging it into the clinic ranking is what we are avoiding.
+          number(shown);
+          if (also) also.hidden = alsoShown.length === 0;
+          number(alsoShown);
+        }
+
+        for (const chip of row.querySelectorAll('.pf-chip')) {
+          const on = chip.dataset.discipline === key;
+          chip.classList.toggle('is-on', on);
+          chip.setAttribute('aria-pressed', on ? 'true' : 'false');
+        }
       }
 
-      for (const chip of row.querySelectorAll('.pf-chip')) {
-        const on = chip.dataset.group === group;
-        chip.classList.toggle('is-on', on);
-        chip.setAttribute('aria-pressed', on ? 'true' : 'false');
-      }
-    }
-
-    row.addEventListener('click', (e) => {
-      const chip = e.target.closest('.pf-chip');
-      if (chip) apply(chip.dataset.group);
-    });
+      row.addEventListener('click', (e) => {
+        const chip = e.target.closest('.pf-chip');
+        if (chip) apply(chip.dataset.discipline);
+      });
     };
 
     if (document.readyState === 'loading') {
