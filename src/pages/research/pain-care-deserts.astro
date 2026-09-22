@@ -196,6 +196,43 @@ const datasetLd = {
       {' '}<a href="/research/pain-care-deserts.csv">pain-care-deserts.csv</a>.
     </p>
 
+    <h2>Put this map on your site</h2>
+    <p>
+      The map above is available as an embed. It is a plain iframe — no tracking, no
+      third-party scripts, no API key — and it credits this study with a link, which is
+      the only thing we ask in return.
+    </p>
+    <pre class="embed-code"><code>&lt;iframe src="{SITE.url}/embed/pain-care-deserts/"
+        width="100%" height="700" loading="lazy" style="border:0"
+        title="Pain care deserts: U.S. counties with no pain management clinic"&gt;
+&lt;/iframe&gt;</code></pre>
+    <p class="muted">
+      The map is responsive, so its height depends on how wide your column is. 700px fits
+      comfortably at any width, because the map itself is capped. If you would rather it size itself exactly, the frame posts its height
+      to the parent window — listen for it and set the height from
+      {' '}<code>event.data.height</code> when
+      {' '}<code>event.data.painbeaconEmbed === 'pain-care-deserts'</code>.
+    </p>
+
+    <h2>Use the data directly</h2>
+    <p>
+      Both files carry the full county table and are served with
+      {' '}<code>Access-Control-Allow-Origin: *</code>, so you can fetch them straight from
+      your own pages:
+    </p>
+    <ul>
+      <li><a href="/research/pain-care-deserts.json">pain-care-deserts.json</a> — national
+        totals, a row per state, and a row per county, with the license and sources in the
+        payload</li>
+      <li><a href="/research/pain-care-deserts.csv">pain-care-deserts.csv</a> — the county
+        table, for spreadsheets</li>
+    </ul>
+    <p class="muted">
+      Everything here is built from federal public-domain sources: the NPI registry for
+      clinic locations, and U.S. Census Bureau population estimates, ZCTA crosswalk and
+      TIGER county boundaries. Reuse it under CC BY 4.0 with the citation below.
+    </p>
+
     <h2>How to cite this study</h2>
     <p class="muted">
       Shea, R. ({year}). <em>Pain Care Deserts: U.S. Counties With No Pain Management

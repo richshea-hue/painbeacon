@@ -5,6 +5,9 @@ Disallow: /c/
 # Sponsor click redirect and view counter — not content.
 Disallow: /go/
 Disallow: /i/
+# Embeddable copies of research graphics. Real content, but it belongs to the
+# study page it credits; indexing both would be duplicate.
+Disallow: /embed/
 # Practice Kit — the download endpoint is token-gated and the file store is
 # private. The public page is /practice-kit/.
 Disallow: /practice-kit/download

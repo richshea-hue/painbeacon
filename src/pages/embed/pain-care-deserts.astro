@@ -1,0 +1,136 @@
+---
+// The Pain Care Deserts choropleth, as an embeddable page.
+//
+// Organizations drop this in an <iframe>; the credit line under the map links
+// back to the study, which is the only thing we ask in return and the reason
+// this exists. The snippet to copy lives on /research/pain-care-deserts/.
+//
+// Deliberately NOT built on Base.astro: no nav, no footer, no analytics, no
+// fonts fetched from a third party. An embed lands inside somebody else's
+// page, so it carries only what it needs and nothing that could slow or track
+// their readers. DesertMap is inline SVG with no map library and no tiles, so
+// the whole thing is one HTML document.
+//
+// Two things gate whether this works at all, both outside this file:
+//   1. public/_headers must stop sending X-Frame-Options: SAMEORIGIN for
+//      /embed/*, or every third-party iframe renders blank.
+//   2. public/robots.txt disallows /embed/ and the page is noindex, so the
+//      embed never competes with the study page it points at. It is also
+//      absent from sitemap.xml, which is a hand-built allow-list.
+import DesertMap from '../../components/DesertMap.astro';
+import { getDesertStats } from '../../lib/deserts.js';
+import { SITE } from '../../lib/site.js';
+
+const S = await getDesertStats();
+const fmt = (n) => Number(n).toLocaleString('en-US');
+const study = `${SITE.url}/research/pain-care-deserts/`;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Pain Care Deserts — U.S. counties with no pain management clinic</title>
+    <style is:global>
+      /* The tokens DesertMap reads. Inlined rather than importing global.css:
+         an embed should not carry a whole site's stylesheet into someone
+         else's page. */
+      :root {
+        --paper: #f7f4ed;
+        --card: #fffefb;
+        --ink: #1c2b2a;
+        --ink-soft: #4c5b59;
+        --line: #e3ddcf;
+        --radius: 4px;
+        --sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        --shadow: 0 1px 2px rgba(28, 43, 42, 0.06), 0 8px 24px -16px rgba(28, 43, 42, 0.25);
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; background: var(--paper); }
+      body {
+        font-family: var(--sans);
+        color: var(--ink);
+        padding: 0.75rem 0.9rem 0.9rem;
+        -webkit-text-size-adjust: 100%;
+      }
+      .embed-head { margin: 0 0 0.35rem; }
+      .embed-head h1 {
+        font-size: 1.02rem; line-height: 1.3; margin: 0 0 0.2rem; font-weight: 700;
+      }
+      .embed-head p { margin: 0; font-size: 0.82rem; line-height: 1.45; color: var(--ink-soft); }
+      .embed-head strong { color: var(--ink); }
+
+      /* DesertMap breaks out of a prose column on the study page. Inside an
+         embed there is no column to break out of, so put it back. */
+      .desert-map {
+        margin: 0.4rem auto 0.5rem !important;
+        /* Capped, not fluid. The map keeps its aspect ratio, so an uncapped
+           width makes the embed taller on wider hosts — and a fixed-height
+           iframe would then clip the credit line, which is the one element
+           that must always be visible. Capping makes the height plateau, so
+           a single recommended height in the snippet holds everywhere. */
+        width: 100% !important;
+        max-width: 760px !important;
+        transform: none !important;
+        left: auto !important;
+      }
+      .desert-map figcaption { font-size: 0.74rem; }
+
+      .credit {
+        margin: 0; padding-top: 0.6rem; border-top: 1px solid var(--line);
+        font-size: 0.76rem; line-height: 1.5; color: var(--ink-soft);
+      }
+      .credit a { color: #0a4f46; font-weight: 600; }
+      .credit a:hover { text-decoration: none; }
+    </style>
+  </head>
+  <body>
+    <div class="embed-head">
+      <h1>Pain care deserts: {fmt(S.desertCount)} U.S. counties have no pain clinic</h1>
+      <p>
+        That is <strong>{S.desertPct}% of counties</strong>, home to
+        {' '}<strong>{fmt(S.desertPop)} people</strong> ({S.desertPopPct}% of the population).
+        A further {fmt(S.singleClinicCount)} counties have exactly one.
+      </p>
+    </div>
+
+    <DesertMap rows={S.rows} />
+
+    <p class="credit">
+      Source: <a href={study} target="_blank" rel="noopener">Pain Care Deserts</a>, PainBeacon —
+      built from the federal NPI registry and U.S. Census Bureau vintage-{S.vintage} population
+      estimates. Free to reuse under
+      {' '}<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC&nbsp;BY&nbsp;4.0</a>.
+      Data updated {S.generatedAt}.
+    </p>
+
+    <script is:inline>
+      // Tell the host page how tall we actually are.
+      //
+      // The map is responsive, so its height depends on the width the host
+      // gives us — and if the iframe is too short the credit line below the
+      // map is the first thing clipped, which is the one part that must not
+      // be. The snippet on /research/pain-care-deserts/ ships a fixed height
+      // that fits at common widths, and optionally a three-line listener that
+      // uses this message to size the frame exactly. Either way the credit
+      // stays visible.
+      (function () {
+        var last = 0;
+        function post() {
+          var h = Math.ceil(document.documentElement.getBoundingClientRect().height);
+          if (h && Math.abs(h - last) > 2) {
+            last = h;
+            try {
+              parent.postMessage({ painbeaconEmbed: 'pain-care-deserts', height: h }, '*');
+            } catch (e) {}
+          }
+        }
+        window.addEventListener('load', post);
+        window.addEventListener('resize', post);
+        if (window.ResizeObserver) new ResizeObserver(post).observe(document.body);
+        post();
+      })();
+    </script>
+  </body>
+</html>
