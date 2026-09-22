@@ -31,6 +31,7 @@
 // default-deny with no anon policy: it is internal data, not a public table.
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { findBacklinks, normalizeSite, robotsAllows } from './lib/backlinks.mjs';
+import { serviceKey, missingKeyMessage } from './lib/sb-key.mjs';
 
 const argv = process.argv.slice(2);
 const has = (f) => argv.includes(f);
@@ -50,11 +51,11 @@ const UA = 'PainBeaconBot/1.0 (+https://painbeacon.com/verified-badge/)';
 const CACHE = new URL('../data/backlinks.json', import.meta.url);
 
 const SB = (process.env.SUPABASE_URL || '').replace(/\/$/, '');
-const KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || '';
+const KEY = serviceKey()?.key || '';
 // --sites --dry-run needs neither the directory nor the table, so it runs
 // anywhere; anything that reads or writes Supabase does not.
 if ((!SB || !KEY) && !(SITES.length && DRY_RUN)) {
-  console.error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required (see .env.example).');
+  console.error(missingKeyMessage(process.env, 'backlinks'));
   process.exit(1);
 }
 const H = { apikey: KEY, Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json' };
