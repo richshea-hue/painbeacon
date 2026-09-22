@@ -1,0 +1,152 @@
+---
+/**
+ * Practice-type filter for a clinic list.
+ *
+ * Two jobs. It narrows a long city list to the kind of practice someone
+ * actually wants — physiatry rather than anesthesiology, say — and it is where
+ * the unranked records become rankable: medical-supply and service entities sit
+ * below the ranked list unnumbered, because they do not treat pain and should
+ * not take a place among clinics that do, but choose that group and they are
+ * ranked 1..N against each other, which is the only comparison that means
+ * anything for them.
+ *
+ * Progressive enhancement: the row is hidden until the script runs, so a
+ * visitor without JavaScript gets the full ranked list and the "also
+ * registered" group below it, both complete, and never sees a control that
+ * does nothing.
+ */
+import { PRACTICE_GROUPS, practiceGroup } from '../lib/practice-type.js';
+
+const { clinics, unranked = [] } = Astro.props;
+
+// Only offer groups that are actually on this page, with their counts. An empty
+// filter is worse than no filter.
+const counts = new Map();
+for (const c of [...clinics, ...unranked]) {
+  const k = practiceGroup(c);
+  counts.set(k, (counts.get(k) || 0) + 1);
+}
+const groups = PRACTICE_GROUPS.filter((g) => counts.get(g.key));
+const total = clinics.length + unranked.length;
+---
+{groups.length > 1 && (
+  <div class="practice-filter" hidden data-practice-filter>
+    <span class="pf-label">Show</span>
+    <button type="button" class="pf-chip is-on" data-group="all" aria-pressed="true">
+      All <span class="pf-n">{total}</span>
+    </button>
+    {groups.map((g) => (
+      <button type="button" class="pf-chip" data-group={g.key} aria-pressed="false">
+        {g.label} <span class="pf-n">{counts.get(g.key)}</span>
+      </button>
+    ))}
+  </div>
+)}
+
+<style>
+  .practice-filter {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem;
+    margin: 0 0 1rem;
+  }
+  .pf-label {
+    font-size: 0.82rem; color: var(--ink-soft); margin-right: 0.15rem;
+  }
+  .pf-chip {
+    font: inherit; font-size: 0.84rem; line-height: 1;
+    padding: 0.42rem 0.7rem; border-radius: 999px; cursor: pointer;
+    color: var(--ink); background: var(--card);
+    border: 1px solid var(--line);
+  }
+  .pf-chip:hover { border-color: color-mix(in srgb, var(--teal) 45%, var(--line)); }
+  .pf-chip:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+  .pf-chip.is-on {
+    color: var(--teal-deep); background: color-mix(in srgb, var(--teal) 12%, var(--card));
+    border-color: color-mix(in srgb, var(--teal) 40%, var(--line));
+  }
+  .pf-n { font-family: var(--mono); font-size: 0.76rem; opacity: 0.7; margin-left: 0.35em; }
+  @media (max-width: 560px) { .pf-label { display: none; } }
+</style>
+
+<script is:inline>
+  (() => {
+    // This component renders ABOVE the list it filters, and an is:inline script
+    // runs where it sits — so at parse time the list below does not exist yet
+    // and every querySelector for it comes back null. Wait for the document.
+    const start = () => {
+    const row = document.querySelector('[data-practice-filter]');
+    if (!row) return;
+    const ranked = document.querySelector('[data-ranked-list]');
+    const also = document.querySelector('[data-also-section]');
+    if (!ranked) return;
+    row.hidden = false;
+
+    const cardsIn = (root) => (root ? Array.from(root.querySelectorAll('li.clinic')) : []);
+    const rankedCards = cardsIn(ranked);
+    const alsoCards = cardsIn(also ? also.querySelector('ul') : null);
+
+    // Server-rendered ranks, so "All" can restore exactly what was published
+    // rather than a number this script invented.
+    const published = new Map();
+    for (const li of rankedCards) {
+      const slot = li.querySelector('.rank-badge');
+      if (slot) published.set(li, slot.textContent.trim());
+    }
+
+    const number = (cards) => {
+      let n = 0;
+      for (const li of cards) {
+        const slot = li.querySelector('.rank-badge');
+        if (slot) slot.textContent = String(++n);
+      }
+    };
+
+    function apply(group) {
+      const all = group === 'all';
+      let shown = [];
+
+      for (const li of rankedCards) {
+        const match = all || li.dataset.group === group;
+        li.hidden = !match;
+        if (match) shown.push(li);
+      }
+      for (const li of alsoCards) {
+        const match = !all && li.dataset.group === group;
+        li.hidden = !match;
+      }
+
+      if (all) {
+        // Put the published ranks back and show the unranked group again.
+        for (const li of rankedCards) {
+          const slot = li.querySelector('.rank-badge');
+          if (slot) slot.textContent = published.get(li) ?? '';
+        }
+        if (also) also.hidden = false;
+      } else {
+        const alsoShown = alsoCards.filter((li) => !li.hidden);
+        // One group at a time, so the visible cards are the whole comparison —
+        // number them from 1 whichever list they came from.
+        number(shown.length ? shown : alsoShown);
+        if (also) also.hidden = alsoShown.length === 0;
+        if (alsoShown.length) number(alsoShown);
+      }
+
+      for (const chip of row.querySelectorAll('.pf-chip')) {
+        const on = chip.dataset.group === group;
+        chip.classList.toggle('is-on', on);
+        chip.setAttribute('aria-pressed', on ? 'true' : 'false');
+      }
+    }
+
+    row.addEventListener('click', (e) => {
+      const chip = e.target.closest('.pf-chip');
+      if (chip) apply(chip.dataset.group);
+    });
+    };
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', start, { once: true });
+    } else {
+      start();
+    }
+  })();
+</script>

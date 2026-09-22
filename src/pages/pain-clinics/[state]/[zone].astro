@@ -6,6 +6,8 @@ import ClinicMap from '../../../components/ClinicMap.astro';
 import SponsorCard from '../../../components/SponsorCard.astro';
 import { getClinics, groupBy, stateName, titleCase } from '../../../lib/data.js';
 import { rankClinics } from '../../../lib/ranking.js';
+import { isRankable, practiceGroupLabel, practiceGroup } from '../../../lib/practice-type.js';
+import PracticeFilter from '../../../components/PracticeFilter.astro';
 import { breadcrumbLd, itemListLd } from '../../../lib/schema.js';
 import { getMetroIndex } from '../../../lib/metros.js';
 import { metroLabel, bestMetroFor } from '../../../lib/metro-defs.js';
@@ -42,7 +44,17 @@ const metro = best && best.n * 2 >= clinics.length ? best.entry.metro : null;
 // so paid placement never mixes with the objective ranking.
 const featured = ranked.filter((c) => c.listing_tier === 'featured').slice(0, 1);
 const featuredNpis = new Set(featured.map((c) => c.npi));
-const listed = ranked.filter((c) => !featuredNpis.has(c.npi));
+const inList = ranked.filter((c) => !featuredNpis.has(c.npi));
+
+// Medical-supply and service entities are listed but do not take a rank among
+// clinics that treat pain: they declared a pain taxonomy in one of their
+// fifteen NPPES slots, which is what put them in the directory, but a company
+// that sells braces is not competing with a physician. They keep their place on
+// the page — the address may be exactly what someone wants — below the ranked
+// list and unnumbered. Filter to their group and they are ranked against each
+// other, which is the comparison that means something for them.
+const listed = inList.filter(isRankable);
+const alsoHere = inList.filter((c) => !isRankable(c));
 
 // Map pins for every clinic in this zone that has coordinates (matched ones).
 const mapMarkers = ranked
@@ -97,9 +109,27 @@ const crumbs = [
       </section>
     )}
 
-    <ul class="clinic-list">
+    <PracticeFilter clinics={listed} unranked={alsoHere} />
+
+    <ul class="clinic-list" data-ranked-list>
       {listed.map((c, i) => <ClinicCard clinic={c} rank={i + 1} />)}
     </ul>
+
+    {alsoHere.length > 0 && (
+      <section class="also-here" data-also-section>
+        <h2>Also listed in {zoneLabel}</h2>
+        <p class="also-note">
+          {alsoHere.length === 1 ? 'This record carries' : 'These records carry'} a pain taxonomy in
+          the federal NPI registry, which is why {alsoHere.length === 1 ? 'it appears' : 'they appear'}
+          here, but {alsoHere.length === 1 ? 'it supplies' : 'they supply'} equipment or services
+          rather than treating pain — so {alsoHere.length === 1 ? 'it is' : 'they are'} not ranked
+          against the clinics above.
+        </p>
+        <ul class="clinic-list">
+          {alsoHere.map((c) => <ClinicCard clinic={c} />)}
+        </ul>
+      </section>
+    )}
 
     {/* Brand sponsor bought for this STATE (data/sponsors.json). Below the
         ranked list, never inside it — a sponsor is not a clinic. */}

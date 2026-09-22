@@ -1,5 +1,6 @@
 ---
 import { isPainPrimary, titleCase } from '../lib/data.js';
+import { practiceGroup } from '../lib/practice-type.js';
 const { clinic, rank } = Astro.props;
 const c = clinic;
 const interventional = (c.all_taxonomy_codes || '').includes('208VP0014X');
@@ -14,8 +15,12 @@ const showPracticeType = Boolean(c.primary_taxonomy_desc)
   && (!isPainPrimary(c) || !interventional);
 const stars = c.aggregate_rating ? '★'.repeat(Math.round(Number(c.aggregate_rating))) : '';
 ---
-<li class="clinic">
-  {rank ? <div class="rank-badge">{rank}</div> : <div></div>}
+{/* data-group lets the practice filter show and hide cards without a round
+    trip, and the rank slot is always rendered — empty when the card has no
+    rank — so filtering to one group can number that group 1..N in place
+    without the grid column collapsing and shifting the layout. */}
+<li class="clinic" data-group={practiceGroup(c)}>
+  <div class="rank-badge">{rank || ''}</div>
   <div>
     <h3><a href={`/clinic/${c.slug}/`}>{titleCase(c.name)}</a>
     </h3>
