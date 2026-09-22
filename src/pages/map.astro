@@ -32,6 +32,7 @@ const crumbs = [
   { name: 'Home', href: '/' },
   { name: 'Map', href: '/map/' },
 ];
+import { DISCIPLINES } from '../lib/practice-type.js';
 ---
 
 <Base title={title} description={description} jsonld={[breadcrumbLd(crumbs)]}>
@@ -76,10 +77,21 @@ const crumbs = [
         <button type="button" class="nm-toggle nm-sort" data-sort="match" aria-pressed="true">Best match</button>
         <button type="button" class="nm-toggle nm-sort" data-sort="distance" aria-pressed="false">Distance</button>
       </div>
+      <div class="nm-control-group">
+        <label class="nm-control-label" for="natmap-practice">Practice</label>
+        {/* Option values are indices into DISCIPLINES, which is also what the
+            points file's discipline bitmask is built from — same array, same
+            build, so the two cannot drift apart. */}
+        <select class="nm-select" id="natmap-practice">
+          <option value="">All practices</option>
+          {DISCIPLINES.map((d, i) => <option value={i}>{d.label}</option>)}
+        </select>
+      </div>
       <div class="nm-control-group" role="group" aria-label="Filter results">
         <span class="nm-control-label">Show only</span>
         <button type="button" class="nm-toggle nm-filter" data-filter="verified" aria-pressed="false">✓ Verified</button>
         <button type="button" class="nm-toggle nm-filter" data-filter="open" aria-pressed="false">Open now</button>
+        <button type="button" class="nm-toggle nm-filter" data-filter="medicare" aria-pressed="false">Accepts Medicare</button>
       </div>
       <p class="nm-count" id="natmap-count" role="status" aria-live="polite"></p>
     </div>
@@ -99,6 +111,16 @@ const crumbs = [
       <a href="/how-we-rank/">published, independent criteria — no pay-to-rank</a>. "Open now" uses
       each clinic's published hours. Clinics without usable coordinates appear in the
       <a href="/pain-clinics/">state listings</a> but not on the map.
+    </p>
+    <p style="margin:0.6rem 0 0; color:var(--ink-soft); font-size:0.88rem;">
+      &ldquo;Practice&rdquo; reads every specialty a clinic has registered in the federal
+      NPI directory, not just its main one, so a practice that does two things appears
+      under both. &ldquo;Accepts Medicare&rdquo; comes from the federal CMS
+      provider-enrollment file, or from the clinic itself where it has claimed its
+      listing. A clinic missing from that file is not shown as refusing Medicare — we
+      mark only what we can confirm, which is why there is no opposite filter. Check
+      your specific plan with the clinic before you book, and see
+      <a href="/how-we-rank/">how we rank</a> for the rest.
     </p>
   </section>
 
@@ -249,6 +271,24 @@ const crumbs = [
       cursor: pointer;
     }
     .nm-toggle:hover { border-color: color-mix(in srgb, var(--teal, #17a08c) 40%, var(--line, #e3ddcf)); }
+    /* Matches .nm-toggle's shape so the row reads as one set of controls,
+       but stays a real <select>: nineteen disciplines will not fit as chips. */
+    .nm-select {
+      font: inherit; font-size: 0.86rem; line-height: 1;
+      padding: 0.45rem 1.9rem 0.45rem 0.75rem; border-radius: 999px;
+      color: var(--ink, #1d2b29); background: var(--card, #fff);
+      border: 1px solid var(--line, #e3ddcf); cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%237c8a87' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 0.7rem center;
+    }
+    .nm-select:hover { border-color: color-mix(in srgb, var(--teal, #17a08c) 40%, var(--line, #e3ddcf)); }
+    .nm-select:focus-visible { outline: 2px solid var(--teal, #17a08c); outline-offset: 2px; }
+    .nm-select.is-on {
+      color: var(--teal-ink, #0f6f62); font-weight: 600;
+      background-color: color-mix(in srgb, var(--teal, #17a08c) 12%, var(--card, #fff));
+      border-color: color-mix(in srgb, var(--teal, #17a08c) 40%, var(--line, #e3ddcf));
+    }
     .nm-toggle[aria-pressed='true'] {
       background: var(--ink, #0f2e3a);
       border-color: var(--ink, #0f2e3a);
@@ -786,7 +826,12 @@ const crumbs = [
             b.setAttribute('aria-pressed', String(b.getAttribute('data-sort') === 'distance'));
           });
         }
-        var filters = { verified: false, open: false };
+        var filters = { verified: false, open: false, medicare: false };
+        // Practice is a separate axis from the Show-only switches: it narrows
+        // what they leave, so "chiropractic, accepts Medicare" is askable.
+        // -1 means every practice; otherwise it is a bit index into the
+        // discipline mask carried in each row.
+        var practiceBit = -1;
         var activeIdx = -1;
 
         // "Open now" evaluated against the visitor's clock — searches are
@@ -826,6 +871,8 @@ const crumbs = [
             if (!bounds.contains([r[0], r[1]])) return;
             if (filters.verified && !(r[7] > 0)) return;
             if (filters.open && !isOpenNow(r[10])) return;
+            if (filters.medicare && !r[12]) return;
+            if (practiceBit >= 0 && !((r[11] || 0) & (1 << practiceBit))) return;
             inView.push(i);
           });
 
@@ -870,7 +917,8 @@ const crumbs = [
 
           var shown = inView.slice(0, LIST_CAP);
           countEl.textContent = inView.length
-            ? inView.length.toLocaleString('en-US') + ' clinics in view' +
+            ? inView.length.toLocaleString('en-US') +
+              (inView.length === 1 ? ' clinic in view' : ' clinics in view') +
               (inView.length > LIST_CAP ? ' — showing top ' + LIST_CAP : '') +
               (baselineOnly && sortMode === 'match'
                 ? ' — all basic listings so far, shown nearest first'
@@ -881,7 +929,8 @@ const crumbs = [
             railEl.hidden = true;
             gridEl.classList.remove('nm-has-rail');
             listEl.innerHTML = '<li class="nm-empty">No clinics in this view' +
-              ((filters.verified || filters.open) ? ' matching the filters' : '') +
+              ((filters.verified || filters.open || filters.medicare || practiceBit >= 0)
+                ? ' matching the filters' : '') +
               ' — zoom out, pan, or search above.</li>';
             return;
           }
@@ -896,6 +945,7 @@ const crumbs = [
                 r[8].toFixed(1) + ' (' + r[9].toLocaleString('en-US') + ')');
             }
             if (isOpenNow(r[10])) tags.push('Open now');
+            if (r[12]) tags.push('Accepts Medicare');
             return '<li class="nm-card' + (sponsored ? ' nm-sponsored' : '') + '" data-i="' + i + '">' +
               '<div class="nm-card-main">' +
               (sponsored ? '<span class="nm-sponsor-chip">Sponsored</span>' : '') +
@@ -997,6 +1047,15 @@ const crumbs = [
             updateList();
           });
         });
+        var practiceEl = document.getElementById('natmap-practice');
+        if (practiceEl) {
+          practiceEl.addEventListener('change', function () {
+            var v = practiceEl.value;
+            practiceBit = v === '' ? -1 : Number(v);
+            practiceEl.classList.toggle('is-on', practiceBit >= 0);
+            updateList();
+          });
+        }
 
         // Deep-link support: /map/?q=las+vegas runs the search on arrival.
         var qs = new URLSearchParams(location.search).get('q');

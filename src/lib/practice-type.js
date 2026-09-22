@@ -124,6 +124,26 @@ export const DISCIPLINES = [
     match: either(prefix('251', '253Z', '374'), exact('171M00000X')) },
 ];
 
+/**
+ * The disciplines a record answers to, as a bitmask over DISCIPLINES order.
+ *
+ * For /map, whose points file every visitor downloads: at directory scale a
+ * list of discipline slugs per row would outweigh the data it describes, so
+ * nineteen booleans travel as one small integer (bits 0..18). The map's
+ * <select> carries the same array indices, because both sides are generated
+ * from DISCIPLINES in the same build — reorder that list and they move
+ * together.
+ */
+export function disciplineMask(c) {
+  const codes = taxonomyCodes(c);
+  if (!codes.length) return 0;
+  let mask = 0;
+  DISCIPLINES.forEach((d, i) => {
+    if (codes.some((code) => d.match(code))) mask |= 1 << i;
+  });
+  return mask;
+}
+
 const LABELS = Object.fromEntries(DISCIPLINES.map((d) => [d.key, d.label]));
 export const disciplineLabel = (key) => LABELS[key] || key;
 
