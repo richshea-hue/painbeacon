@@ -1,6 +1,7 @@
 ---
 import { isPainPrimary, titleCase } from '../lib/data.js';
 import { disciplineAttr } from '../lib/practice-type.js';
+import { medicareAttr } from '../lib/insurance.js';
 const { clinic, rank } = Astro.props;
 const c = clinic;
 const interventional = (c.all_taxonomy_codes || '').includes('208VP0014X');
@@ -21,7 +22,7 @@ const stars = c.aggregate_rating ? '★'.repeat(Math.round(Number(c.aggregate_ra
     The rank slot is always rendered — empty when the card has no rank — so
     filtering to one discipline can number it 1..N in place without the grid
     column collapsing and shifting the layout. */}
-<li class="clinic" data-disciplines={disciplineAttr(c)}>
+<li class="clinic" data-disciplines={disciplineAttr(c)} data-medicare={medicareAttr(c)}>
   <div class="rank-badge">{rank || ''}</div>
   <div>
     <h3><a href={`/clinic/${c.slug}/`}>{titleCase(c.name)}</a>

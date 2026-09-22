@@ -5,6 +5,7 @@ import ClinicMap from '../../components/ClinicMap.astro';
 import ClaimProfile from '../../components/ClaimProfile.astro';
 import SponsorCard from '../../components/SponsorCard.astro';
 import { getClinics, titleCase, stateName } from '../../lib/data.js';
+import { acceptsMedicare as acceptsMedicareOf } from '../../lib/insurance.js';
 import { scoreClinic, scoreBand } from '../../lib/ranking.js';
 import { breadcrumbLd, clinicLd, faqLd } from '../../lib/schema.js';
 import { SITE } from '../../lib/site.js';
@@ -81,12 +82,11 @@ const linkableWebsite =
 // Embed-badge page link, pre-filled so the clinic lands on their own snippet.
 const badgeHref = `/verified-badge/?slug=${encodeURIComponent(c.slug)}&name=${encodeURIComponent(name)}`;
 
-// Self-reported (from the clinic's own claim form) always wins over the
-// CMS federal-enrollment match, since the clinic knows its own billing
-// better than an NPI lookup can. null = unknown either way.
-const acceptsMedicare = c.accepts_medicare_self_reported != null
-  ? c.accepts_medicare_self_reported
-  : (c.accepts_medicare_cms === true ? true : null);
+// Self-reported (from the clinic's own claim form) always wins over the CMS
+// federal-enrollment match, since the clinic knows its own billing better than
+// an NPI lookup can. null = unknown either way, which is what a CMS miss is:
+// see src/lib/insurance.js for why a miss is never rendered as a refusal.
+const acceptsMedicare = acceptsMedicareOf(c);
 const toList = (s) => Array.isArray(s)
   ? s.filter(Boolean)
   : (s ? String(s).split(/[;,]/).map((x) => x.trim()).filter(Boolean) : []);

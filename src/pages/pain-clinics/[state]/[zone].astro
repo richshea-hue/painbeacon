@@ -97,8 +97,12 @@ const crumbs = [
 
     <ClinicMap markers={mapMarkers} />
 
+    {/* The paid slot is filtered along with everything else: once a visitor
+        narrows to a discipline or to Medicare, they are no longer looking at
+        the page the sponsorship bought, and a non-matching card sitting above
+        a filtered list reads as payment bending the results. */}
     {featured.length > 0 && (
-      <section class="featured-slot">
+      <section class="featured-slot" data-featured-slot>
         <div class="featured-head">
           <span class="featured-pill">Featured</span>
           <span class="featured-note">Sponsored placement · <a href="/how-we-rank/">independent of our ranking</a></span>

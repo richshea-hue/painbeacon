@@ -19,6 +19,7 @@
  * group below it, both complete, and never sees a control that does nothing.
  */
 import { DISCIPLINES, disciplinesOf } from '../lib/practice-type.js';
+import { acceptsMedicare } from '../lib/insurance.js';
 
 const { clinics, unranked = [] } = Astro.props;
 
@@ -26,8 +27,10 @@ const { clinics, unranked = [] } = Astro.props;
 // empty filter is worse than no filter, and the count is what tells a reader
 // whether a chip will narrow anything before they spend a tap on it.
 const counts = new Map();
+let medicare = 0;
 for (const c of [...clinics, ...unranked]) {
   for (const k of disciplinesOf(c)) counts.set(k, (counts.get(k) || 0) + 1);
+  if (acceptsMedicare(c) === true) medicare += 1;
 }
 const shown = DISCIPLINES.filter((d) => counts.get(d.key));
 const total = clinics.length + unranked.length;
@@ -43,7 +46,28 @@ const total = clinics.length + unranked.length;
         {d.label}{' '}<span class="pf-n">{counts.get(d.key)}</span>
       </button>
     ))}
+    {medicare > 0 && (
+      <>
+        <span class="pf-sep" aria-hidden="true"></span>
+        <button type="button" class="pf-chip pf-toggle" data-insurance="medicare" aria-pressed="false">
+          Accepts Medicare{' '}<span class="pf-n">{medicare}</span>
+        </button>
+      </>
+    )}
   </div>
+)}
+{shown.length > 1 && (
+  <p class="pf-empty" hidden data-practice-filter-empty>
+    No practices on this page match that combination. Try clearing one of the filters.
+  </p>
+)}
+{shown.length > 1 && medicare > 0 && (
+  <p class="pf-note" hidden data-practice-filter-note>
+    Medicare status comes from the federal CMS provider-enrollment file, or from
+    the clinic itself where it has claimed its listing. A clinic missing from that
+    file is not shown as refusing Medicare — we only mark the ones we can confirm.
+    Check your specific plan with the clinic before you book.
+  </p>
 )}
 
 <style>
@@ -67,6 +91,23 @@ const total = clinics.length + unranked.length;
     border-color: color-mix(in srgb, var(--teal) 40%, var(--line));
   }
   .pf-n { font-family: var(--mono); font-size: 0.76rem; opacity: 0.7; margin-left: 0.35em; }
+  /* Insurance is a different axis from discipline — it narrows whatever is
+     already chosen — so the chip is set apart and reads as a switch. */
+  .pf-sep {
+    width: 1px; align-self: stretch; margin: 0.1rem 0.35rem;
+    background: var(--line);
+  }
+  .pf-toggle.is-on {
+    color: var(--card); background: var(--teal-deep); border-color: var(--teal-deep);
+  }
+  .pf-toggle.is-on .pf-n { opacity: 0.85; }
+  .pf-empty {
+    font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 1rem;
+  }
+  .pf-note {
+    font-size: 0.78rem; color: var(--ink-soft); line-height: 1.5;
+    margin: -0.5rem 0 1rem; max-width: 60ch;
+  }
   @media (max-width: 560px) { .pf-label { display: none; } }
 </style>
 
@@ -82,14 +123,31 @@ const total = clinics.length + unranked.length;
       const also = document.querySelector('[data-also-section]');
       if (!ranked) return;
       row.hidden = false;
+      const note = document.querySelector('[data-practice-filter-note]');
+      if (note) note.hidden = false;
+      // Combining two axes can legitimately select nothing — say so rather
+      // than leaving a blank page under the chips.
+      const empty = document.querySelector('[data-practice-filter-empty]');
 
       const cardsIn = (root) => (root ? Array.from(root.querySelectorAll('li.clinic')) : []);
       const rankedCards = cardsIn(ranked);
       const alsoCards = cardsIn(also ? also.querySelector('ul') : null);
+      // The paid slot lives outside both lists, so it needs hiding explicitly.
+      const featured = document.querySelector('[data-featured-slot]');
+      const featuredCards = cardsIn(featured);
 
       // A card carries every discipline it declared, so matching is a token
       // test rather than an equality test — a practice can be in several.
       const has = (li, key) => (li.dataset.disciplines || '').split(' ').includes(key);
+
+      // Two independent axes. Discipline is single-select; insurance is a
+      // switch that narrows whatever discipline is chosen, so "chiropractic
+      // AND accepts Medicare" is askable. Both have to pass.
+      let discipline = 'all';
+      let medicareOnly = false;
+      const matches = (li) =>
+        (discipline === 'all' || has(li, discipline))
+        && (!medicareOnly || li.dataset.medicare === '1');
 
       // Server-rendered ranks, so "All" can restore exactly what was published
       // rather than a number this script invented.
@@ -110,20 +168,22 @@ const total = clinics.length + unranked.length;
         }
       };
 
-      function apply(key) {
-        const all = key === 'all';
+      // Untouched (no discipline, no insurance) is the published page, so it
+      // restores rather than renumbers.
+      function apply() {
+        const untouched = discipline === 'all' && !medicareOnly;
         const shown = [];
 
         for (const li of rankedCards) {
-          const match = all || has(li, key);
+          const match = matches(li);
           li.hidden = !match;
           if (match) shown.push(li);
         }
         for (const li of alsoCards) {
-          li.hidden = all ? false : !has(li, key);
+          li.hidden = untouched ? false : !matches(li);
         }
 
-        if (all) {
+        if (untouched) {
           // Put the published ranks back and show the unranked group again.
           for (const li of published.keys()) {
             const slot = li.querySelector('.rank-badge');
@@ -132,25 +192,44 @@ const total = clinics.length + unranked.length;
           if (also) also.hidden = false;
         } else {
           const alsoShown = alsoCards.filter((li) => !li.hidden);
-          // One discipline at a time, so the visible cards are the whole
-          // comparison — number each list from 1. The two stay separate: a
-          // supply company being ranked among supply companies is the point,
-          // and merging it into the clinic ranking is what we are avoiding.
+          // The visible cards are the whole comparison, so number each list
+          // from 1. The two stay separate: a supply company being ranked among
+          // supply companies is the point, and merging it into the clinic
+          // ranking is what we are avoiding.
           number(shown);
           if (also) also.hidden = alsoShown.length === 0;
           number(alsoShown);
         }
 
-        for (const chip of row.querySelectorAll('.pf-chip')) {
-          const on = chip.dataset.discipline === key;
+        let featuredShown = 0;
+        for (const li of featuredCards) {
+          const match = untouched || matches(li);
+          li.hidden = !match;
+          if (match) featuredShown += 1;
+        }
+        if (featured) featured.hidden = featuredShown === 0;
+
+        if (empty) empty.hidden = shown.length > 0 || featuredShown > 0
+          || alsoCards.some((li) => !li.hidden);
+
+        for (const chip of row.querySelectorAll('.pf-chip[data-discipline]')) {
+          const on = chip.dataset.discipline === discipline;
           chip.classList.toggle('is-on', on);
           chip.setAttribute('aria-pressed', on ? 'true' : 'false');
+        }
+        const ins = row.querySelector('.pf-chip[data-insurance]');
+        if (ins) {
+          ins.classList.toggle('is-on', medicareOnly);
+          ins.setAttribute('aria-pressed', medicareOnly ? 'true' : 'false');
         }
       }
 
       row.addEventListener('click', (e) => {
         const chip = e.target.closest('.pf-chip');
-        if (chip) apply(chip.dataset.discipline);
+        if (!chip) return;
+        if (chip.dataset.insurance) medicareOnly = !medicareOnly;
+        else discipline = chip.dataset.discipline;
+        apply();
       });
     };
 
