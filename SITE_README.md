@@ -172,6 +172,32 @@ clinic pages, after the byline on articles. No sponsor → nothing renders.
   line and `rel="sponsored nofollow"`. Amber top rule = brand sponsor; teal pill
   = Featured clinic. Keep the two distinguishable.
 
+### Backlinks
+
+The growth loop: a clinic claims its listing, takes the badge from
+`/verified-badge/`, embeds it on its own site, and that followed link raises
+organic traffic — which is what lets the paid geotargeting budget come down.
+`public.backlinks` existed and was empty, so the loop was an assumption.
+
+`node --env-file=.env scripts/check-backlinks.mjs` fetches each clinic
+website's home page, counts links back to us, and upserts one row per domain:
+`status` (linked / no_link / unreachable / blocked_by_robots), `links_count`,
+`followed` (false when every link carries nofollow/sponsored/ugc, which is no
+use for organic) and `badge` (the issued embed rather than a plain mention).
+
+- `--verified` limits it to claimed tiers, which is the badge-conversion number
+- `--sites a.com,b.com` re-checks named domains and skips the directory read
+- `--limit N`, `--refresh`, `--dry-run`, `--delay ms`
+- Incremental: `data/backlinks.json` is written as each site completes, so an
+  interrupted run resumes. Gitignored; Supabase is the store.
+
+It reads the HOME PAGE only, so a badge on an inner page reads as `no_link` —
+it under-counts rather than over-. One paced request per site, a User-Agent
+that says who we are, and robots.txt honored. **Run it from the computer, not
+a cloud session**: outbound there goes through an allowlist proxy and every
+fetch fails identically, which looks exactly like every clinic being offline.
+Parser tests: `npm run test:backlinks`.
+
 ### Draft articles
 
 `draft: true` in an article's front matter keeps it out of the build entirely —
