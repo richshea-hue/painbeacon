@@ -27,6 +27,7 @@
 // no bot verdict, so for those the referrer test carries the whole weight and
 // the report labels the window accordingly.
 import { readFileSync, writeFileSync } from 'node:fs';
+import { serviceKey, missingKeyMessage } from './lib/sb-key.mjs';
 
 const argv = process.argv.slice(2);
 const arg = (k, d) => { const i = argv.indexOf(k); return i === -1 ? d : argv[i + 1]; };
@@ -34,8 +35,10 @@ const SPONSOR = arg('--sponsor', null);
 const OUT = arg('--out', null);
 if (!SPONSOR) { console.error('usage: --sponsor <id> [--since YYYY-MM-DD] [--until YYYY-MM-DD] [--out file.md]'); process.exit(1); }
 
-const url = process.env.SUPABASE_URL, key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-if (!url || !key) { console.error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required (see .env.example).'); process.exit(1); }
+const url = process.env.SUPABASE_URL;
+const found = serviceKey();
+if (!url || !found) { console.error(missingKeyMessage(process.env, 'sponsor_events')); process.exit(1); }
+const key = found.key;
 
 let entry = null;
 try { entry = (JSON.parse(readFileSync(new URL('../data/sponsors.json', import.meta.url), 'utf8')).sponsors || []).find((s) => s.id === SPONSOR) || null; } catch {}

@@ -172,6 +172,43 @@ clinic pages, after the byline on articles. No sponsor → nothing renders.
   line and `rel="sponsored nofollow"`. Amber top rule = brand sponsor; teal pill
   = Featured clinic. Keep the two distinguishable.
 
+### Research embeds and data
+
+`/research/pain-care-deserts/` publishes its county dataset three ways, all
+CC BY 4.0 and all built from federal public-domain sources (NPPES clinic
+locations, Census population, Census ZCTA crosswalk, TIGER county geometry):
+
+- `/research/pain-care-deserts.csv` — the county table
+- `/research/pain-care-deserts.json` — national totals, per state, per county,
+  with the license, sources and definition in the payload
+- `/embed/pain-care-deserts/` — the choropleth as an embeddable page, credited
+  back to the study. The snippet to copy is on the study page.
+
+**Why this data and not the clinic map.** Everything above is public domain.
+The points behind `/map/` are not redistributable: their coordinates and
+ratings come from Google Places and Geocoding, whose terms forbid passing them
+on. Keep that line where it is — NPPES fields (name, address, NPI, taxonomy,
+phone) are fine, Google-derived ones are not.
+
+Three things the embed depends on, all outside the page itself:
+
+1. `public/_headers` stops sending `X-Frame-Options: SAMEORIGIN` for `/embed/*`
+   and sets `frame-ancestors *`. Without it every third-party iframe renders
+   blank. **If an embed is blank on someone's site, check that block first.**
+2. The JSON and CSV carry `Access-Control-Allow-Origin: *` from `_headers`,
+   because Astro's static build discards headers set on an endpoint's Response.
+3. `/embed/` is `Disallow`ed in robots.txt, `noindex` in the page, and absent
+   from `sitemap.xml` (a hand-built allow-list), so it never competes with the
+   study page it credits.
+
+The map inside the embed is capped at 760px on purpose: it keeps its aspect
+ratio, so an uncapped width makes the frame taller on wider hosts and a
+fixed-height iframe clips the credit line — the one element that must always
+show. Capped, the height plateaus at ~666px and the recommended `height="700"`
+holds at any width. The frame also posts its height to the parent
+(`event.data.painbeaconEmbed === 'pain-care-deserts'`) for hosts that want to
+size it exactly.
+
 ### Backlinks
 
 The growth loop: a clinic claims its listing, takes the badge from
