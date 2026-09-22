@@ -8,9 +8,11 @@
 // the count. Supabase missing or down → still returns the pixel; a lost count
 // is better than a broken image. Unknown sponsor → pixel, no count.
 //
-// Bots that fetch images are counted; the report says so. That is still far
-// closer to "people who saw the card" than raw page requests.
+// Most crawlers never request the image, which is why a view is a better human
+// signal than a click ever was. The ones that do are flagged the same way the
+// click endpoint flags them, so both sides of the rate are filtered alike.
 import sponsorsFile from '../../data/sponsors.json';
+import { isBot } from '../_lib/bot.js';
 
 const KNOWN = new Set((sponsorsFile.sponsors || []).map((s) => s.id));
 const GIF = Uint8Array.from([
@@ -34,7 +36,10 @@ export async function onRequestGet(context) {
           apikey: env.SUPABASE_ANON_KEY,
           Authorization: `Bearer ${env.SUPABASE_ANON_KEY}`,
         },
-        body: JSON.stringify({ p_sponsor: id, p_event: 'view', p_path: page || null }),
+        body: JSON.stringify({
+          p_sponsor: id, p_event: 'view', p_path: page || null,
+          p_bot: isBot(context.request),
+        }),
       }).catch(() => {})
     );
   }
