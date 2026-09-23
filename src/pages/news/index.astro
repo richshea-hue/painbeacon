@@ -49,7 +49,7 @@ const fmt = (d) =>
             <img class="article-thumb" src={a.data.heroRemote
               ? `${a.data.heroRemote}&w=600&h=600&fit=crop&crop=entropy&q=80`
               : a.data.thumb || a.data.image || `/social/${a.slug}.png`}
-              alt={a.data.thumb ? (a.data.heroAlt || '') : (a.data.imageAlt || '')}
+              alt={a.data.heroRemote || a.data.thumb ? (a.data.heroAlt || '') : (a.data.imageAlt || '')}
               width="180" height="180" loading="lazy" />
           </a>
         </li>
