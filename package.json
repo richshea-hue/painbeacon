@@ -16,7 +16,8 @@
     "test:art": "node --test src/lib/article-art.test.mjs",
     "test:place": "node --test src/lib/place-query.test.mjs",
     "test:practice": "node --test src/lib/practice-type.test.mjs",
-    "test:backlinks": "node --test scripts/lib/backlinks.test.mjs"
+    "test:backlinks": "node --test scripts/lib/backlinks.test.mjs",
+    "test:feed": "node --test scripts/lib/feed-item.test.mjs"
   },
   "dependencies": {
     "@astrojs/rss": "^4.0.19",

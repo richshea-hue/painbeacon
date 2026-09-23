@@ -43,6 +43,21 @@ export async function GET(context) {
       'the right kind of pain clinic, treatments explained in plain English, and how ' +
       'our rankings work.',
     site: context.site,
+    // WebSub discovery. rel="hub" is where a reader subscribes for push
+    // updates; rel="self" is the canonical topic URL the hub keys those
+    // subscriptions on, and a subscription needs both to complete. This is only
+    // the advertisement — the hub fans nothing out until someone pings it,
+    // which scripts/ping-websub.mjs does after each deploy that touches an
+    // article. Blank SITE.websubHub emits neither link.
+    ...(SITE.websubHub
+      ? {
+          xmlns: { atom: 'http://www.w3.org/2005/Atom' },
+          customData:
+            `<atom:link rel="hub" href="${SITE.websubHub}"/>` +
+            `<atom:link rel="self" href="${new URL('/rss.xml', SITE.url).href}" ` +
+            'type="application/rss+xml"/>',
+        }
+      : {}),
     // Promise.all, not a bare map: remoteEnclosure does a HEAD request, so the
     // per-item spread has to be awaited before rss() sees the items.
     items: await Promise.all(
