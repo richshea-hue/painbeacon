@@ -59,6 +59,30 @@ If you can reach neither the API nor the remote, stop and say so.
 One unmerged draft stalls the entire queue, so the fix is always to resolve the
 open PR — never to write around it.
 
+## DATE THE ARTICLE THE DAY IT PUBLISHES, NOT THE DAY IT WAS WRITTEN
+
+`date:` in the frontmatter becomes that item's `<pubDate>` in `dist/rss.xml`
+(see `src/pages/rss.xml.js`), and dlvr.it posts to Facebook and X off that feed.
+A feed poller judges an item by its date: one that shows up already a week old
+reads as backfill rather than news, and gets passed over. So an article whose
+`date:` is older than the day it reaches `main` can publish to the site
+perfectly — right page, right feed position, valid enclosure — and still never
+reach either social account.
+
+That is not hypothetical either. The spinal cord stimulator article was written
+and dated 2026-09-16, sat as PR #55 for a week, and merged on 2026-09-23 still
+carrying the older date. Nothing was wrong with the feed; dlvr.it simply did not
+consider a seven-day-old item new. Re-dating it to the merge day was the fix.
+
+So:
+
+- Writing a draft → date it today, as usual.
+- Merging a draft that has sat → BEFORE merging, set `date:` to the merge day
+  and move this file's checkoff date to match. One line in each file.
+
+That is also the more honest date: nobody could read the article until it
+merged.
+
 - [x] How to choose a pain clinic (Choosing a Clinic) — 2026-07-16
 - [x] What interventional pain clinics do (Treatments Explained) — 2026-07-16
 - [x] Your first pain clinic appointment (Patient Guides) — 2026-07-16
@@ -68,5 +92,5 @@ open PR — never to write around it.
 - [x] Epidural steroid injections: what the evidence actually says (Treatments Explained) — 2026-08-26
 - [x] Sciatica: when to see a pain specialist vs. wait it out (Patient Guides) — 2026-09-02
 - [x] Pain management without opioids: what modern clinics actually offer (Treatments Explained) — 2026-09-09
-- [x] Spinal cord stimulators: who they're for and what a trial involves (Treatments Explained) — 2026-09-16
+- [x] Spinal cord stimulators: who they're for and what a trial involves (Treatments Explained) — 2026-09-23
 - [ ] Questions to ask before agreeing to any pain procedure (Patient Guides)
