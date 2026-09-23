@@ -90,9 +90,18 @@ export function websiteLd() {
   };
 }
 
-// Official profiles for Organization sameAs — ties the site to its social
-// accounts for entity/knowledge-graph purposes.
-function sameAsLinks() {
+/**
+ * Official profiles for Organization sameAs — ties the site to its social
+ * accounts for entity/knowledge-graph purposes.
+ *
+ * Exported because Base.astro emits an Organization block of its own on every
+ * page, and the two ship together on the homepage. It used to name x and
+ * facebook literally, which agreed with this list only for as long as those
+ * were the only two profiles: adding Bluesky made one block claim three
+ * accounts and the other two, on the same page. Derive both from here and they
+ * cannot disagree again.
+ */
+export function sameAsLinks() {
   return Object.values(SITE.socials || {}).filter(Boolean);
 }
 

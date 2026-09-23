@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import { SITE } from '../lib/site.js';
+import { sameAsLinks } from '../lib/schema.js';
 import LeadChat from '../components/LeadChat.astro';
 
 const {
@@ -56,7 +57,7 @@ const organizationLd = {
     url: `${SITE.url}/brand/painbeacon-logo-horizontal-dark.svg`,
     caption: `${SITE.name} logo`,
   },
-  sameAs: [SITE.socials.x, SITE.socials.facebook].filter(Boolean),
+  sameAs: sameAsLinks(),
   publishingPrinciples: `${SITE.url}/how-we-rank/`,
   knowsAbout: [
     'Pain management clinics',
