@@ -6,6 +6,7 @@ import { rankClinics } from '../lib/ranking.js';
 import { getDesertStats } from '../lib/deserts.js';
 import { websiteLd } from '../lib/schema.js';
 import { getArticlesNewestFirst } from '../lib/articles.js';
+import { articleThumb } from '../lib/article-art.js';
 import { getMetroIndex } from '../lib/metros.js';
 import { metroLabel } from '../lib/metro-defs.js';
 
@@ -254,14 +255,8 @@ const total = primaries.length;
                 <p class="article-dek">{a.data.dek}</p>
                 <span class="article-more">Read →</span>
               </div>
-              {/* heroRemote wins, as it does everywhere else: an article with a
-                  hotlinked Unsplash photo has no local thumb to fall back to, and
-                  the /social/ card behind it is only generated for articles that
-                  lack their own art. */}
-              <img class="article-thumb" src={a.data.heroRemote
-                ? `${a.data.heroRemote}&w=600&h=600&fit=crop&crop=entropy&q=80`
-                : a.data.thumb || a.data.image || `/social/${a.slug}.png`}
-                alt={a.data.heroRemote || a.data.thumb ? (a.data.heroAlt || '') : (a.data.imageAlt || '')}
+              {/* No title fallback on the alt: the headline is right beside it. */}
+              <img class="article-thumb" {...articleThumb(a.data, a.slug)}
                 width="180" height="180" loading="lazy" decoding="async" />
             </a>
           </li>
