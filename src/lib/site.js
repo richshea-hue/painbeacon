@@ -15,6 +15,7 @@ export const SITE = {
   socials: {
     x: 'https://x.com/painbeacon',
     facebook: 'https://www.facebook.com/profile.php?id=61592202442574',
+    bluesky: 'https://bsky.app/profile/painbeacon.com',
   },
 
   // WebSub (formerly PubSubHubbub) hub. Declared in rss.xml and pinged after
