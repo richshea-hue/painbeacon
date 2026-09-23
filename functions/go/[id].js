@@ -8,9 +8,18 @@
 // own analytics. Unknown or inactive sponsor → home. Supabase down → still
 // redirect; a lost count is better than a dead link.
 //
+// Every request is classified before it is counted. This endpoint used to log
+// a click on ANY GET, and because crawlers follow links while skipping the 1x1
+// view pixel, the first flight reported 257 clicks where 5 had a same-site
+// referrer. The bot verdict is stored as a boolean; the user-agent it was
+// derived from is not, because /privacy promises no device identifier. The
+// redirect itself is never gated — a bot still gets sent on its way, it just
+// does not land in the sponsor's numbers as a person.
+//
 // The destination comes from data/sponsors.json, never from the query string,
 // so this can't be used as an open redirect.
 import sponsorsFile from '../../data/sponsors.json';
+import { isBot, isSameSite } from '../_lib/bot.js';
 
 const SPONSORS = new Map((sponsorsFile.sponsors || []).map((s) => [s.id, s]));
 
@@ -37,7 +46,12 @@ export async function onRequestGet(context) {
           p_sponsor: id,
           p_event: 'click',
           p_path: page || null,
-          p_referrer: (context.request.headers.get('referer') || '').slice(0, 300) || null,
+          // Kept only when it is one of our own pages. An off-site referrer is
+          // not ours to hand to an advertiser, and a crawler's is noise.
+          p_referrer: isSameSite(context.request, reqUrl)
+            ? (context.request.headers.get('referer') || '').slice(0, 300) || null
+            : null,
+          p_bot: isBot(context.request),
         }),
       });
     } catch (_e) {

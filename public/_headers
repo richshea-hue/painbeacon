@@ -16,3 +16,25 @@
 /practice-kit/files/*
   X-Robots-Tag: noindex
   Cache-Control: private, no-store
+
+# The Pain Care Deserts embed is meant to be framed on other people's sites,
+# so the site-wide X-Frame-Options above has to come back off for this path.
+# `!` removes an inherited header on Cloudflare Pages; frame-ancestors is the
+# modern equivalent and is what browsers honor when both are present.
+# If an embed ever renders blank on a third-party page, check this block first.
+/embed/*
+  ! X-Frame-Options
+  Content-Security-Policy: frame-ancestors *
+  X-Robots-Tag: noindex
+  Cache-Control: public, max-age=3600, s-maxage=86400
+
+# The study's data files are published CC BY 4.0 for other sites to fetch
+# directly, which needs CORS. Astro's static build discards headers set on an
+# endpoint's Response, so they belong here.
+/research/pain-care-deserts.json
+  Access-Control-Allow-Origin: *
+  Cache-Control: public, max-age=3600, s-maxage=86400
+
+/research/pain-care-deserts.csv
+  Access-Control-Allow-Origin: *
+  Cache-Control: public, max-age=3600, s-maxage=86400

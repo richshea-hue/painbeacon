@@ -17,3 +17,6 @@ __pycache__/
 # Source photos downloaded by scripts/fetch-article-photo.mjs. Only the crops
 # prepare-article-images.mjs makes from them are committed.
 /.photo-src/
+# Run cache for scripts/check-backlinks.mjs. public.backlinks is the store;
+# this only exists so an interrupted run resumes.
+/data/backlinks.json

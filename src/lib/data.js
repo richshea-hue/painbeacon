@@ -122,6 +122,30 @@ export async function getClinics() {
   return _cache;
 }
 
+// The five pain taxonomy codes the NPPES sync filters the directory on
+// (CODE_DESC in scripts/sync_nppes.py). A clinic is listed if ANY of its
+// fifteen taxonomy slots carries one of these — which is NOT the same as pain
+// medicine being what the practice primarily does. 2,839 listed clinics have a
+// primary registration that is something else: mostly Anesthesiology,
+// Orthopaedic Surgery and PM&R, but also 123 durable medical equipment,  us-english-ok
+// 54 chiropractors, 20 physical therapists and a dentist.
+//
+// "Orthopaedic" above is CMS's own spelling in the NPPES taxonomy table.  us-english-ok
+// primary_taxonomy_desc is stored verbatim from that table and rendered as-is,
+// so it reaches the page that way too; us-english.mjs only scans authored
+// source, which is right — correcting a federal label would misquote it.
+export const PAIN_TAXONOMY_CODES = new Set([
+  '207LP2900X', // Anesthesiology - Pain Medicine
+  '208VP0014X', // Pain Medicine - Interventional Pain Medicine
+  '208VP0000X', // Pain Medicine - Pain Medicine
+  '2081P2900X', // Physical Medicine & Rehabilitation - Pain Medicine
+  '2084P2900X', // Psychiatry & Neurology - Pain Medicine
+]);
+
+// Is pain medicine this practice's PRIMARY registration, rather than one of
+// the other fourteen things it also declared?
+export const isPainPrimary = (c) => PAIN_TAXONOMY_CODES.has(c.primary_taxonomy_code);
+
 export function titleCase(s) {
   return (s || '')
     .toLowerCase()

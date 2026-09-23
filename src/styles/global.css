@@ -163,6 +163,21 @@ p { margin: 0 0 1rem; }
   background: color-mix(in srgb, var(--teal) 10%, var(--card)); border: 1px solid color-mix(in srgb, var(--teal) 22%, var(--line));
   border-radius: 999px; width: 2.1rem; height: 2.1rem; display: grid; place-items: center;
 }
+/* Unranked cards still render the slot, so the name column stays put when the
+   practice filter numbers a group in place. */
+.rank-badge:empty { border-color: transparent; background: none; }
+/* .clinic sets display:grid, which beats the user-agent rule for [hidden] — so
+   without this the practice filter sets the property and nothing disappears. */
+.clinic[hidden] { display: none; }
+
+/* Records listed at an address but not ranked against the clinics: supply and
+   service entities. Set apart so the separation reads as deliberate rather
+   than as the tail of the ranking. */
+.also-here { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line); }
+.also-here h2 { font-size: 1.05rem; margin: 0 0 0.35rem; }
+.also-here .also-note {
+  font-size: 0.88rem; color: var(--ink-soft); margin: 0 0 1rem; max-width: 46rem;
+}
 .clinic h3 { margin: 0 0 0.2rem; font-size: 1.18rem; }
 .clinic h3 a { color: var(--ink); }
 .clinic .meta { font-size: 0.88rem; color: var(--ink-soft); margin: 0; }
@@ -429,16 +444,47 @@ hr.rule { border: 0; border-top: 1px solid var(--line); margin: 2.5rem 0; }
   .hero-dark { display: flex; flex-direction: column; }
   .hero-dark .wrap { order: 1; }
   .hero-dark .hero-photo {
-    position: static; order: 2; z-index: 2;
-    height: 12rem; border-top: 1px solid rgba(95, 216, 200, 0.18);
+    /* relative, NOT static: the picture and video inside keep `position:
+       absolute; inset: 0` from the desktop rule, and absolute resolves
+       against the nearest POSITIONED ancestor. Static here sent them past
+       this band to .hero-dark itself, so the photo covered the whole hero —
+       headline, lede and the search box with it — instead of filling the
+       12rem strip below the copy. Keeping it positioned is what confines
+       them to the band. */
+    position: relative; order: 2; z-index: 2;
+    /* 8rem, down from 12: at the taller size the band was the last thing
+       before the lead-callout card and pushed it further down a page whose
+       job is to get someone searching. It still reads as a photograph at
+       this height — the clinician stays centered — and it now works as the
+       seam between the dark hero and the light page below. */
+    height: 8rem; border-top: 1px solid rgba(95, 216, 200, 0.18);
+    overflow: hidden;
   }
   .hero-dark .hero-photo img { object-position: 50% 24%; }
   /* Nothing left to scrim but the base gradient. */
   .hero-dark::before { background: none; }
 }
 @media (max-width: 480px) {
-  .hero-dark .hero-photo { height: 10rem; }
+  .hero-dark .hero-photo { height: 6rem; }
+  /* The search box is the only thing on this page that starts a task, so it
+     has to be on the first screen. At 3.75rem of lead-in it fell just below
+     the fold on a 320x568 phone — the copy above it is fixed, so the padding
+     is what gives. Measured at 320, 360, 375 and 390 wide.
+
+     padding-bottom is 0.9rem to match .hero-trust's padding-top exactly, so
+     the rule above the trust strip sits midway between the paragraph and the
+     first line of it. At 2rem the gap above the rule was 32px against 15px
+     below, which read as the rule belonging to the trust strip rather than
+     separating the two. */
+  .hero-dark .inner { padding-top: 1.25rem; padding-bottom: 0.9rem; }
 }
+
+/* The lead-callout section under the hero. This lives here rather than in an
+   inline style on the section so the phone breakpoint can tighten it: on a
+   phone the card is the first thing below the hero photo band, and every
+   pixel above it is a pixel of the card that does not make the first screen. */
+.lead-section { padding-block: 2rem 0.5rem; }
+@media (max-width: 480px) { .lead-section { padding-block: 1rem 0.5rem; } }
 
 .cta-band { background: #0f2e3a; color: var(--paper); margin-top: 3rem; }
 .cta-band .wrap { display: flex; align-items: center; flex-wrap: wrap; gap: 1.25rem; padding-top: 2rem; padding-bottom: 2rem; }

@@ -11,10 +11,23 @@
 // an email or hand to the sponsor as is.
 //
 // What a "view" is: one request for the 1×1 image inside the card, i.e. one
-// render of the card in something that loads images. Real people, plus the
-// crawlers that fetch images. What a "click" is: one follow of the card's link
-// through /go/, JavaScript or not. Neither stores who the visitor was.
+// render of the card in something that loads images — which crawlers mostly
+// do not. What a "click" is: one follow of the card's link through /go/,
+// JavaScript or not. Neither stores who the visitor was.
+//
+// Every number here is filtered, and the report says by how much. Until
+// 2026-09-22 it was not: /go/ counted any GET, so crawlers following the link
+// while skipping the view pixel turned 5 real clicks into 257. A sponsor can
+// check us — the redirect tags every click utm_source=painbeacon, so their own
+// analytics hold the true figure. Reporting the raw count would have been
+// caught, and deserved to be.
+//
+// A click counts as confirmed when it was not flagged automated AND arrived
+// with one of our own pages as its referrer. Rows written before the fix have
+// no bot verdict, so for those the referrer test carries the whole weight and
+// the report labels the window accordingly.
 import { readFileSync, writeFileSync } from 'node:fs';
+import { serviceKey, missingKeyMessage } from './lib/sb-key.mjs';
 
 const argv = process.argv.slice(2);
 const arg = (k, d) => { const i = argv.indexOf(k); return i === -1 ? d : argv[i + 1]; };
@@ -22,8 +35,10 @@ const SPONSOR = arg('--sponsor', null);
 const OUT = arg('--out', null);
 if (!SPONSOR) { console.error('usage: --sponsor <id> [--since YYYY-MM-DD] [--until YYYY-MM-DD] [--out file.md]'); process.exit(1); }
 
-const url = process.env.SUPABASE_URL, key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-if (!url || !key) { console.error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required (see .env.example).'); process.exit(1); }
+const url = process.env.SUPABASE_URL;
+const found = serviceKey();
+if (!url || !found) { console.error(missingKeyMessage(process.env, 'sponsor_events')); process.exit(1); }
+const key = found.key;
 
 let entry = null;
 try { entry = (JSON.parse(readFileSync(new URL('../data/sponsors.json', import.meta.url), 'utf8')).sponsors || []).find((s) => s.id === SPONSOR) || null; } catch {}
@@ -37,7 +52,7 @@ const base = url.replace(/\/$/, '');
 const H = { apikey: key, Authorization: `Bearer ${key}` };
 const rows = [];
 for (let from = 0; ; from += 1000) {
-  const r = await fetch(`${base}/rest/v1/sponsor_events?select=created_at,event,path,referrer&sponsor=eq.${encodeURIComponent(SPONSOR)}&created_at=gte.${SINCE}T00:00:00Z&created_at=lt.${UNTIL}T23:59:59.999Z&order=created_at.asc`,
+  const r = await fetch(`${base}/rest/v1/sponsor_events?select=created_at,event,path,referrer,bot&sponsor=eq.${encodeURIComponent(SPONSOR)}&created_at=gte.${SINCE}T00:00:00Z&created_at=lt.${UNTIL}T23:59:59.999Z&order=created_at.asc`,
     { headers: { ...H, Range: `${from}-${from + 999}`, Prefer: 'count=exact' } });
   if (r.status === 404) { console.error('sponsor_events table not found — run sponsor_events_table.sql in Supabase first.'); process.exit(1); }
   if (!r.ok && r.status !== 416) { console.error(`Supabase ${r.status}: ${await r.text()}`); process.exit(1); }
@@ -49,15 +64,32 @@ for (let from = 0; ; from += 1000) {
 
 const n = (x) => Number(x || 0).toLocaleString('en-US');
 const pct = (c, v) => (v > 0 ? `${(100 * c / v).toFixed(2)}%` : '—');
-const views = rows.filter((r) => r.event === 'view').length;
-const clicks = rows.filter((r) => r.event === 'click').length;
+
+// One classifier, used everywhere below, so the headline and the breakdowns
+// can never disagree about what counted.
+const automated = (r) => r.bot === true;
+const sameSite = (r) => typeof r.referrer === 'string' && /(^|\/\/)([a-z0-9-]+\.)*painbeacon\.com/i.test(r.referrer);
+// A view already requires a browser that fetches images; a click has to prove
+// it came from one of our pages.
+const confirmed = (r) => !automated(r) && (r.event === 'view' || sameSite(r));
+
+const viewRows = rows.filter((r) => r.event === 'view');
+const clickRows = rows.filter((r) => r.event === 'click');
+const views = viewRows.filter(confirmed).length;
+const clicks = clickRows.filter(confirmed).length;
+const botViews = viewRows.filter(automated).length;
+const botClicks = clickRows.filter(automated).length;
+// Not flagged automated, but with nothing tying it to one of our pages.
+const unattributed = clickRows.filter((r) => !automated(r) && !sameSite(r)).length;
+// Rows written before the counter was fixed carry no verdict at all.
+const legacy = rows.filter((r) => r.bot === null || r.bot === undefined).length;
 
 const byDay = new Map();
 for (let d = new Date(`${SINCE}T00:00:00Z`); d <= new Date(`${UNTIL}T00:00:00Z`); d = new Date(d.getTime() + 86400000)) byDay.set(d.toISOString().slice(0, 10), { v: 0, c: 0 });
-for (const r of rows) { const k = r.created_at.slice(0, 10); const b = byDay.get(k) || { v: 0, c: 0 }; b[r.event === 'view' ? 'v' : 'c']++; byDay.set(k, b); }
+for (const r of rows.filter(confirmed)) { const k = r.created_at.slice(0, 10); const b = byDay.get(k) || { v: 0, c: 0 }; b[r.event === 'view' ? 'v' : 'c']++; byDay.set(k, b); }
 
 const byPage = new Map();
-for (const r of rows) { const k = r.path || '(unknown)'; const b = byPage.get(k) || { v: 0, c: 0 }; b[r.event === 'view' ? 'v' : 'c']++; byPage.set(k, b); }
+for (const r of rows.filter(confirmed)) { const k = r.path || '(unknown)'; const b = byPage.get(k) || { v: 0, c: 0 }; b[r.event === 'view' ? 'v' : 'c']++; byPage.set(k, b); }
 const topPages = [...byPage.entries()].sort((a, b) => b[1].c - a[1].c || b[1].v - a[1].v).slice(0, 25);
 
 // Which kinds of page did the work: area lists, clinic profiles, state hubs, guides.
@@ -75,6 +107,18 @@ L.push(`| Clicks to ${entry?.url ? new URL(entry.url).hostname.replace(/^www\./,
 L.push(`| Click-through rate | ${pct(clicks, views)} |`);
 L.push(`| Days live | ${[...byDay.values()].filter((b) => b.v > 0).length} of ${byDay.size} |\n`);
 
+L.push('### What was filtered out\n');
+L.push('| | |'); L.push('|---|---:|');
+L.push(`| Automated requests not counted | ${n(botViews + botClicks)} |`);
+L.push(`| Clicks we could not attribute to a page | ${n(unattributed)} |`);
+L.push(`| Raw events before filtering | ${n(rows.length)} |\n`);
+if (legacy > 0) {
+  L.push(`> ${n(legacy)} of these events predate the counter fix of 2026-09-22 and carry no`);
+  L.push('> automation verdict. For those, a click counts only when it arrived from one of');
+  L.push('> our own pages, which is the stricter test — so this window understates rather');
+  L.push('> than overstates.\n');
+}
+
 L.push('## By page type\n'); L.push('| Page type | Views | Clicks | Rate |'); L.push('|---|---:|---:|---:|');
 for (const [k, t] of [...byKind.entries()].sort((a, b) => b[1].v - a[1].v)) L.push(`| ${k} | ${n(t.v)} | ${n(t.c)} | ${pct(t.c, t.v)} |`);
 
@@ -85,7 +129,7 @@ L.push('\n## Top pages\n'); L.push('| Page | Views | Clicks |'); L.push('|---|--
 for (const [p, b] of topPages) L.push(`| ${p} | ${n(b.v)} | ${n(b.c)} |`);
 
 L.push('\n---');
-L.push('A view is one display of your card in a browser that loads images (real readers plus the crawlers that fetch images). A click is one follow of the card\'s link, counted on our servers and forwarded to your site with UTM tags (utm_source=painbeacon, utm_medium=sponsor, utm_campaign=' + SPONSOR + ', utm_content=the page), so your own analytics show the same visits under Acquisition → Campaigns. PainBeacon stores no IP address, device identifier or cookie for any of this.');
+L.push('A view is one display of your card in a browser that loads images; crawlers mostly do not, which is what makes this a reader count. A click is counted only when it was not flagged as automated and arrived from one of our own pages — everything else is excluded and shown above. Clicks are forwarded to your site with UTM tags (utm_source=painbeacon, utm_medium=sponsor, utm_campaign=' + SPONSOR + ', utm_content=the page), so your own analytics show the same visits under Acquisition → Campaigns. PainBeacon stores no IP address, device identifier or cookie for any of this.');
 
 const text = L.join('\n');
 if (OUT) { writeFileSync(OUT, text); console.log(`wrote ${OUT}`); } else console.log(text);

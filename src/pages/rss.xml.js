@@ -1,5 +1,6 @@
 import rss from '@astrojs/rss';
 import { getArticlesNewestFirst } from '../lib/articles.js';
+import { articleShare } from '../lib/article-art.js';
 import { statSync } from 'node:fs';
 import { SITE } from '../lib/site.js';
 
@@ -45,15 +46,16 @@ export async function GET(context) {
     // Promise.all, not a bare map: remoteEnclosure does a HEAD request, so the
     // per-item spread has to be awaited before rss() sees the items.
     items: await Promise.all(
-      articles.map(async (a) => ({
-        title: a.data.title,
-        description: a.data.dek,
-        pubDate: a.data.date,
-        link: `/news/${a.slug}/`,
-        ...(a.data.heroRemote
-          ? await remoteEnclosure(`${a.data.heroRemote}&w=1200&h=1200&fit=crop&crop=entropy&q=80`)
-          : cardEnclosure(a.data.shareImg || a.data.image || `/social/${a.slug}.png`)),
-      }))
+      articles.map(async (a) => {
+        const share = articleShare(a.data, a.slug);
+        return {
+          title: a.data.title,
+          description: a.data.dek,
+          pubDate: a.data.date,
+          link: `/news/${a.slug}/`,
+          ...(share.remote ? await remoteEnclosure(share.src) : cardEnclosure(share.src)),
+        };
+      })
     ),
   });
 }

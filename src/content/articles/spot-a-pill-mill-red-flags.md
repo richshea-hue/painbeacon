@@ -3,15 +3,12 @@ title: 'Red Flags: How to Spot a Pill Mill Before You Book'
 dek: 'Most of the warning signs of a bad pain practice are visible from your couch — on the website, in one phone call, before you ever sit in the waiting room. Here is what to look for, and what looks alarming but is actually good care.'
 date: 2026-07-30
 category: 'Choosing a Clinic'
-heroImg: '/images/news/spot-a-pill-mill-red-flags/pain-clinic-waiting-room-patient-consultation-hero.jpg'
 heroRemote: 'https://images.unsplash.com/photo-1628771065518-0d82f1938462?ixid=M3wxMDM5NjYwfDB8MXxhbGx8fHx8fHx8fHwxNzg4MjY5MDQ4fA&ixlib=rb-4.1.0'
-heroAlt: 'colorful pills spilling from orange bottle'
+heroAlt: 'Assorted tablets and capsules spilled across a blue surface from an overturned orange prescription bottle.'
 heroCreditName: 'Towfiqu barbhuiya'
 heroCreditProfile: 'https://unsplash.com/@towfiqu999999'
 heroCreditPhoto: 'https://unsplash.com/photos/colorful-pills-spilling-from-orange-bottle-w8p9cQDLX7I'
 heroCreditProvider: 'Unsplash'
-thumb: '/images/news/spot-a-pill-mill-red-flags/pain-clinic-waiting-room-patient-consultation-thumb.jpg'
-shareImg: '/images/news/spot-a-pill-mill-red-flags/pain-clinic-waiting-room-patient-consultation-share.jpg'
 ---
 
 "Pill mill" is a blunt term for a specific thing: a practice organized around

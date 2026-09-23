@@ -19,6 +19,14 @@ on:
         description: "Dry run (count candidates only — no Google calls, no writes)"
         type: boolean
         default: false
+      zones:
+        description: "Spend this run on these markets only — comma-separated zone_slugs (e.g. washington-dc,arlington-va). Blank = whole directory. Run once with dry_run first to see the count."
+        type: string
+        default: ""
+      states:
+        description: "Same, at state granularity — comma-separated 2-letter codes (e.g. DC,VA,MD). Blank = whole directory."
+        type: string
+        default: ""
 
 jobs:
   backfill:
@@ -44,4 +52,8 @@ jobs:
           # On a scheduled run, inputs.limit is empty, so fall back to 450.
           LIMIT: ${{ inputs.limit || '700' }}
           DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
+          # Empty on a scheduled run, which is what keeps the monthly run
+          # untargeted — it should keep covering the whole directory.
+          ZONES: ${{ inputs.zones }}
+          STATES: ${{ inputs.states }}
         run: python scripts/backfill_websites.py

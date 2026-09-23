@@ -87,14 +87,73 @@ export const SITE = {
   // Payment Link says, so change both together. The pre-2026-09 links
   // (5kQ4gBgGl97W… at $29, 3cI5kF1Lresg… at $299) charge the OLD prices —
   // archive them in Stripe once the new ones exist, never re-paste them.
+  //
+  // Four links, the amount each charges, and what it buys:
+  //   enhanced.url          $50/mo recurring        1 month, renewing
+  //   enhanced.commit.url   $135 one-time           4 months of service
+  //   featured.url          $500/mo recurring       1 month, renewing
+  //   featured.commit.url   $1,350 one-time         4 months of service
+  //
+  // The prepaid links bill three months' list price and deliver four, so the
+  // `per` figures below are the total over FOUR months, not three. Stripe sees
+  // a one-time charge and nothing more: the bonus month exists only because
+  // someone honors it when setting the listing's end date by hand. Change the
+  // months of service and scripts/check-payment-links.mjs must change with it.
+  //
+  // EVERY link needs a required custom field asking for the practice name and
+  // NPI, because nothing here is automatic. There is no Stripe webhook and no
+  // checkout function in this repo: a payment lands in Stripe and that is all
+  // that happens. Someone then finds the clinic in /dashboard/, sets
+  // listing_tier by hand, and rebuilds the site. Without that field a payment
+  // arrives with an email address and no way to tell which of ~14,500 clinics
+  // just bought, and the buyer waits while we work it out.
+  //
+  // Do NOT put the outreach "Founding Featured — 4 months" link ($500 once,
+  // scripts/outreach/README.md) in any slot below. It is a different offer at
+  // a different price and belongs only in those emails; dropping it here would
+  // sell four months for the price the page calls one.
+  //
+  // scripts/check-payment-links.mjs runs at build time and rejects a test-mode
+  // link, a retired link, a non-Payment-Link URL, and the same link pasted in
+  // two slots. It cannot tell whether a live link charges the right amount —
+  // confirm that in Stripe when you create it.
   pricing: {
+    // The bonus month on a prepaid listing is a LAUNCH OFFER, not the standing
+    // rate. Prepaid bills three months' list price and runs four — 32.5% below
+    // list, against 10% for an ordinary prepay — which is worth it while the
+    // problem is getting the first paying customers and cash for ads, and is
+    // not worth it forever.
+    //
+    // `until` is deliberately empty. There is no one to give notice to yet, and
+    // naming a date before we know what converts would either rush us into
+    // killing a working offer or trap us in one that is not. Fill it in as
+    // YYYY-MM-DD when there is a reason, and every place the offer appears
+    // starts printing the deadline.
+    //
+    // ENDING IT is one change, and the build checks you did all of it: set
+    // active:false, put the commit labels back to '3 months prepaid', and put
+    // the per figures back to price/3 ($45/mo and $450/mo).
+    // scripts/check-payment-links.mjs derives the months of service from
+    // `active`, so a half-finished reversion fails the build instead of
+    // quietly selling four months at the three-month price. Anyone already in
+    // a prepaid term keeps the four months they bought — /terms/ says so.
+    launchOffer: {
+      active: true,
+      label: 'Launch offer',
+      until: '',
+    },
     enhanced: {
-      price: '$50', period: '/mo', note: '30-day free trial', url: '',
-      commit: { label: '3 months prepaid', price: '$135', per: '$45/mo', url: '' },
+      // note renders as a badge under the price on /for-practices/. It must
+      // describe what the Payment Link in `url` actually does: the 2026-09-18
+      // link charges $50 immediately, so the '30-day free trial' that used to
+      // sit here promised a trial checkout never gave. Re-add it only alongside
+      // a trial configured on the link itself.
+      price: '$50', period: '/mo', note: '', url: 'https://buy.stripe.com/bJeaEZdu92Jyb9DaHReAg05',
+      commit: { label: '4 months, paying for 3', price: '$135', per: '$33.75/mo', url: 'https://buy.stripe.com/bJeeVfdu9ck82D75nxeAg06' },
     },
     featured: {
-      price: '$500', period: '/mo', note: '', url: '',
-      commit: { label: '3 months prepaid', price: '$1,350', per: '$450/mo', url: '' },
+      price: '$500', period: '/mo', note: '', url: 'https://buy.stripe.com/fZufZjcq5doc1z303deAg07',
+      commit: { label: '4 months, paying for 3', price: '$1,350', per: '$337.50/mo', url: 'https://buy.stripe.com/00wcN72Pv4RGb9DaHReAg08' },
     },
     // Brand sponsorship (data/sponsors.json) — sold, not self-serve. Prices
     // render on /advertise/; the sale closes by conversation and invoice.

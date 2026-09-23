@@ -2,6 +2,7 @@
 import Base from '../../layouts/Base.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import { getArticlesNewestFirst } from '../../lib/articles.js';
+import { articleThumb } from '../../lib/article-art.js';
 import { breadcrumbLd } from '../../lib/schema.js';
 import { SITE } from '../../lib/site.js';
 
@@ -46,10 +47,8 @@ const fmt = (d) =>
               <p class="article-dek">{a.data.dek}</p>
               <span class="article-more">Read →</span>
             </div>
-            <img class="article-thumb" src={a.data.heroRemote
-              ? `${a.data.heroRemote}&w=600&h=600&fit=crop&crop=entropy&q=80`
-              : a.data.thumb || a.data.image || `/social/${a.slug}.png`}
-              alt={a.data.thumb ? (a.data.heroAlt || '') : (a.data.imageAlt || '')}
+            {/* No title fallback on the alt: the headline is right beside it. */}
+            <img class="article-thumb" {...articleThumb(a.data, a.slug)}
               width="180" height="180" loading="lazy" />
           </a>
         </li>
