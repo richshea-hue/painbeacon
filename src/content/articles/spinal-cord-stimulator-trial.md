@@ -1,7 +1,7 @@
 ---
 title: 'Spinal Cord Stimulators: Who They''re For and What a Trial Involves'
 dek: 'A spinal cord stimulator gets a test run before anything is implanted. Here is who the device is really for, what the trial week involves, and what it cannot promise.'
-date: 2026-09-16
+date: 2026-09-23
 category: 'Treatments Explained'
 heroImg: '/images/news/spinal-cord-stimulator-trial/doctor-explaining-spine-imaging-to-patient-hero.jpg'
 heroAlt: 'A physician in a white coat points to spine images on a wall-mounted monitor while a patient in a dark jacket stands beside him and studies the screen.'
