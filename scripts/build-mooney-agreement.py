@@ -13,7 +13,7 @@ from reportlab.platypus import (BaseDocTemplate, PageTemplate, Frame, Paragraph,
 import os, sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(
-    ROOT, "PainBeacon-Mooney-sales-agreement-2026-09-22.pdf")
+    ROOT, "PainBeacon-Mooney-sales-agreement.pdf")
 
 TEAL_DEEP = colors.HexColor("#0A4F46")
 INK       = colors.HexColor("#1D2B29")
@@ -53,7 +53,7 @@ def deco(canvas, doc):
     canvas.drawString(0.72*inch, 0.30*inch, "PAINBEACON.COM")
     canvas.drawRightString(w - 0.72*inch, 0.30*inch, "Page %d of 2" % doc.page)
     canvas.setStrokeColor(LINE); canvas.setLineWidth(0.5)
-    canvas.line(0.72*inch, 0.44*inch, w - 0.72*inch, 0.48*inch)
+    canvas.line(0.72*inch, 0.44*inch, w - 0.72*inch, 0.44*inch)
     canvas.restoreState()
 
 doc = BaseDocTemplate(OUT, pagesize=LETTER,
