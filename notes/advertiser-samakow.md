@@ -2,7 +2,7 @@
 
 Living record. Last updated 2026-09-23.
 
-Paul Samakow is a Northern Virginia personal-injury attorney, practising in VA
+Paul Samakow is a Northern Virginia personal-injury attorney, practicing in VA
 and MD since 1980, introduced by Mark Mooney. There are **two separate
 relationships** and they should not be blended, because the economics have
 nothing in common:
