@@ -17,6 +17,19 @@ export const SITE = {
     facebook: 'https://www.facebook.com/profile.php?id=61592202442574',
   },
 
+  // WebSub (formerly PubSubHubbub) hub. Declared in rss.xml and pinged after
+  // each deploy that touches an article, so feed readers and aggregators get a
+  // push the moment one lands instead of waiting out their own poll interval.
+  //
+  // NOT Google's pubsubhubbub.appspot.com, which most feeds still name and
+  // which most tutorials still recommend: it is abandoned, and it drops the
+  // majority of subscribe requests. A feed pointing there advertises WebSub and
+  // silently delivers nothing. websubhub.com is maintained and answers.
+  //
+  // Set '' and the feed stops declaring a hub and the ping is skipped, which is
+  // the right state if nothing is pinging.
+  websubHub: 'https://websubhub.com/hub',
+
   // Google Preferred Sources — a READER opt-in, not a ranking setting. Someone
   // who ticks our box gets a "Preferred" badge on our links inside AI Overviews
   // and AI Mode, and Google reports preferred sources are about twice as likely

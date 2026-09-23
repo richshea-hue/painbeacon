@@ -1,0 +1,68 @@
+name: Announce new article
+
+# Pushes a newly published article to Bluesky and pings the WebSub hub, once the
+# deploy carrying it is live.
+#
+# WHY NOT JUST LEAVE IT TO dlvr.it. dlvr.it polls the feed on a timer and judges
+# each item by its pubDate. An article that merges a week after it was written
+# therefore arrives already stale and gets passed over — which is exactly what
+# happened on 2026-09-16 (see article-calendar.md). These two steps push instead
+# of waiting to be polled, so publishing is the trigger.
+#
+# Both steps are idempotent: post-to-bluesky.mjs asks Bluesky whether the URL is
+# already up before posting anything, and a WebSub ping with nothing new costs
+# the hub one conditional GET. Re-running this workflow is safe.
+#
+# SECRETS — Settings → Secrets and variables → Actions:
+#   BLUESKY_HANDLE        painbeacon.bsky.social, or the domain handle if set
+#   BLUESKY_APP_PASSWORD  an APP PASSWORD (Bluesky → Settings → Privacy and
+#                         security → App passwords), never the account password
+# With either one unset the Bluesky step prints what it would have posted and
+# exits clean, so this workflow is harmless before the secrets exist. The WebSub
+# ping needs no credentials and runs regardless.
+
+on:
+  push:
+    branches: [main]
+    # Only article changes. A deploy that touches templates or clinic data has
+    # nothing new to announce, and the feed's first item would be last week's.
+    paths:
+      - 'src/content/articles/**'
+  workflow_dispatch:
+    # "Run workflow" in the Actions tab, for a post that needs re-sending.
+
+# One at a time. Two overlapping runs could both pass the already-posted check
+# before either has written its post.
+concurrency:
+  group: announce-article
+  cancel-in-progress: false
+
+jobs:
+  announce:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+
+      - name: Wait for the Cloudflare Pages deploy
+        # Both scripts read the LIVE feed, so they have to run after the build
+        # that publishes the article — otherwise Bluesky gets last week's item
+        # and the hub fetches a feed that has not changed. Same 5 minutes
+        # indexnow-submit.yml waits for the same reason.
+        run: sleep 300
+
+      - name: Post to Bluesky
+        env:
+          BLUESKY_HANDLE: ${{ secrets.BLUESKY_HANDLE }}
+          BLUESKY_APP_PASSWORD: ${{ secrets.BLUESKY_APP_PASSWORD }}
+        run: node scripts/post-to-bluesky.mjs
+
+      - name: Ping the WebSub hub
+        # Runs even if Bluesky failed: the two announce to different audiences
+        # and neither should be able to silence the other.
+        if: always()
+        run: node scripts/ping-websub.mjs
