@@ -45,8 +45,10 @@ export async function GET(context) {
     site: context.site,
     // WebSub discovery. rel="hub" is where a reader subscribes for push
     // updates; rel="self" is the canonical topic URL the hub keys those
-    // subscriptions on, and a subscription needs both to complete. This is only
-    // the advertisement — the hub fans nothing out until someone pings it,
+    // subscriptions on, and a subscription needs both to complete. Advertising
+    // them is the part WebSub actually requires of a publisher; how the
+    // publisher then pings the hub is left unspecified (see ping-websub.mjs).
+    // This is only the advertisement — the hub fans nothing out until pinged,
     // which scripts/ping-websub.mjs does after each deploy that touches an
     // article. Blank SITE.websubHub emits neither link.
     ...(SITE.websubHub
