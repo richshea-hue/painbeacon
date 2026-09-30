@@ -3,6 +3,14 @@ title: 'Questions to Ask Before Agreeing to Any Pain Procedure'
 dek: 'A pain procedure deserves real informed consent, not a rushed signature. The questions that separate a good conversation from a sales pitch.'
 date: 2026-09-30
 category: 'Patient Guides'
+heroImg: '/images/news/questions-before-a-pain-procedure/doctor-discussing-procedure-with-patient-at-desk-hero.jpg'
+heroAlt: 'A physician in a white coat gestures as he explains something across a desk to a woman in a patterned blouse, who listens closely, with a laptop and desk lamp between them.'
+thumb: '/images/news/questions-before-a-pain-procedure/doctor-discussing-procedure-with-patient-at-desk-thumb.jpg'
+shareImg: '/images/news/questions-before-a-pain-procedure/doctor-discussing-procedure-with-patient-at-desk-share.jpg'
+heroCreditName: 'Lucas Guimarães Bueno'
+heroCreditProfile: 'https://www.pexels.com/@lucas-guimaraes-bueno-258458556'
+heroCreditPhoto: 'https://www.pexels.com/photo/doctor-talking-with-woman-in-white-long-sleeve-shirt-12599544/'
+heroCreditProvider: 'Pexels'
 ---
 
 At some point in a long pain journey, someone in a white coat proposes doing
@@ -78,15 +86,21 @@ That last one matters more than it sounds. A practice that can answer
 clearly, by name or by role, is telling you something about how it is run.
 A practice that shrugs is telling you something too.
 
+<figure>
+  <img src="/images/news/questions-before-a-pain-procedure/patient-writing-questions-in-notebook.jpg"
+       alt="A woman in a pink shirt stands at a kitchen counter writing in an open notebook with a black pen."
+       width="1200" height="800" loading="lazy" />
+  <figcaption>Writing your questions down at home, before the appointment, is the simplest way to make sure they actually get asked once the visit starts moving fast.</figcaption>
+</figure>
+
 ## Ask who is actually doing it, and how often
 
 Experience is one of the more honestly answerable questions in medicine,
 and clinicians who do a lot of a given procedure tend to have fewer
 complications and better outcomes than those who do it occasionally. It is
 reasonable to ask **how many of these you perform, and how often do you
-need to revise, repeat, or remove them?** — the same question we suggested
-for stimulator trials applies just as well to injections, ablations, and
-implants generally.
+need to revise, repeat, or remove them?** That applies to injections,
+ablations, and implants alike.
 
 It is also worth asking whether the person performing the procedure is the
 one you have been talking to, or someone else in the practice, and what
