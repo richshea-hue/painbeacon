@@ -27,6 +27,8 @@
 // whichever it has):
 //   PEXELS_API_KEY        https://www.pexels.com/api/
 //   UNSPLASH_ACCESS_KEY   https://unsplash.com/developers
+// In a cloud session either may instead be an "API credential" on the
+// environment (proxy-attached); see the PROXY_KEY note below.
 //
 // TWO DIFFERENT OUTCOMES, because the two providers have different rules:
 //
@@ -56,8 +58,17 @@ const opt = (name) => {
   return i > -1 ? argv[i + 1] : undefined;
 };
 
-const pexelsKey = process.env.PEXELS_API_KEY;
-const unsplashKey = process.env.UNSPLASH_ACCESS_KEY;
+// In a Claude Code cloud session the keys can live in the environment's "API
+// credentials" instead of env vars: the egress proxy attaches the real key to
+// requests for the credential's host, so the container never holds it. The
+// script then has no key to read, but it must still send the requests. When no
+// key is set and HTTPS_PROXY is present it sends a placeholder and lets the
+// proxy supply the real one; a provider with no credential just fails its
+// search (reported, not fatal), and so does the Unsplash download ping.
+const PROXY_KEY = 'supplied-by-egress-proxy';
+const viaProxy = Boolean(process.env.HTTPS_PROXY || process.env.https_proxy);
+const pexelsKey = process.env.PEXELS_API_KEY || (viaProxy ? PROXY_KEY : undefined);
+const unsplashKey = process.env.UNSPLASH_ACCESS_KEY || (viaProxy ? PROXY_KEY : undefined);
 if (!pexelsKey && !unsplashKey) {
   console.error(
     'No photo API key. Set PEXELS_API_KEY and/or UNSPLASH_ACCESS_KEY and run with `node --env-file=.env`.'
@@ -66,6 +77,9 @@ if (!pexelsKey && !unsplashKey) {
 }
 if (!pexelsKey) console.warn('! PEXELS_API_KEY missing — searching Unsplash only.');
 if (!unsplashKey) console.warn('! UNSPLASH_ACCESS_KEY missing — no backup if Pexels comes up empty.');
+if (viaProxy && (pexelsKey === PROXY_KEY || unsplashKey === PROXY_KEY)) {
+  console.warn('! No key in the environment — relying on API credentials attached by the egress proxy.');
+}
 
 // ---------------------------------------------------------------- registry
 
