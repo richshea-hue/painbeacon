@@ -1,7 +1,7 @@
 ---
 title: 'Questions to Ask Before Agreeing to Any Pain Procedure'
 dek: 'Injection, nerve block, ablation or implant: eight plain questions that help you understand the plan, the risks and the alternatives before you say yes.'
-date: 2026-09-30
+date: 2026-10-01
 category: 'Patient Guides'
 heroImg: '/images/news/questions-to-ask-before-a-pain-procedure/procedure-questions-checklist-illustration-hero.jpg'
 heroAlt: 'An illustrated clipboard with five green check marks beside blank lines, standing for a checklist of questions to review before a pain procedure.'
