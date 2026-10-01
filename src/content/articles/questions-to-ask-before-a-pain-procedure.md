@@ -3,10 +3,14 @@ title: 'Questions to Ask Before Agreeing to Any Pain Procedure'
 dek: 'Injection, nerve block, ablation or implant: eight plain questions that help you understand the plan, the risks and the alternatives before you say yes.'
 date: 2026-10-01
 category: 'Patient Guides'
-heroImg: '/images/news/questions-to-ask-before-a-pain-procedure/procedure-questions-checklist-illustration-hero.jpg'
-heroAlt: 'An illustrated clipboard with five green check marks beside blank lines, standing for a checklist of questions to review before a pain procedure.'
-thumb: '/images/news/questions-to-ask-before-a-pain-procedure/procedure-questions-checklist-illustration-thumb.jpg'
-shareImg: '/images/news/questions-to-ask-before-a-pain-procedure/procedure-questions-checklist-illustration-share.jpg'
+heroImg: '/images/news/questions-to-ask-before-a-pain-procedure/doctor-discussing-procedure-with-patient-at-desk-hero.jpg'
+heroAlt: 'A physician in a white coat gestures as he explains something across a desk to a woman in a patterned blouse, who listens closely, with a laptop and desk lamp between them.'
+thumb: '/images/news/questions-to-ask-before-a-pain-procedure/doctor-discussing-procedure-with-patient-at-desk-thumb.jpg'
+shareImg: '/images/news/questions-to-ask-before-a-pain-procedure/doctor-discussing-procedure-with-patient-at-desk-share.jpg'
+heroCreditName: 'Lucas Guimarães Bueno'
+heroCreditProfile: 'https://www.pexels.com/@lucas-guimaraes-bueno-258458556'
+heroCreditPhoto: 'https://www.pexels.com/photo/doctor-talking-with-woman-in-white-long-sleeve-shirt-12599544/'
+heroCreditProvider: 'Pexels'
 ---
 
 Most people are not prepared for the moment a specialist says, "I'd like to
@@ -19,6 +23,13 @@ eight below work for nearly any procedure, from an epidural steroid injection
 to a radiofrequency ablation to a spinal cord stimulator trial. Bring them
 written down, since it is easy to forget half of them when someone in a white
 coat is waiting for your answer.
+
+<figure>
+  <img src="/images/news/questions-to-ask-before-a-pain-procedure/patient-writing-questions-in-notebook.jpg"
+       alt="A woman in a pink shirt stands at a kitchen counter writing in an open notebook with a black pen."
+       width="1200" height="800" loading="lazy" />
+  <figcaption>Writing your questions down at home, before the appointment, is the simplest way to make sure they actually get asked once the visit starts moving fast.</figcaption>
+</figure>
 
 ## 1. What exactly are you treating, and how do you know that is the source?
 
