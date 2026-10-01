@@ -297,6 +297,31 @@
       ]
     },
     {
+      "page": "news/questions-to-ask-before-a-pain-procedure",
+      "role": "hero",
+      "pexels_id": null,
+      "src_url": "manual:original illustration generated for this article (sharp/SVG); no stock photo",
+      "photographer": null,
+      "source_md5": "a5c5d65f95840f46f9c6e87870c48205",
+      "files": [
+        {
+          "path": "/images/news/questions-to-ask-before-a-pain-procedure/procedure-questions-checklist-illustration-hero.jpg",
+          "md5": "adee07b855fe10990ecc75a6bffb5e11",
+          "bytes": 19289
+        },
+        {
+          "path": "/images/news/questions-to-ask-before-a-pain-procedure/procedure-questions-checklist-illustration-thumb.jpg",
+          "md5": "bc247505468ec9c2bed8e7a6dcab17a1",
+          "bytes": 10835
+        },
+        {
+          "path": "/images/news/questions-to-ask-before-a-pain-procedure/procedure-questions-checklist-illustration-share.jpg",
+          "md5": "d21396a0362d9c6f537fb104dbf6de9e",
+          "bytes": 23872
+        }
+      ]
+    },
+    {
       "page": "news/sciatica-when-to-see-a-specialist",
       "role": "hero",
       "pexels_id": 8313199,
