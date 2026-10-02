@@ -74,10 +74,55 @@ python scripts/outreach/make_drafts.py --in <artifact.csv> \
 Clinics already `verified` are skipped — they control their own info, so
 there's nothing to confirm.
 
+## Warm outreach: clinics AI assistants already cite us for
+
+Bing Webmaster Tools → **AI Performance → Grounding Queries** lists the
+queries where Bing/Copilot cited painbeacon.com. Some of those queries are a
+single practice's name: somebody asked an assistant about one clinic and we
+were a source. Those clinics are the warmest list we have, because the pitch
+is checkable by the recipient in ten seconds and it is good news rather than
+a favor-ask.
+
+```bash
+# Bing: AI Performance -> Grounding Queries -> "Download all"
+python scripts/outreach/match_ai_citations.py \
+    --queries ~/Downloads/bing-grounding-queries.csv \
+    --out scripts/outreach/out/targets-ai.csv
+
+# then the usual steps 2 and 3
+python scripts/outreach/discover_emails.py \
+    --in scripts/outreach/out/targets-ai.csv \
+    --out scripts/outreach/out/targets-ai-emails.csv
+python scripts/outreach/make_drafts.py \
+    --in scripts/outreach/out/targets-ai-emails.csv --variant ai-cited ...
+```
+
+The matcher sorts the queries into **category** ("pain specialist" — we are
+being used as a directory, no clinic to contact) and **branded** ("mahajan
+spine and joint" — one practice, that practice is the target). It decides by
+rarity rather than a keyword list: a branded query contains a token almost no
+other clinic name uses, a category query is built from tokens thousands share.
+A query carrying intent words ("best", "near me", a year) is category whatever
+else is in it, because "best pain doctors near me in augusta" names a city,
+not a practice.
+
+Everything it does not write is still printed — the category queries, the
+branded-looking ones that matched nothing (possibly a practice we do not
+list), and the runner-up matches. **Read the runners-up.** A rare word can be
+shared: "augusta spine and pain" matches Augusta Spine and Pain at 1.00 and
+Augusta Foot and Ankle at 0.77, and only the first is written. By default one
+clinic is written per query for exactly this reason; `--max-per-query 3` is
+for when you mean to mail several locations of one practice.
+
+**Only send `ai-cited` to rows this script produced.** The email says Copilot
+cites us for that practice, which the recipient can check immediately. It has
+to be true of them specifically.
+
 ## The pitches
 
 | variant | hook | src tag |
 |---|---|---|
+| `ai-cited` | "Copilot cites us when people ask about you" (warmest; needs match_ai_citations.py) | `em-ai-cited` |
 | `confirm-update` | "our records show X changed — can you confirm?" (warm; needs a confirm report) | `em-confirm-update` |
 | `fix-info` | "here's what patients see for you — is it right?" | `em-fix-info` |
 | `badge-backlink` | free Verified badge + followed link to your site | `em-badge-backlink` |
