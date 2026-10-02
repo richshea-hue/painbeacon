@@ -13,6 +13,11 @@ so the dashboard shows which pitch produced each claim):
   badge-backlink     free Verified badge + followed link to their site
   founding-featured  ONE clinic per market, at the launch offer the site
                      already publishes (read from src/lib/site.js)
+  ai-cited           "AI assistants cite us when people ask about you" — input
+                     is scripts/outreach/match_ai_citations.py's output, whose
+                     rows carry ai_query / ai_citations. Only send to rows that
+                     script produced: the claim is checkable in ten seconds, so
+                     it has to be true of THAT practice.
   confirm-update     "we just found your hours/website via Google" — input is
                      scripts/outreach/build_confirm_targets.py's output
                      (rows carry an updated_fields column: hours, website,
@@ -88,7 +93,7 @@ def pricing():
     }
 
 VARIANTS = ("fix-info", "badge-backlink", "founding-featured",
-            "confirm-update", "launch-feedback")
+            "confirm-update", "launch-feedback", "ai-cited")
 
 
 def host_of(url):
@@ -305,6 +310,27 @@ of date:
 We are brand new, so I would genuinely like your feedback. If something
 on your listing is wrong, or there is something you would want from a
 directory like this, just let me know.
+
+{from_name}
+PainBeacon — painbeacon.com"""
+
+    elif variant == "ai-cited":
+        subject = f"Copilot cites us when people ask about {clinic}"
+        body = f"""Hi {clinic} team,
+
+When someone asks Microsoft Copilot about your practice, PainBeacon comes
+back as one of the sources it uses. You can check that in about ten seconds.
+
+We are an independent directory of pain clinics built from the federal NPI
+registry. This is what we show for you:
+{profile}
+
+Claiming it is free and takes a couple of minutes. You can correct anything
+that is wrong and add a link to your own site:
+{claim}
+
+Claiming does not move you up or down in our rankings. We do not sell
+placement, which is the reason the data holds up.
 
 {from_name}
 PainBeacon — painbeacon.com"""
