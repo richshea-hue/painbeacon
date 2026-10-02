@@ -5,7 +5,7 @@ match_ai_citations.py — an alternative step 1 for the outreach pipeline.
 build_targets.py picks a market and sorts by review count. This picks the
 clinics that AI assistants ALREADY cite us for, which is a warmer list: the
 pitch writes itself, the recipient can verify it in ten seconds, and it is
-flattering rather than a favour-ask.
+flattering rather than a favor-ask.
 
 Input is the "Download all" export from Bing Webmaster Tools →
 AI Performance → Grounding Queries. Those queries split into two kinds:

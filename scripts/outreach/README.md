@@ -81,7 +81,7 @@ queries where Bing/Copilot cited painbeacon.com. Some of those queries are a
 single practice's name: somebody asked an assistant about one clinic and we
 were a source. Those clinics are the warmest list we have, because the pitch
 is checkable by the recipient in ten seconds and it is good news rather than
-a favour-ask.
+a favor-ask.
 
 ```bash
 # Bing: AI Performance -> Grounding Queries -> "Download all"
