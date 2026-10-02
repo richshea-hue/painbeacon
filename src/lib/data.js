@@ -1,6 +1,7 @@
 // Build-time data access. Reads the clinics_public VIEW only — internal
 // deal-flow columns are not exposed by that view, so the site cannot leak them.
-// Falls back to a local fictional sample so the project builds without Supabase.
+// Falls back to a local fictional sample so the project builds without Supabase
+// on a laptop; a Cloudflare Pages build (CF_PAGES set) fails instead.
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -49,6 +50,11 @@ async function fetchFromSupabase(url, key) {
   return out;
 }
 
+// clinics_public held 14,536 rows on 2026-09-19. A real fetch far below that
+// means a half-broken view or a truncated page loop; publishing it would
+// silently drop most of the directory, so fail instead.
+const MIN_CLINICS = 10000;
+
 let _cache = null;
 
 export async function getClinics() {
@@ -60,6 +66,22 @@ export async function getClinics() {
   if (url && key) {
     rows = await fetchFromSupabase(url, key);
     console.log(`[data] loaded ${rows.length} clinics from Supabase clinics_public`);
+    if (rows.length < MIN_CLINICS) {
+      throw new Error(
+        `[data] Supabase clinics_public returned only ${rows.length} rows (floor is ${MIN_CLINICS}). ` +
+          `Refusing to build a partial directory — check the view and its permissions.`
+      );
+    }
+  } else if (process.env.CF_PAGES) {
+    // Cloudflare Pages sets CF_PAGES=1 on every build, production and preview.
+    // The sample fallback below would publish eight invented clinics as a
+    // national medical directory, so a deploy without real data must fail.
+    const missing = [!url && 'SUPABASE_URL', !key && 'SUPABASE_ANON_KEY'].filter(Boolean).join(' and ');
+    throw new Error(
+      `[data] ${missing} not set in this Cloudflare Pages build. Refusing to publish ` +
+        `FICTIONAL sample clinics. Add the missing value under Settings → Environment variables for this ` +
+        `environment (production and preview are configured separately), then redeploy.`
+    );
   } else {
     rows = sampleData;
     console.warn(
