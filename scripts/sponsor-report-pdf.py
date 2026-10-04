@@ -167,6 +167,8 @@ def build(data, out_path):
     F.append(Spacer(1, 12))
 
     g = data.get("growth") or {}
+    # sponsor-report.mjs already trims the pre-launch months; all that is left
+    # to drop is a current month that has not seen a search yet.
     months = [m for m in g.get("months", []) if m.get("searches") or not m.get("partial")]
     if any(m["searches"] for m in months):
         F.append(P("How the site is growing", "h2"))

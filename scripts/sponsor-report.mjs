@@ -36,7 +36,10 @@ const SPONSOR = arg('--sponsor', null);
 const OUT = arg('--out', null);
 const JSON_OUT = arg('--json', null);
 const GROWTH_MONTHS = Math.max(0, Number(arg('--growth-months', 6)) || 0);
-if (!SPONSOR) { console.error('usage: --sponsor <id> [--since YYYY-MM-DD] [--until YYYY-MM-DD] [--out file.md] [--json file.json] [--growth-months 6]'); process.exit(1); }
+// Set this when the earliest month with data is the launch month: a part-month
+// start makes every later month look like growth that did not happen.
+const GROWTH_SINCE = arg('--growth-since', null);
+if (!SPONSOR) { console.error('usage: --sponsor <id> [--since YYYY-MM-DD] [--until YYYY-MM-DD] [--out file.md] [--json file.json] [--growth-months 6] [--growth-since YYYY-MM]'); process.exit(1); }
 
 const url = process.env.SUPABASE_URL;
 const found = serviceKey();
@@ -143,9 +146,20 @@ if (GROWTH_MONTHS > 0) {
       if (counts.has(k)) counts.set(k, counts.get(k) + 1);
     }
     const thisMonth = new Date().toISOString().slice(0, 7);
-    growth.months = [...counts.entries()].map(([month, searches]) => ({
+    let series = [...counts.entries()].map(([month, searches]) => ({
       month, searches, partial: month === thisMonth,
     }));
+    // Drop the months before anything was recorded. The window is a fixed
+    // number of months back, but the site is younger than that and the table
+    // would open with empty bars — which reads as a flat line before launch
+    // rather than as "we were not there yet". Interior zeros are kept: a
+    // genuine quiet month is information, a pre-launch one is not.
+    const firstWithData = series.findIndex((m) => m.searches > 0);
+    series = firstWithData === -1 ? [] : series.slice(firstWithData);
+    // An explicit start wins, for the launch-month case the heuristic cannot
+    // see: a month that only ran for nine days is not a month to grow from.
+    if (GROWTH_SINCE) series = series.filter((m) => m.month >= GROWTH_SINCE);
+    growth.months = series;
   }
 }
 // The headline change ignores the month in progress and any leading months
