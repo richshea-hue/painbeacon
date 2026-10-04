@@ -47,9 +47,19 @@ const BOT_PATTERNS = [
  * a bare fetch usually does not.
  */
 export function isBot(request) {
-  const ua = (request.headers.get('user-agent') || '').toLowerCase();
-  if (!ua) return true;
-  return BOT_PATTERNS.some((p) => ua.includes(p));
+  return isBotUA(request.headers.get('user-agent'));
+}
+
+/**
+ * The same verdict from a stored User-Agent string rather than a live request,
+ * so a report reading rows out of the database applies exactly the patterns the
+ * counters applied when they wrote them. Two copies of this list would drift,
+ * and a report that disagreed with its own counter is worse than no report.
+ */
+export function isBotUA(ua) {
+  const s = (ua || '').toLowerCase();
+  if (!s) return true;
+  return BOT_PATTERNS.some((p) => s.includes(p));
 }
 
 /**

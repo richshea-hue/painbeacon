@@ -28,12 +28,15 @@
 // the report labels the window accordingly.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { serviceKey, missingKeyMessage } from './lib/sb-key.mjs';
+import { isBotUA } from '../functions/_lib/bot.js';
 
 const argv = process.argv.slice(2);
 const arg = (k, d) => { const i = argv.indexOf(k); return i === -1 ? d : argv[i + 1]; };
 const SPONSOR = arg('--sponsor', null);
 const OUT = arg('--out', null);
-if (!SPONSOR) { console.error('usage: --sponsor <id> [--since YYYY-MM-DD] [--until YYYY-MM-DD] [--out file.md]'); process.exit(1); }
+const JSON_OUT = arg('--json', null);
+const GROWTH_MONTHS = Math.max(0, Number(arg('--growth-months', 6)) || 0);
+if (!SPONSOR) { console.error('usage: --sponsor <id> [--since YYYY-MM-DD] [--until YYYY-MM-DD] [--out file.md] [--json file.json] [--growth-months 6]'); process.exit(1); }
 
 const url = process.env.SUPABASE_URL;
 const found = serviceKey();
@@ -97,6 +100,64 @@ const kind = (p) => (/^\/news\//.test(p) ? 'Guides' : /^\/clinic\//.test(p) ? 'C
 const byKind = new Map();
 for (const [p, b] of byPage) { const k = kind(p); const t = byKind.get(k) || { v: 0, c: 0 }; t.v += b.v; t.c += b.c; byKind.set(k, t); }
 
+// ---------------------------------------------------------------------------
+// How the site itself is growing.
+//
+// Counted from search_events, not from page views, and the distinction is the
+// point. A row here means a visitor typed a ZIP or a city into the search box
+// and submitted it: the write happens in client-side JavaScript, so a crawler
+// that never runs JS cannot produce one, and the action is deliberate rather
+// than incidental. Page views on a 12,000-page directory are mostly robots —
+// that is the same trap that briefly turned 5 real sponsor clicks into 257,
+// and it is not a number to put in front of anyone who buys advertising.
+//
+// deep_link rows are excluded: those come from a URL, which a crawler can
+// follow. Only 'hero' and 'chatbot' are a person at a keyboard.
+const monthKey = (iso) => iso.slice(0, 7);
+const growth = { months: [], source: 'search_events', note: null };
+if (GROWTH_MONTHS > 0) {
+  const start = new Date();
+  start.setUTCDate(1);
+  start.setUTCMonth(start.getUTCMonth() - (GROWTH_MONTHS - 1));
+  const from = start.toISOString().slice(0, 10);
+  const sRows = [];
+  let ok = true;
+  for (let off = 0; ; off += 1000) {
+    const r = await fetch(`${base}/rest/v1/search_events?select=created_at,source,user_agent&created_at=gte.${from}T00:00:00Z&order=created_at.asc`,
+      { headers: { ...H, Range: `${off}-${off + 999}` } });
+    if (r.status === 416) break;
+    if (!r.ok) { ok = false; growth.note = `search_events unavailable (${r.status})`; break; }
+    const page = await r.json();
+    sRows.push(...page);
+    if (page.length < 1000) break;
+  }
+  if (ok) {
+    const human = sRows.filter((r) => (r.source === 'hero' || r.source === 'chatbot') && !isBotUA(r.user_agent));
+    const counts = new Map();
+    for (let i = 0; i < GROWTH_MONTHS; i++) {
+      const d = new Date(start); d.setUTCMonth(start.getUTCMonth() + i);
+      counts.set(d.toISOString().slice(0, 7), 0);
+    }
+    for (const r of human) {
+      const k = monthKey(r.created_at);
+      if (counts.has(k)) counts.set(k, counts.get(k) + 1);
+    }
+    const thisMonth = new Date().toISOString().slice(0, 7);
+    growth.months = [...counts.entries()].map(([month, searches]) => ({
+      month, searches, partial: month === thisMonth,
+    }));
+  }
+}
+// The headline change ignores the month in progress and any leading months
+// with nothing in them, so a partial month can never read as a decline and an
+// empty pre-launch month can never read as infinite growth.
+const complete = growth.months.filter((m) => !m.partial && m.searches > 0);
+growth.first = complete[0] || null;
+growth.last = complete.length > 1 ? complete[complete.length - 1] : null;
+growth.changePct = growth.first && growth.last && growth.first.searches > 0
+  ? Math.round(100 * (growth.last.searches - growth.first.searches) / growth.first.searches)
+  : null;
+
 const name = entry?.name || SPONSOR;
 const L = [];
 L.push(`# ${name} on PainBeacon — sponsor report`);
@@ -128,8 +189,40 @@ for (const [k, b] of byDay) L.push(`| ${k} | ${n(b.v)} | ${n(b.c)} |`);
 L.push('\n## Top pages\n'); L.push('| Page | Views | Clicks |'); L.push('|---|---:|---:|');
 for (const [p, b] of topPages) L.push(`| ${p} | ${n(b.v)} | ${n(b.c)} |`);
 
+if (growth.months.some((m) => m.searches > 0)) {
+  L.push('\n## How the site is growing\n');
+  L.push('| Month | Searches run by visitors |'); L.push('|---|---:|');
+  for (const m of growth.months) L.push(`| ${m.month}${m.partial ? ' (so far)' : ''} | ${n(m.searches)} |`);
+  if (growth.changePct !== null) {
+    L.push(`\n**${growth.changePct >= 0 ? '+' : ''}${growth.changePct}%** from ${growth.first.month} to ${growth.last.month}.\n`);
+  }
+  L.push('A search is one person typing a ZIP code or city into the site and submitting it.');
+  L.push('We report these rather than page views: the search is recorded by JavaScript in the');
+  L.push('visitor\'s browser, so automated traffic cannot produce one, and on a directory of');
+  L.push('12,000 pages most raw page requests are crawlers rather than readers.\n');
+}
+
 L.push('\n---');
 L.push('A view is one display of your card in a browser that loads images; crawlers mostly do not, which is what makes this a reader count. A click is counted only when it was not flagged as automated and arrived from one of our own pages — everything else is excluded and shown above. Clicks are forwarded to your site with UTM tags (utm_source=painbeacon, utm_medium=sponsor, utm_campaign=' + SPONSOR + ', utm_content=the page), so your own analytics show the same visits under Acquisition → Campaigns. PainBeacon stores no IP address, device identifier or cookie for any of this.');
 
 const text = L.join('\n');
-if (OUT) { writeFileSync(OUT, text); console.log(`wrote ${OUT}`); } else console.log(text);
+if (OUT) { writeFileSync(OUT, text); console.log(`wrote ${OUT}`); } else if (!JSON_OUT) console.log(text);
+
+// The PDF renderer reads this rather than parsing the Markdown back, so there
+// is one set of arithmetic and the two outputs cannot disagree.
+if (JSON_OUT) {
+  const payload = {
+    sponsor: SPONSOR, name, states: entry?.states || [], url: entry?.url || null,
+    since: SINCE, until: UNTIL, prepared: day(0),
+    headline: { views, clicks, ctr: views > 0 ? +(100 * clicks / views).toFixed(2) : null,
+                days_with_views: [...byDay.values()].filter((b) => b.v > 0).length, days: byDay.size },
+    filtered: { automated: botViews + botClicks, unattributed, raw: rows.length, legacy },
+    by_kind: [...byKind.entries()].map(([kind, t]) => ({ kind, views: t.v, clicks: t.c })),
+    by_day: [...byDay.entries()].map(([date, b]) => ({ date, views: b.v, clicks: b.c })),
+    top_pages: topPages.map(([path, b]) => ({ path, views: b.v, clicks: b.c })),
+    clicks_detail: clickRows.filter(confirmed).map((r) => ({ date: r.created_at.slice(0, 10), path: r.path || '' })),
+    growth,
+  };
+  writeFileSync(JSON_OUT, JSON.stringify(payload, null, 2));
+  console.log(`wrote ${JSON_OUT}`);
+}
