@@ -297,6 +297,86 @@
       ]
     },
     {
+      "page": "news/questions-to-ask-before-a-pain-procedure",
+      "role": "hero",
+      "pexels_id": 12599544,
+      "src_url": "https://www.pexels.com/photo/12599544/",
+      "photographer": "Lucas Guimarães Bueno",
+      "source_md5": "bbbc3cb4be2ff69ce64c55a40d1b5b99",
+      "files": [
+        {
+          "path": "/images/news/questions-to-ask-before-a-pain-procedure/doctor-discussing-procedure-with-patient-at-desk-hero.jpg",
+          "md5": "0c95f068633ea1bacaa7d27486728d01",
+          "bytes": 89377
+        },
+        {
+          "path": "/images/news/questions-to-ask-before-a-pain-procedure/doctor-discussing-procedure-with-patient-at-desk-thumb.jpg",
+          "md5": "48549556d60b9f3111663b9d11a464dc",
+          "bytes": 27990
+        },
+        {
+          "path": "/images/news/questions-to-ask-before-a-pain-procedure/doctor-discussing-procedure-with-patient-at-desk-share.jpg",
+          "md5": "8817776c281c6398ef95c0377f7169ab",
+          "bytes": 71865
+        }
+      ]
+    },
+    {
+      "page": "news/questions-to-ask-before-a-pain-procedure",
+      "role": "inline",
+      "pexels_id": 8845104,
+      "src_url": "https://www.pexels.com/photo/8845104/",
+      "photographer": "Yaroslav Shuraev",
+      "source_md5": "be8def1eca8dd7f1a4d2337ad60240d7",
+      "files": [
+        {
+          "path": "/images/news/questions-to-ask-before-a-pain-procedure/patient-writing-questions-in-notebook.jpg",
+          "md5": "8742cdedafb48bad4c912ec011158379",
+          "bytes": 64470
+        }
+      ]
+    },
+    {
+      "page": "news/radiofrequency-ablation-back-neck-pain",
+      "role": "hero",
+      "pexels_id": 7298429,
+      "src_url": "https://www.pexels.com/photo/7298429/",
+      "photographer": null,
+      "source_md5": "f5ac16951f20bb33acbb36d2ae9230ce",
+      "files": [
+        {
+          "path": "/images/news/radiofrequency-ablation-back-neck-pain/man-holding-lower-back-facet-joint-pain-hero.jpg",
+          "md5": "c7d99ffddb1cdd97a14b44b0a19c8605",
+          "bytes": 120967
+        },
+        {
+          "path": "/images/news/radiofrequency-ablation-back-neck-pain/man-holding-lower-back-facet-joint-pain-thumb.jpg",
+          "md5": "c8dc5acd14e3bfd65447e89302b8deeb",
+          "bytes": 32672
+        },
+        {
+          "path": "/images/news/radiofrequency-ablation-back-neck-pain/man-holding-lower-back-facet-joint-pain-share.jpg",
+          "md5": "7f92ad5f323cf8f40ee182725f57e4c7",
+          "bytes": 116854
+        }
+      ]
+    },
+    {
+      "page": "news/radiofrequency-ablation-back-neck-pain",
+      "role": "inline",
+      "pexels_id": 6129678,
+      "src_url": "https://www.pexels.com/photo/6129678/",
+      "photographer": null,
+      "source_md5": "baa4ba207e801bad1d37cc7c084d9323",
+      "files": [
+        {
+          "path": "/images/news/radiofrequency-ablation-back-neck-pain/nurse-checking-patient-blood-pressure-before-procedure.jpg",
+          "md5": "d4261cc3092c3ad395acb6d7a9b34c41",
+          "bytes": 109796
+        }
+      ]
+    },
+    {
       "page": "news/sciatica-when-to-see-a-specialist",
       "role": "hero",
       "pexels_id": 8313199,
@@ -446,46 +526,6 @@
         }
       ],
       "note": "backfilled 2026-08-01 — shipped before the registry existed, Pexels id unknown; only file hashes guard this one"
-    },
-    {
-      "page": "news/questions-to-ask-before-a-pain-procedure",
-      "role": "hero",
-      "pexels_id": 12599544,
-      "src_url": "https://www.pexels.com/photo/12599544/",
-      "photographer": "Lucas Guimarães Bueno",
-      "source_md5": "bbbc3cb4be2ff69ce64c55a40d1b5b99",
-      "files": [
-        {
-          "path": "/images/news/questions-to-ask-before-a-pain-procedure/doctor-discussing-procedure-with-patient-at-desk-hero.jpg",
-          "md5": "0c95f068633ea1bacaa7d27486728d01",
-          "bytes": 89377
-        },
-        {
-          "path": "/images/news/questions-to-ask-before-a-pain-procedure/doctor-discussing-procedure-with-patient-at-desk-thumb.jpg",
-          "md5": "48549556d60b9f3111663b9d11a464dc",
-          "bytes": 27990
-        },
-        {
-          "path": "/images/news/questions-to-ask-before-a-pain-procedure/doctor-discussing-procedure-with-patient-at-desk-share.jpg",
-          "md5": "8817776c281c6398ef95c0377f7169ab",
-          "bytes": 71865
-        }
-      ]
-    },
-    {
-      "page": "news/questions-to-ask-before-a-pain-procedure",
-      "role": "inline",
-      "pexels_id": 8845104,
-      "src_url": "https://www.pexels.com/photo/8845104/",
-      "photographer": "Yaroslav Shuraev",
-      "source_md5": "be8def1eca8dd7f1a4d2337ad60240d7",
-      "files": [
-        {
-          "path": "/images/news/questions-to-ask-before-a-pain-procedure/patient-writing-questions-in-notebook.jpg",
-          "md5": "8742cdedafb48bad4c912ec011158379",
-          "bytes": 64470
-        }
-      ]
     }
   ]
 }
