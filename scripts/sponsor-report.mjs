@@ -28,6 +28,8 @@
 // the report labels the window accordingly.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { serviceKey, missingKeyMessage } from './lib/sb-key.mjs';
+import { gscClient, gscConfigured, latestSettledDay } from './lib/gsc.mjs';
+import { monthKey, monthWindow, shapeSeries, summarize } from './lib/growth.mjs';
 import { isBotUA } from '../functions/_lib/bot.js';
 
 const argv = process.argv.slice(2);
@@ -36,10 +38,18 @@ const SPONSOR = arg('--sponsor', null);
 const OUT = arg('--out', null);
 const JSON_OUT = arg('--json', null);
 const GROWTH_MONTHS = Math.max(0, Number(arg('--growth-months', 6)) || 0);
+// Where the growth panel gets its numbers. 'auto' prefers Search Console when
+// a key is configured, because its history reaches back to launch while the
+// site's own search log only starts on 2026-10-06.
+const GROWTH_SOURCE = arg('--growth-source', 'auto');
+if (!['auto', 'search-console', 'search_events'].includes(GROWTH_SOURCE)) {
+  console.error(`--growth-source must be auto, search-console or search_events (got ${GROWTH_SOURCE})`);
+  process.exit(1);
+}
 // Set this when the earliest month with data is the launch month: a part-month
 // start makes every later month look like growth that did not happen.
 const GROWTH_SINCE = arg('--growth-since', null);
-if (!SPONSOR) { console.error('usage: --sponsor <id> [--since YYYY-MM-DD] [--until YYYY-MM-DD] [--out file.md] [--json file.json] [--growth-months 6] [--growth-since YYYY-MM]'); process.exit(1); }
+if (!SPONSOR) { console.error('usage: --sponsor <id> [--since YYYY-MM-DD] [--until YYYY-MM-DD] [--out file.md] [--json file.json] [--growth-months 6] [--growth-since YYYY-MM] [--growth-source auto|search-console|search_events]'); process.exit(1); }
 
 const url = process.env.SUPABASE_URL;
 const found = serviceKey();
@@ -106,71 +116,92 @@ for (const [p, b] of byPage) { const k = kind(p); const t = byKind.get(k) || { v
 // ---------------------------------------------------------------------------
 // How the site itself is growing.
 //
-// Counted from search_events, not from page views, and the distinction is the
-// point. A row here means a visitor typed a ZIP or a city into the search box
-// and submitted it: the write happens in client-side JavaScript, so a crawler
-// that never runs JS cannot produce one, and the action is deliberate rather
-// than incidental. Page views on a 12,000-page directory are mostly robots —
-// that is the same trap that briefly turned 5 real sponsor clicks into 257,
-// and it is not a number to put in front of anyone who buys advertising.
+// Two sources can answer this, and neither one is page views. Page views on a
+// 12,000-page directory are mostly robots — the same trap that briefly turned
+// 5 real sponsor clicks into 257, and not a number to put in front of anyone
+// who buys advertising.
 //
-// deep_link rows are excluded: those come from a URL, which a crawler can
-// follow. Only 'hero' and 'chatbot' are a person at a keyboard.
-const monthKey = (iso) => iso.slice(0, 7);
-const growth = { months: [], source: 'search_events', note: null };
+//  - Search Console, the default wherever GSC_SERVICE_ACCOUNT_JSON is set. An
+//    impression means Google showed a PainBeacon page to a person reading a
+//    results page; a click means that person came. GOOGLE counts both, not us,
+//    which is what makes the figure checkable by the sponsor, and the history
+//    reaches back to launch because Google was recording it before anyone here
+//    thought to report it.
+//  - search_events, the site's own log: one row per ZIP or city a visitor
+//    typed into the search box and submitted. Written by client-side
+//    JavaScript, so a crawler that never runs JS cannot produce one, and the
+//    act is deliberate rather than incidental. deep_link rows are excluded —
+//    those come from a URL, which a crawler can follow; only 'hero' and
+//    'chatbot' are a person at a keyboard. The table was not created until
+//    2026-10-06, so it has no history before that date.
+//
+// Impressions are the bar series and clicks ride alongside as a plain number.
+// The two differ by a factor of about fifty, and drawing both as bars means two
+// scales in one panel — the dual-axis trick that can make any pair of series
+// say whatever the author wanted.
+const growth = { months: [], source: null, metric: null, property: null, through: null, note: null };
 if (GROWTH_MONTHS > 0) {
-  const start = new Date();
-  start.setUTCDate(1);
-  start.setUTCMonth(start.getUTCMonth() - (GROWTH_MONTHS - 1));
-  const from = start.toISOString().slice(0, 10);
-  const sRows = [];
-  let ok = true;
-  for (let off = 0; ; off += 1000) {
-    const r = await fetch(`${base}/rest/v1/search_events?select=created_at,source,user_agent&created_at=gte.${from}T00:00:00Z&order=created_at.asc`,
-      { headers: { ...H, Range: `${off}-${off + 999}` } });
-    if (r.status === 416) break;
-    if (!r.ok) { ok = false; growth.note = `search_events unavailable (${r.status})`; break; }
-    const page = await r.json();
-    sRows.push(...page);
-    if (page.length < 1000) break;
-  }
-  if (ok) {
-    const human = sRows.filter((r) => (r.source === 'hero' || r.source === 'chatbot') && !isBotUA(r.user_agent));
-    const counts = new Map();
-    for (let i = 0; i < GROWTH_MONTHS; i++) {
-      const d = new Date(start); d.setUTCMonth(start.getUTCMonth() + i);
-      counts.set(d.toISOString().slice(0, 7), 0);
+  const want = GROWTH_SOURCE === 'auto'
+    ? (gscConfigured() ? 'search-console' : 'search_events')
+    : GROWTH_SOURCE;
+
+  if (want === 'search-console') {
+    growth.source = 'search-console';
+    growth.metric = 'impressions';
+    const keys = monthWindow(GROWTH_MONTHS);
+    try {
+      const gsc = await gscClient();
+      if (!gsc) throw new Error('GSC_SERVICE_ACCOUNT_JSON not set');
+      growth.property = gsc.site;
+      const through = latestSettledDay();
+      growth.through = through;
+      const rows = await gsc.query(`${keys[0]}-01`, through, { dimensions: ['date'], rowLimit: 25000 });
+      const bucket = new Map(keys.map((k) => [k, { impressions: 0, clicks: 0 }]));
+      for (const r of rows) {
+        const b = bucket.get(monthKey(r.keys[0]));
+        if (!b) continue;
+        b.impressions += r.impressions || 0;
+        b.clicks += r.clicks || 0;
+      }
+      growth.months = shapeSeries(keys.map((month) => ({
+        month, value: bucket.get(month).impressions, clicks: bucket.get(month).clicks,
+      })), { through, since: GROWTH_SINCE });
+    } catch (e) {
+      // A missing key, an unshared property and a network block all land here,
+      // and none of them should cost the sponsor their report.
+      growth.note = `Search Console unavailable (${e.message})`;
     }
-    for (const r of human) {
-      const k = monthKey(r.created_at);
-      if (counts.has(k)) counts.set(k, counts.get(k) + 1);
+  } else {
+    growth.source = 'search_events';
+    growth.metric = 'searches';
+    const keys = monthWindow(GROWTH_MONTHS);
+    const from = `${keys[0]}-01`;
+    const sRows = [];
+    let ok = true;
+    for (let off = 0; ; off += 1000) {
+      const r = await fetch(`${base}/rest/v1/search_events?select=created_at,source,user_agent&created_at=gte.${from}T00:00:00Z&order=created_at.asc`,
+        { headers: { ...H, Range: `${off}-${off + 999}` } });
+      if (r.status === 416) break;
+      if (!r.ok) { ok = false; growth.note = `search_events unavailable (${r.status})`; break; }
+      const page = await r.json();
+      sRows.push(...page);
+      if (page.length < 1000) break;
     }
-    const thisMonth = new Date().toISOString().slice(0, 7);
-    let series = [...counts.entries()].map(([month, searches]) => ({
-      month, searches, partial: month === thisMonth,
-    }));
-    // Drop the months before anything was recorded. The window is a fixed
-    // number of months back, but the site is younger than that and the table
-    // would open with empty bars — which reads as a flat line before launch
-    // rather than as "we were not there yet". Interior zeros are kept: a
-    // genuine quiet month is information, a pre-launch one is not.
-    const firstWithData = series.findIndex((m) => m.searches > 0);
-    series = firstWithData === -1 ? [] : series.slice(firstWithData);
-    // An explicit start wins, for the launch-month case the heuristic cannot
-    // see: a month that only ran for nine days is not a month to grow from.
-    if (GROWTH_SINCE) series = series.filter((m) => m.month >= GROWTH_SINCE);
-    growth.months = series;
+    if (ok) {
+      const human = sRows.filter((r) => (r.source === 'hero' || r.source === 'chatbot') && !isBotUA(r.user_agent));
+      const counts = new Map(keys.map((k) => [k, 0]));
+      for (const r of human) {
+        const k = monthKey(r.created_at);
+        if (counts.has(k)) counts.set(k, counts.get(k) + 1);
+      }
+      const through = day(0);
+      growth.through = through;
+      growth.months = shapeSeries(keys.map((month) => ({ month, value: counts.get(month) })),
+        { through, since: GROWTH_SINCE });
+    }
   }
 }
-// The headline change ignores the month in progress and any leading months
-// with nothing in them, so a partial month can never read as a decline and an
-// empty pre-launch month can never read as infinite growth.
-const complete = growth.months.filter((m) => !m.partial && m.searches > 0);
-growth.first = complete[0] || null;
-growth.last = complete.length > 1 ? complete[complete.length - 1] : null;
-growth.changePct = growth.first && growth.last && growth.first.searches > 0
-  ? Math.round(100 * (growth.last.searches - growth.first.searches) / growth.first.searches)
-  : null;
+Object.assign(growth, summarize(growth.months));
 
 const name = entry?.name || SPONSOR;
 const L = [];
@@ -203,17 +234,40 @@ for (const [k, b] of byDay) L.push(`| ${k} | ${n(b.v)} | ${n(b.c)} |`);
 L.push('\n## Top pages\n'); L.push('| Page | Views | Clicks |'); L.push('|---|---:|---:|');
 for (const [p, b] of topPages) L.push(`| ${p} | ${n(b.v)} | ${n(b.c)} |`);
 
-if (growth.months.some((m) => m.searches > 0)) {
+const GSC = growth.source === 'search-console';
+if (growth.months.some((m) => m.value > 0)) {
   L.push('\n## How the site is growing\n');
-  L.push('| Month | Searches run by visitors |'); L.push('|---|---:|');
-  for (const m of growth.months) L.push(`| ${m.month}${m.partial ? ' (so far)' : ''} | ${n(m.searches)} |`);
-  if (growth.changePct !== null) {
-    L.push(`\n**${growth.changePct >= 0 ? '+' : ''}${growth.changePct}%** from ${growth.first.month} to ${growth.last.month}.\n`);
+  if (GSC) {
+    L.push('| Month | Times Google showed a page | Visitors who clicked through |');
+    L.push('|---|---:|---:|');
+    for (const m of growth.months) {
+      L.push(`| ${m.month}${m.partial ? ' (so far)' : ''} | ${n(m.value)} | ${n(m.clicks)} |`);
+    }
+  } else {
+    L.push('| Month | Searches run by visitors |'); L.push('|---|---:|');
+    for (const m of growth.months) L.push(`| ${m.month}${m.partial ? ' (so far)' : ''} | ${n(m.value)} |`);
   }
-  L.push('A search is one person typing a ZIP code or city into the site and submitting it.');
-  L.push('We report these rather than page views: the search is recorded by JavaScript in the');
-  L.push('visitor\'s browser, so automated traffic cannot produce one, and on a directory of');
-  L.push('12,000 pages most raw page requests are crawlers rather than readers.\n');
+  if (growth.changePct !== null) {
+    const what = GSC ? ' in how often Google showed a PainBeacon page' : '';
+    L.push(`\n**${growth.changePct >= 0 ? '+' : ''}${growth.changePct}%**${what} from ${growth.first.month} to ${growth.last.month}.\n`);
+  }
+  if (GSC) {
+    L.push('These are Google\'s own counts, from Search Console, for');
+    L.push(`${growth.property}. An impression is one time Google showed a PainBeacon page to`);
+    L.push('someone reading a results page; a click is one time that person came. We report');
+    L.push('these rather than page views because on a directory of 12,000 pages most raw page');
+    L.push('requests are crawlers rather than readers — and because you can hold us to a');
+    L.push('number we did not count ourselves. Google settles each day about two days late,');
+    L.push(`so figures run through ${growth.through} and any month still open is marked.\n`);
+  } else {
+    L.push('A search is one person typing a ZIP code or city into the site and submitting it.');
+    L.push('We report these rather than page views: the search is recorded by JavaScript in the');
+    L.push('visitor\'s browser, so automated traffic cannot produce one, and on a directory of');
+    L.push('12,000 pages most raw page requests are crawlers rather than readers.\n');
+  }
+} else if (growth.note) {
+  // Say nothing to the sponsor, but do not let the operator think it rendered.
+  console.error(`growth panel omitted: ${growth.note}`);
 }
 
 L.push('\n---');
