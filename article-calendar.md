@@ -94,3 +94,9 @@ merged.
 - [x] Pain management without opioids: what modern clinics actually offer (Treatments Explained) — 2026-09-09
 - [x] Spinal cord stimulators: who they're for and what a trial involves (Treatments Explained) — 2026-09-23
 - [x] Questions to ask before agreeing to any pain procedure (Patient Guides) — 2026-10-01
+- [x] Radiofrequency ablation for back and neck pain: what it is and who it helps (Treatments Explained) — 2026-10-07
+- [ ] Who's who at a pain clinic: anesthesiologists, physiatrists, neurologists and other pain specialists (Choosing a Clinic)
+- [ ] Reading pain clinic reviews: what star ratings can and can't tell you (Inside the Rankings)
+- [ ] Telehealth for chronic pain: what can and can't happen by video (Patient Guides)
+- [ ] Knee pain: when a pain clinic can help, and when to see an orthopedist (Patient Guides)
+- [ ] Nerve blocks explained: diagnostic vs. therapeutic, and why the difference matters (Treatments Explained)
