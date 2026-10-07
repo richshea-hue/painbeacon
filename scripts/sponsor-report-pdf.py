@@ -12,10 +12,14 @@ of arithmetic, so the two outputs cannot disagree.
 Needs reportlab (pip install reportlab). Nothing here talks to the network or
 reads credentials.
 
-The growth panel is one series of monthly counts, so it is drawn as a plain bar
-row with every value labeled and no legend — the heading names the series. Bars
-carry the house teal; the numbers beside them stay in text ink, because a figure
-wearing the series color reads as a second encoding that is not there.
+The growth panel is ONE encoded series of monthly counts, so it is drawn as a
+plain bar row with every value labeled and no legend — the heading names the
+series. Where the source also reports clicks they ride alongside as a number in
+their own column, never as a second set of bars: impressions run about fifty
+times larger, and two scales in one panel is the dual-axis chart that can be
+made to say anything. Bars carry the house teal; the numbers beside them stay in
+text ink, because a figure wearing the series color reads as a second encoding
+that is not there.
 """
 
 import argparse
@@ -62,31 +66,55 @@ st = {
 
 
 class BarRow(Flowable):
-    """One horizontal bar per month, value labeled at the end.
+    """One horizontal bar per month, with the value — and, where the source has
+    one, a companion count — in right-aligned columns.
 
     Bars start at a common baseline and share one scale, so length is the only
-    thing carrying magnitude. The in-progress month is drawn hollow: a partial
-    count next to complete ones would otherwise read as a fall.
+    thing carrying magnitude. The companion count is a NUMBER, never a second
+    bar: impressions and clicks differ by about fiftyfold, and two scales in one
+    panel is the dual-axis chart that can be made to say anything. The
+    in-progress month is drawn hollow, because a partial count standing beside
+    complete ones would otherwise read as a fall.
     """
 
-    ROW, GAP, BAR = 17, 2, 11          # 2px surface gap between adjacent bars
+    ROW, GAP, BAR, HEAD = 17, 2, 11, 13     # 2px surface gap between bars
 
-    def __init__(self, months, width, label_w=58, value_w=42):
+    def __init__(self, months, width, label_w=58, value_w=56,
+                 value_head="", clicks_head=""):
         super().__init__()
         self.months, self.width = months, width
         self.label_w, self.value_w = label_w, value_w
-        self.height = len(months) * (self.ROW + self.GAP)
+        self.clicks = any(m.get("clicks") is not None for m in months)
+        self.clicks_w = 58 if self.clicks else 0
+        self.value_head, self.clicks_head = value_head, clicks_head
+        self.head = self.HEAD if (value_head or clicks_head) else 0
+        self.height = len(months) * (self.ROW + self.GAP) + self.head
 
     def draw(self):
         c = self.canv
-        peak = max([m["searches"] for m in self.months] or [0]) or 1
-        track = self.width - self.label_w - self.value_w
-        y = self.height - self.ROW
+        peak = max([m["value"] for m in self.months] or [0]) or 1
+        track = self.width - self.label_w - self.value_w - self.clicks_w
+        value_x = self.label_w + track + self.value_w - 2
+        clicks_x = value_x + self.clicks_w
+
+        y = self.height - self.head
+        if self.head:
+            c.setFont("Helvetica", 7.5)
+            c.setFillColor(SOFT)
+            if self.value_head:
+                c.drawRightString(value_x, y + 2, self.value_head)
+            if self.clicks and self.clicks_head:
+                c.drawRightString(clicks_x, y + 2, self.clicks_head)
+            c.setStrokeColor(LINE)
+            c.setLineWidth(0.5)
+            c.line(0, y - 1, self.width, y - 1)
+
+        y -= self.ROW
         for m in self.months:
             c.setFont("Helvetica", 8.5)
             c.setFillColor(SOFT)
             c.drawString(0, y + 2.5, month_label(m["month"]) + (" *" if m["partial"] else ""))
-            w = max(1.5, track * m["searches"] / peak)
+            w = max(1.5, track * m["value"] / peak)
             c.setFillColor(TEAL)
             c.setStrokeColor(TEAL)
             if m["partial"]:
@@ -95,9 +123,15 @@ class BarRow(Flowable):
                 c.roundRect(self.label_w, y, w, self.BAR, 2.5, stroke=1, fill=1)
             else:
                 c.roundRect(self.label_w, y, w, self.BAR, 2.5, stroke=0, fill=1)
+            # Values wear text ink, not the series color: a figure in the bar's
+            # color reads as a second encoding that is not there.
+            c.setFillColor(INK)
             c.setFont("Helvetica-Bold", 9)
-            c.setFillColor(INK)          # value wears text ink, not the series color
-            c.drawString(self.label_w + w + 6, y + 2, f"{m['searches']:,}")
+            c.drawRightString(value_x, y + 2, f"{m['value']:,}")
+            if self.clicks:
+                c.setFont("Helvetica", 9)
+                c.setFillColor(SOFT)
+                c.drawRightString(clicks_x, y + 2, f"{m.get('clicks') or 0:,}")
             y -= self.ROW + self.GAP
 
 
@@ -167,24 +201,41 @@ def build(data, out_path):
     F.append(Spacer(1, 12))
 
     g = data.get("growth") or {}
+    gsc = g.get("source") == "search-console"
     # sponsor-report.mjs already trims the pre-launch months; all that is left
-    # to drop is a current month that has not seen a search yet.
-    months = [m for m in g.get("months", []) if m.get("searches") or not m.get("partial")]
-    if any(m["searches"] for m in months):
+    # to drop is a current month that has not seen anything yet.
+    months = [m for m in g.get("months", []) if m.get("value") or not m.get("partial")]
+    if any(m["value"] for m in months):
         F.append(P("How the site is growing", "h2"))
         if g.get("changePct") is not None:
+            what = ("in how often Google showed a PainBeacon page"
+                    if gsc else "measured in searches run by visitors")
             F.append(P(f"<b>{'+' if g['changePct'] >= 0 else ''}{g['changePct']}%</b> "
                        f"from {month_label(g['first']['month'])} to {month_label(g['last']['month'])}, "
-                       "measured in searches run by visitors."))
+                       f"{what}."))
             F.append(Spacer(1, 5))
-        F.append(BarRow(months, W))
+        F.append(BarRow(months, W,
+                        value_head="Shown in Google" if gsc else "Searches",
+                        clicks_head="Clicked through" if gsc else ""))
         F.append(Spacer(1, 4))
-        F.append(P("A search is one person typing a ZIP code or city into the site and submitting "
-                   "it. We report these instead of page views on purpose: the search is recorded "
-                   "by JavaScript in the visitor's browser, so automated traffic cannot produce "
-                   "one, and on a directory of 12,000 pages most raw page requests are crawlers "
-                   "rather than readers. An asterisk marks a month still in progress; it is left "
-                   "out of the percentage above.", "small"))
+        if gsc:
+            F.append(P("These are Google's own counts, from Search Console for "
+                       f"{g.get('property') or 'this site'}. An impression is one time Google "
+                       "showed a PainBeacon page to someone reading a results page; a click is "
+                       "one time that person came. We report these instead of page views because "
+                       "on a directory of 12,000 pages most raw page requests are crawlers rather "
+                       "than readers &mdash; and because you can hold us to a number we did not "
+                       "count ourselves. Google settles each day about two days late, so figures "
+                       f"run through {g.get('through') or 'the last settled day'}; an asterisk "
+                       "marks a month still in progress, which is left out of the percentage "
+                       "above.", "small"))
+        else:
+            F.append(P("A search is one person typing a ZIP code or city into the site and "
+                       "submitting it. We report these instead of page views on purpose: the "
+                       "search is recorded by JavaScript in the visitor's browser, so automated "
+                       "traffic cannot produce one, and on a directory of 12,000 pages most raw "
+                       "page requests are crawlers rather than readers. An asterisk marks a month "
+                       "still in progress; it is left out of the percentage above.", "small"))
         F.append(Spacer(1, 8))
 
     F.append(P("What was excluded, and why", "h2"))

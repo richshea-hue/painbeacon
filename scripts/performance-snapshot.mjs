@@ -24,8 +24,8 @@
 //
 // This must run where those hosts are reachable (Rich's computer). The cloud
 // container's egress proxy blocks Cloudflare and Supabase.
-import { readFileSync, writeFileSync } from 'node:fs';
-import { createSign } from 'node:crypto';
+import { writeFileSync } from 'node:fs';
+import { gscClient, gscConfigured, LAG_DAYS } from './lib/gsc.mjs';
 
 const argv = process.argv.slice(2);
 const arg = (k, d) => { const i = argv.indexOf(k); return i === -1 ? d : argv[i + 1]; };
@@ -42,35 +42,14 @@ const say = (s = '') => lines.push(s);
 
 // --------------------------------------------------------------- Search Console
 async function searchConsole() {
-  const keyPath = process.env.GSC_SERVICE_ACCOUNT_JSON;
   say('## Google Search Console');
-  if (!keyPath) { say('_skipped: GSC_SERVICE_ACCOUNT_JSON not set_\n'); return; }
-  const site = process.env.GSC_SITE || `sc-domain:${ZONE_NAME}`;
-  const sa = JSON.parse(readFileSync(keyPath, 'utf8'));
-  const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
-  const iat = Math.floor(Date.now() / 1000);
-  const unsigned = `${b64({ alg: 'RS256', typ: 'JWT' })}.${b64({
-    iss: sa.client_email, scope: 'https://www.googleapis.com/auth/webmasters.readonly',
-    aud: 'https://oauth2.googleapis.com/token', iat, exp: iat + 3600,
-  })}`;
-  const sig = createSign('RSA-SHA256').update(unsigned).sign(sa.private_key, 'base64url');
-  const tok = await (await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: `${unsigned}.${sig}` }),
-  })).json();
-  if (!tok.access_token) throw new Error(`GSC auth failed — is ${sa.client_email} a user on ${site}?`);
+  if (!gscConfigured()) { say('_skipped: GSC_SERVICE_ACCOUNT_JSON not set_\n'); return; }
+  const gsc = await gscClient({ site: process.env.GSC_SITE || `sc-domain:${ZONE_NAME}` });
+  const { site, query } = gsc;
 
-  const query = async (startDate, endDate, body) => {
-    const r = await fetch(`https://searchconsole.googleapis.com/webmasters/v3/sites/${encodeURIComponent(site)}/searchAnalytics/query`, {
-      method: 'POST', headers: { Authorization: `Bearer ${tok.access_token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ startDate, endDate, ...body }),
-    });
-    const out = await r.json();
-    if (out.error) throw new Error(`GSC: ${out.error.message}`);
-    return out.rows || [];
-  };
-  // Search Console lags about two days.
-  const cEnd = day(-2), cStart = day(-(WINDOW + 1)), pEnd = day(-(WINDOW + 2)), pStart = day(-(2 * WINDOW + 1));
+  // Search Console settles a day's data about two days late (see lib/gsc.mjs).
+  const cEnd = day(-LAG_DAYS), cStart = day(-(WINDOW + LAG_DAYS - 1));
+  const pEnd = day(-(WINDOW + LAG_DAYS)), pStart = day(-(2 * WINDOW + LAG_DAYS - 1));
   const [cur] = await query(cStart, cEnd, { rowLimit: 1 });
   const [prev] = await query(pStart, pEnd, { rowLimit: 1 });
   const c = cur || { clicks: 0, impressions: 0, ctr: 0, position: 0 };

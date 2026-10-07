@@ -168,6 +168,24 @@ clinic pages, after the byline on articles. No sponsor → nothing renders.
   --sponsor samakow-law [--since 2026-09-03 --until 2026-10-03] [--out report.md]`
   prints views, clicks, click-through rate, a daily table and the top pages.
   Needs `SUPABASE_SERVICE_ROLE_KEY` (the anon key cannot read the ledger).
+  `--json out.json` writes the same arithmetic for
+  `python3 scripts/sponsor-report-pdf.py out.json --out report.pdf`, which is
+  the version a sponsor is sent; the PDF reads that JSON rather than parsing the
+  Markdown back, so the two cannot disagree.
+- **The growth panel** on that report answers "is this site going anywhere?".
+  It reads Search Console by default (`GSC_SERVICE_ACCOUNT_JSON`, same key as
+  `performance-snapshot.mjs`) and shows monthly impressions as bars with clicks
+  alongside as a number — Google's counts, not ours, which is the point: a
+  sponsor can check them. Falls back to the site's own `search_events` log where
+  no key is set, or on `--growth-source search_events`; that table was only
+  created 2026-10-06, so it has no history before then. Clicks are never drawn
+  as a second set of bars: they run ~50× smaller than impressions and two scales
+  in one panel is a dual-axis chart, which can be made to say anything.
+  `--growth-months N` sets the window, `--growth-since YYYY-MM` drops a
+  part-month launch that would otherwise inflate every later month, and the
+  month in progress is drawn hollow and left out of the headline percentage.
+  Shaping rules live in `scripts/lib/growth.mjs` and are pinned by
+  `npm run test:growth` — each test there is a way a month chart lies.
 - The card always carries the "Sponsors never influence rankings or editorial"
   line and `rel="sponsored nofollow"`. Amber top rule = brand sponsor; teal pill
   = Featured clinic. Keep the two distinguishable.
