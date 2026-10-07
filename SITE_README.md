@@ -181,9 +181,14 @@ clinic pages, after the byline on articles. No sponsor → nothing renders.
   created 2026-10-06, so it has no history before then. Clicks are never drawn
   as a second set of bars: they run ~50× smaller than impressions and two scales
   in one panel is a dual-axis chart, which can be made to say anything.
-  `--growth-months N` sets the window, `--growth-since YYYY-MM` drops a
-  part-month launch that would otherwise inflate every later month, and the
-  month in progress is drawn hollow and left out of the headline percentage.
+  `--growth-months N` sets the window (`0` omits the panel), `--growth-since
+  YYYY-MM` drops a part-month launch that would otherwise inflate every later
+  month, and the month in progress is drawn hollow and left out of the headline
+  percentage. **The panel needs one complete month or it is not drawn at all**:
+  on 2026-10-07 the only month with data was October, one day old, and a lone
+  hollow bar reading 2 under "How the site is growing" reads worse than the
+  silence it replaced. When it is suppressed the reason goes to stderr, so the
+  operator knows it was dropped and the sponsor never sees why.
   Shaping rules live in `scripts/lib/growth.mjs` and are pinned by
   `npm run test:growth` — each test there is a way a month chart lies.
 - The card always carries the "Sponsors never influence rankings or editorial"
