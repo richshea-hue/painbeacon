@@ -257,6 +257,46 @@
       "note": "DUPLICATE SHOOT, must be replaced: this is the same photo session as the home hero and news/how-to-choose-a-pain-clinic hero (same room, same doctor and patient, different frame). Caught 2026-08-22 by the perceptual check in verify-images.mjs at dHash distance 12; the Pexels id and byte hashes all differ, so no exact check could see it. Waived only so the existing page keeps building - swap in an unrelated photo and delete this waiver."
     },
     {
+      "page": "news/pain-clinic-specialists-who-is-who",
+      "role": "hero",
+      "pexels_id": 6129644,
+      "src_url": "https://www.pexels.com/photo/6129644/",
+      "photographer": null,
+      "source_md5": "193b7c650917f37f609506eed76c922e",
+      "files": [
+        {
+          "path": "/images/news/pain-clinic-specialists-who-is-who/pain-clinic-doctor-and-nurse-talking-in-hallway-hero.jpg",
+          "md5": "8c0050e53c04e0698858671162fe8e86",
+          "bytes": 91950
+        },
+        {
+          "path": "/images/news/pain-clinic-specialists-who-is-who/pain-clinic-doctor-and-nurse-talking-in-hallway-thumb.jpg",
+          "md5": "d68e117493e424d54411f5fd4e815b0a",
+          "bytes": 36940
+        },
+        {
+          "path": "/images/news/pain-clinic-specialists-who-is-who/pain-clinic-doctor-and-nurse-talking-in-hallway-share.jpg",
+          "md5": "d61f558baa4da0920d40a106c97a8247",
+          "bytes": 100557
+        }
+      ]
+    },
+    {
+      "page": "news/pain-clinic-specialists-who-is-who",
+      "role": "inline",
+      "pexels_id": 7551627,
+      "src_url": "https://www.pexels.com/photo/7551627/",
+      "photographer": null,
+      "source_md5": "fa1fedee1c46eda67409d6663aa2de61",
+      "files": [
+        {
+          "path": "/images/news/pain-clinic-specialists-who-is-who/therapist-guiding-older-man-through-arm-stretch.jpg",
+          "md5": "d8d40406b71a291af5860e33ff638c4b",
+          "bytes": 60549
+        }
+      ]
+    },
+    {
       "page": "news/pain-management-without-opioids",
       "role": "hero",
       "pexels_id": 4506163,
