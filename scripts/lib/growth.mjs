@@ -53,6 +53,17 @@ export function shapeSeries(entries, { through, since = null } = {}) {
 }
 
 /**
+ * Is there a growth story to draw at all?
+ *
+ * A panel headed "How the site is growing" that holds nothing but the month in
+ * progress shows no growth and makes no claim — it is one hollow bar and a
+ * number, and it reads worse than the silence it replaced. The month in
+ * progress is context for complete months, never the whole series. So the
+ * panel needs at least one complete month with something in it.
+ */
+export const renderable = (series) => series.some((m) => !m.partial && m.value > 0);
+
+/**
  * First and last COMPLETE non-empty month, and the change between them. A
  * partial month can never read as a decline, and an empty leading month can
  * never read as infinite growth.

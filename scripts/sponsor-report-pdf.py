@@ -205,7 +205,9 @@ def build(data, out_path):
     # sponsor-report.mjs already trims the pre-launch months; all that is left
     # to drop is a current month that has not seen anything yet.
     months = [m for m in g.get("months", []) if m.get("value") or not m.get("partial")]
-    if any(m["value"] for m in months):
+    # `renderable` is decided in sponsor-report.mjs: a panel holding nothing but
+    # the month in progress shows no growth, so it is not drawn at all.
+    if g.get("renderable") and months:
         F.append(P("How the site is growing", "h2"))
         if g.get("changePct") is not None:
             what = ("in how often Google showed a PainBeacon page"

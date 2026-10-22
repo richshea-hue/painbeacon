@@ -29,7 +29,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { serviceKey, missingKeyMessage } from './lib/sb-key.mjs';
 import { gscClient, gscConfigured, latestSettledDay } from './lib/gsc.mjs';
-import { monthKey, monthWindow, shapeSeries, summarize } from './lib/growth.mjs';
+import { monthKey, monthWindow, renderable, shapeSeries, summarize } from './lib/growth.mjs';
 import { isBotUA } from '../functions/_lib/bot.js';
 
 const argv = process.argv.slice(2);
@@ -202,6 +202,9 @@ if (GROWTH_MONTHS > 0) {
   }
 }
 Object.assign(growth, summarize(growth.months));
+// Drawn only where there is a complete month to draw. A panel holding nothing
+// but the month in progress makes no claim and reads worse than no panel.
+growth.renderable = renderable(growth.months);
 
 const name = entry?.name || SPONSOR;
 const L = [];
@@ -235,7 +238,7 @@ L.push('\n## Top pages\n'); L.push('| Page | Views | Clicks |'); L.push('|---|--
 for (const [p, b] of topPages) L.push(`| ${p} | ${n(b.v)} | ${n(b.c)} |`);
 
 const GSC = growth.source === 'search-console';
-if (growth.months.some((m) => m.value > 0)) {
+if (growth.renderable) {
   L.push('\n## How the site is growing\n');
   if (GSC) {
     L.push('| Month | Times Google showed a page | Visitors who clicked through |');
@@ -265,9 +268,10 @@ if (growth.months.some((m) => m.value > 0)) {
     L.push('visitor\'s browser, so automated traffic cannot produce one, and on a directory of');
     L.push('12,000 pages most raw page requests are crawlers rather than readers.\n');
   }
-} else if (growth.note) {
-  // Say nothing to the sponsor, but do not let the operator think it rendered.
-  console.error(`growth panel omitted: ${growth.note}`);
+} else if (GROWTH_MONTHS > 0) {
+  // Say nothing to the sponsor, but never let the operator think it rendered.
+  console.error(`growth panel omitted: ${growth.note
+    || (growth.months.length ? 'no complete month yet — only the month in progress has data' : 'no data in the window')}`);
 }
 
 L.push('\n---');

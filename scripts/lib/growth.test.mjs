@@ -4,7 +4,7 @@
 // inflating the percentage, and a month still filling in reading as a decline.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { monthWindow, firstDayOfWindow, monthComplete, shapeSeries, summarize } from './growth.mjs';
+import { monthWindow, firstDayOfWindow, monthComplete, renderable, shapeSeries, summarize } from './growth.mjs';
 
 const at = (s) => new Date(`${s}T12:00:00Z`);
 const series = (pairs) => pairs.map(([month, value]) => ({ month, value }));
@@ -88,4 +88,25 @@ test('no data anywhere yields an empty series rather than zero bars', () => {
 test('a decline is reported as a decline', () => {
   const out = shapeSeries(series([['2026-08', 400], ['2026-09', 300]]), { through: '2026-09-30' });
   assert.equal(summarize(out).changePct, -25);
+});
+
+test('a series holding only the month in progress draws no panel', () => {
+  // What the live run produced on 2026-10-07: search_events had been live for
+  // one day, so the only month was October with 2 searches in it. One hollow
+  // bar reading 2 under "How the site is growing" says less than nothing.
+  const out = shapeSeries(series([['2026-09', 0], ['2026-10', 2]]), { through: '2026-10-07' });
+  assert.deepEqual(out.map((m) => m.month), ['2026-10']);
+  assert.equal(out[0].partial, true);
+  assert.equal(renderable(out), false);
+});
+
+test('one complete month is enough to draw, even with no percentage', () => {
+  const out = shapeSeries(series([['2026-09', 420], ['2026-10', 80]]), { through: '2026-10-07' });
+  assert.equal(renderable(out), true);
+  assert.equal(summarize(out).changePct, null);   // drawn, but claims nothing
+});
+
+test('nothing anywhere draws nothing', () => {
+  assert.equal(renderable([]), false);
+  assert.equal(renderable(shapeSeries(series([['2026-10', 0]]), { through: '2026-10-07' })), false);
 });
