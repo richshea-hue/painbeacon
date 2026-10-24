@@ -67,11 +67,49 @@ const datasetLd = {
   author: { '@type': 'Person', name: 'Rich Shea', url: 'https://richshea.com' },
   temporalCoverage: year,
   spatialCoverage: 'United States',
+  isAccessibleForFree: true,
+  // Rebuilt from the current directory on every deploy, so the modified date is
+  // the build date. No datePublished: inventing one would be a claim about a
+  // day nobody recorded.
+  dateModified: S.generatedAt,
+  // What Google Dataset Search matches a query against. Without these it can
+  // index the page and still never surface it for "health care deserts".
+  keywords: [
+    'pain management',
+    'chronic pain',
+    'health care access',
+    'health care deserts',
+    'provider shortage',
+    'rural health',
+    'counties',
+    'NPI registry',
+    'United States',
+  ],
+  // The columns of the file, so the shape of the data is legible before anyone
+  // downloads it to find out. Keep in step with the header row in
+  // pain-care-deserts.csv.js.
+  variableMeasured: [
+    { '@type': 'PropertyValue', name: 'county_fips', description: '5-digit Census FIPS code for the county' },
+    { '@type': 'PropertyValue', name: 'county', description: 'County name' },
+    { '@type': 'PropertyValue', name: 'state', description: 'Two-letter state code (50 states and DC)' },
+    { '@type': 'PropertyValue', name: 'population', description: 'County population, U.S. Census estimate' },
+    { '@type': 'PropertyValue', name: 'pain_clinics', description: 'Pain management clinics in the county, counted once per practice location' },
+    { '@type': 'PropertyValue', name: 'is_pain_care_desert', description: 'True where the county has no pain management clinic at all' },
+  ],
+  // Both downloads, not just the CSV. The JSON has been live all along and the
+  // structured data never mentioned it, so Dataset Search could not offer it.
   distribution: [
     {
       '@type': 'DataDownload',
+      name: 'County-level CSV',
       encodingFormat: 'text/csv',
       contentUrl: new URL('/research/pain-care-deserts.csv', SITE.url).href,
+    },
+    {
+      '@type': 'DataDownload',
+      name: 'National totals, per state and per county, with sources and license',
+      encodingFormat: 'application/json',
+      contentUrl: new URL('/research/pain-care-deserts.json', SITE.url).href,
     },
   ],
   isBasedOn: [
