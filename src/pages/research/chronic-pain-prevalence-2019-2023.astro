@@ -26,6 +26,14 @@ const crumbs = [
   { name: 'Chronic pain prevalence 2019–2023', href: '/research/chronic-pain-prevalence-2019-2023/' },
 ];
 
+const pageUrl = new URL('/research/chronic-pain-prevalence-2019-2023/', SITE.url).href;
+
+// mainEntityOfPage names the page this markup DESCRIBES. Pointing it at the
+// journal said our page was not the home of this content while the HTML
+// canonical said it was — two contradictory signals, and we lose that argument.
+// The version of record is still credited, as sameAs and as the link in the
+// body: it is the same work at another URL, which is exactly what sameAs means.
+// scripts/check-structured-data.mjs fails the build if this drifts back.
 const articleLd = {
   '@context': 'https://schema.org',
   '@type': 'ScholarlyArticle',
@@ -37,8 +45,9 @@ const articleLd = {
     name: 'The Journal of Pain',
     publisher: { '@type': 'Organization', name: 'Elsevier' },
   },
-  url: articleUrl,
-  mainEntityOfPage: articleUrl,
+  url: pageUrl,
+  mainEntityOfPage: pageUrl,
+  sameAs: articleUrl,
 };
 ---
 
