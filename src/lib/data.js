@@ -23,7 +23,38 @@ export function slugify(...parts) {
     .toLowerCase();
 }
 
-export const stateSlug = (s) => (s || '').toLowerCase();
+// NPPES occasionally sends a state spelled out — "GEORGIA" rather than "GA".
+// stateSlug is the one chokepoint every state-bearing URL runs through: the
+// state hub, breadcrumbs, the sitemap, the city-redirect map, zip3-zones. So a
+// single unnormalized value mints an entire phantom state section that competes
+// with the real one, and that is not hypothetical — on 2026-10-24 both
+// /pain-clinics/georgia/ and /pain-clinics/ga/ were live, each canonicalizing to
+// itself, both in the sitemap, with the phantom sitting in Google's
+// "Crawled - currently not indexed" from one clinic record in Duluth.
+//
+// Normalizing here rather than at ingest means it holds however the row arrives:
+// a weekly resync, a hand-added clinic, a director's edit.
+let _codeByStateName = null;
+const codeByStateName = () => {
+  if (_codeByStateName) return _codeByStateName;
+  _codeByStateName = new Map(
+    Object.entries(STATE_NAMES).map(([code, name]) => [name.toLowerCase(), code])
+  );
+  // Spellings registries and people actually use for the one that has no plain name.
+  for (const alias of ['district of columbia', 'washington dc', 'washington d.c.']) {
+    _codeByStateName.set(alias, 'DC');
+  }
+  return _codeByStateName;
+};
+
+export const stateSlug = (s) => {
+  const v = String(s ?? '').trim();
+  if (/^[A-Za-z]{2}$/.test(v)) return v.toLowerCase();
+  const code = codeByStateName().get(v.toLowerCase());
+  // Anything still unrecognized has to be URL-safe regardless: the old
+  // .toLowerCase() would have put a space in the path for "NEW YORK".
+  return code ? code.toLowerCase() : slugify(v);
+};
 export const citySlug = (c) => slugify(c);
 
 // Strip a trailing ", NV" state suffix from a zone name to get a display label.
