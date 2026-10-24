@@ -3,6 +3,14 @@ dist/
 .astro/
 .claude/
 .env
+
+# Service-account keys. GSC_SERVICE_ACCOUNT_JSON points at a Google key file
+# whose contents are a private key, and the natural place to drop a download is
+# the folder you are standing in. Keep it outside the repo — these patterns are
+# the backstop for the time it lands here anyway.
+.secrets/
+*-gsc.json
+*service-account*.json
 *.zip
 stannp_*.csv
 Thumbs.db
