@@ -212,8 +212,10 @@ five listings — and if they claim, five pages improve at once.
 
 ## Why this is also the backlink campaign
 
-Search Console reports exactly two external referring domains for painbeacon.com, both
-SEO-spam link sellers, both disavowed. The site ranks badly because nothing links to it.
+Almost nothing links to painbeacon.com, which is a large part of why it ranks
+badly. (An earlier version of this line quoted a referring-domain count and a
+disavow; those were BestRaces' numbers, carried across by mistake. PainBeacon's
+real figure is in the Search Console Links report.)
 
 The `badge-backlink` variant asks a clinic to claim its free listing and offers an
 embeddable "Verified" badge for the clinic's own website. **Every clinic that takes the

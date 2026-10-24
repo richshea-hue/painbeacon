@@ -1,16 +1,21 @@
 # Backlink prospecting — who could link to us, and how to ask
-*2026-10-24. Prospect URLs were found by search and are unverified; open each one
-before writing to it.*
+*2026-10-24, corrected the same day. Prospect URLs were found by search and are
+unverified; open each one before writing to it.*
+
+> **Correction.** The first version of this note said PainBeacon had exactly two
+> referring domains, both SEO-spam link sellers, disavowed on 2026-09-23, during
+> recovery from a site-wide demotion on 2026-08-16. **Those are BestRaces' facts,
+> not PainBeacon's** — they were carried across from the other project by
+> mistake. PainBeacon has no disavow file and no recorded demotion. Its actual
+> backlink profile is unknown and has to be read from the Search Console Links
+> report before anyone quotes a number, including us.
 
 ## Read this before anything else: do not trade links
 
 Google's spam policies name "excessive link exchanges" and "link to me and I'll
-link to you" arrangements as link schemes. This site is the wrong site to test
-that on. Search Console reported exactly two external referring domains for
-painbeacon.com, **both SEO-spam link sellers**, both disavowed on 2026-09-23 —
-and that was during the recovery from the site-wide demotion of 2026-08-16. A
-reciprocal-link campaign is the same class of signal that produced the hole we
-are climbing out of.
+link to you" arrangements as link schemes. That is reason enough on its own — it
+does not need a war story, and the one this note originally told was another
+site's.
 
 The working rule: **never agree in writing to give a link in exchange for one.**
 If a resource page links to us and we separately find their page genuinely worth
@@ -155,9 +160,10 @@ who invite correction, and it is true: we want the errors.
 ## What not to do, ever
 
 Paid links. Guest-post networks. "Directory submission" services. Private blog
-networks. Anything that arrives in the inbox offering DA-50 placements for $99 —
-that is who the two disavowed domains were. `notes/disavow-*` is the record of
-what that bought us.
+networks. Anything that arrives in the inbox offering DA-50 placements for $99.
+A site whose entire pitch is that its rankings are not for sale cannot buy its
+own rankings, and the people selling those placements are selling them to our
+competitors too.
 
 ## And do not let this replace the badge loop
 
