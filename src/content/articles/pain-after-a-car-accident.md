@@ -107,8 +107,8 @@ same injection to everyone who walks in with a crash story is not a practice
 you want to be in, whatever it promises about your case.
 
 Every clinic in [our directory](/pain-clinics/) is ranked on the same published
-criteria — board certification, interventional registration, years in practice,
-verified patient ratings — and none of it is for sale, so you can use it to
+criteria (interventional registration, Google patient ratings, review volume,
+years registered) and none of it is for sale, so you can use it to
 choose a clinic the same way you would if no lawyer were involved.
 
 ## The second track: the paper trail

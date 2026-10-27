@@ -114,7 +114,7 @@ pharmacy or the DEA's tip line — but getting your own care re-established
 somewhere solid comes first.
 
 Every clinic in [our directory](/pain-clinics/) lists the verifiable signals —
-interventional registration, years in practice, verified patient ratings — plus
+interventional registration, years in practice, Google patient ratings — plus
 the contact details you need to run the phone-call test before you commit to
 anything.
 

@@ -103,7 +103,7 @@ Your primary care physician's referral is worth having regardless — many
 insurers require it, and the clinic will want your records anyway.
 
 Every clinic in [our directory](/pain-clinics/) shows its verifiable signals —
-interventional registration, years in practice, verified patient ratings — so
+interventional registration, years in practice, Google patient ratings — so
 you can apply this checklist before you ever call.
 
 ---

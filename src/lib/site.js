@@ -5,10 +5,14 @@ export const SITE = {
   legalName: 'PainBeacon Directory',
   url: 'https://painbeacon.com',
   tagline: 'Find the right pain clinic near you.',
+  // Printed in the footer of every page and in the Organization markup. Name
+  // only what ranking.js measures: until 2026-10-27 this said "board-certified"
+  // and nothing in the data records board certification.
   description:
-    'An independent national directory of pain medicine clinics. Find ' +
-    'board-certified, interventional pain specialists near you, ranked on ' +
-    'objective, published criteria.',
+    'An independent national directory of pain medicine clinics. Find pain ' +
+    'specialists near you, ranked on published criteria: interventional ' +
+    'registration, patient ratings, review volume, years registered, and ' +
+    'contact details.',
 
   // Official social profiles. Rendered in the footer and emitted as sameAs in
   // the site's Organization JSON-LD. Leave a value '' to hide that link.

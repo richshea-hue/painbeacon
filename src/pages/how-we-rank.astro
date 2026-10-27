@@ -17,7 +17,7 @@ const total = Object.values(RANK_WEIGHTS).reduce((a, b) => a + b, 0);
 const rows = Object.entries(RANK_WEIGHTS).map(([k, v]) => ({ label: labels[k], pct: Math.round((v / total) * 100) }));
 ---
 <Base title="How we rank clinics"
-      description="Our objective, published methodology for ranking pain clinics — board certification, interventional capability, verified reviews, and years in practice."
+      description="How we rank pain clinics: interventional registration, Google ratings, review volume, years registered, and contact details. Published in full, never sold."
       jsonld={breadcrumbLd(crumbs)}>
   <div class="wrap narrow prose">
     <Breadcrumbs items={crumbs} />
