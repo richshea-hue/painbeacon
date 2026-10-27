@@ -162,9 +162,20 @@ if (ins.length > 0) {
     a: `${name} lists the following accepted insurance: ${ins.join(', ')}. Verify your specific plan with the clinic before scheduling.`,
   });
 }
+
+// Name only what this page actually holds, in the description and in the
+// source line. Both used to promise "credentials" and "verified reviews" on
+// every profile: no clinic has credentials on file, over half have no reviews,
+// and the reviews that exist are Google's, not ours to call verified.
+const listOf = (xs) => xs.length < 3 ? xs.join(' and ') : `${xs.slice(0, -1).join(', ')}, and ${xs.at(-1)}`;
+const description = `${name}, a pain medicine practice in ${c.cityLabel}, ${c.state}: ` +
+  listOf(['address', c.phone && 'phone', c.hours && 'hours', c.aggregate_rating && 'Google rating',
+    acceptsMedicare != null && 'Medicare status'].filter(Boolean)) + '.';
+const fromGoogle = [c.latitude != null && 'map location', c.hours && 'hours',
+  c.aggregate_rating && 'rating', c.website && 'website'].filter(Boolean);
 ---
 <Base title={`${name} — ${c.cityLabel}, ${c.state}`}
-      description={`${name} is a pain medicine clinic in ${c.cityLabel}, ${c.state}. Location, contact, credentials, and verified reviews.`}
+      description={description}
       canonical={canonicalUrl}
       jsonld={[breadcrumbLd(crumbs), clinicLd(c, canonicalUrl)]}>
   <div class="wrap narrow">
@@ -287,8 +298,9 @@ if (ins.length > 0) {
     <SponsorCard placement="clinic" state={c.state} />
 
     <div class="notice">
-      Listing built from public federal provider records (NPI registry) and enriched
-      with verified location and review data. See <a href="/how-we-rank/">how we rank</a>.
+      Listing built from the federal NPI registry{fromGoogle.length > 0 && <>, with {listOf(fromGoogle)} from Google</>}{c.accepts_medicare_cms === true && <>, and Medicare enrollment from CMS</>}.
+      {isVerified && <> Details confirmed by the clinic.</>}
+      See <a href="/how-we-rank/">how we rank</a>.
       {c.nppes_last_updated && <> Provider record last updated {c.nppes_last_updated}.</>}
     </div>
 

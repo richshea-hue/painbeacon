@@ -10,8 +10,8 @@
   55 states and territories, sourced from the federal NPI registry rather than
   self-submitted marketing.
 - **A published, weighted ranking.** Clinics are ordered on five checkable
-  signals with published weights: interventional pain capability (25%),
-  verified patient rating (25%), verified review volume (20%), years in
+  signals with published weights: interventional pain registration (25%),
+  Google patient rating (25%), Google review volume (20%), years in
   practice (15%), and contact transparency (15%). The full definitions are at
   https://painbeacon.com/how-we-rank/
 - **Original research on access.** "Pain Care Deserts" — a county-by-county
@@ -26,11 +26,11 @@
   clinical quality score and not a medical endorsement. It does not measure
   patient outcomes, because no federal dataset reports outcomes for pain
   clinics.
-- "Interventional pain capability" means the practice carries **NUCC taxonomy
-  208VP0014X** in the federal registry. That is a self-declared credential on
-  the NPI record, not a board certification and not a measure of skill.
-- **Ratings and review counts come from public sources**, not from PainBeacon,
-  and carry the selection bias any public review pool carries.
+- "Interventional pain registration" means the practice carries **NUCC taxonomy
+  208VP0014X** in the federal registry. That is a self-declared code on the NPI
+  record, not a board certification and not a measure of skill.
+- **Ratings and review counts come from Google**, not from PainBeacon, and
+  carry the selection bias any public review pool carries.
 
 ## Things that are commonly got wrong
 

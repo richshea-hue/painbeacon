@@ -7,9 +7,9 @@ import { SITE } from '../lib/site.js';
 
 const crumbs = [{ name: 'Home', href: '/' }, { name: 'How we rank', href: '/how-we-rank/' }];
 const labels = {
-  interventional: 'Interventional pain capability',
-  rating: 'Verified patient rating',
-  reviews: 'Verified review volume',
+  interventional: 'Interventional pain registration',
+  rating: 'Google patient rating',
+  reviews: 'Google review volume',
   tenure: 'Years in practice',
   transparency: 'Contact transparency',
 };
@@ -38,12 +38,15 @@ const rows = Object.entries(RANK_WEIGHTS).map(([k, v]) => ({ label: labels[k], p
     </ul>
 
     <h2>What each signal means</h2>
-    <p><strong>Interventional pain capability.</strong> Whether the practice carries the
-      interventional pain medicine credential (NUCC taxonomy 208VP0014X), indicating
-      image-guided procedural capability beyond medication management.</p>
-    <p><strong>Verified patient rating &amp; review volume.</strong> Aggregate rating and the
-      number of verified reviews from public sources. Volume is scaled so a long track
-      record counts without letting a single five-star review dominate.</p>
+    <p><strong>Interventional pain registration.</strong> Whether the practice registered
+      under interventional pain medicine (NUCC taxonomy 208VP0014X) in the federal NPI
+      registry, which signals a focus on image-guided procedures beyond medication
+      management. Practices choose their own taxonomy codes and no one checks them, so
+      this is a declared specialty, not a certification.</p>
+    <p><strong>Patient rating &amp; review volume.</strong> The practice's rating on Google
+      and its number of Google reviews, where we can match the practice to its Google
+      listing. We don't collect or verify reviews ourselves. Volume is scaled so a long
+      track record counts without letting a single five-star review dominate.</p>
     <p><strong>Years in practice.</strong> Time since the practice's national provider
       record was established, capped so very established and moderately established
       practices aren't separated unfairly.</p>
