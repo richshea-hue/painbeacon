@@ -14,7 +14,7 @@ import ClinicMap from '../../components/ClinicMap.astro';
 import SponsorCard from '../../components/SponsorCard.astro';
 import { getMetroIndex } from '../../lib/metros.js';
 import { metroLabel, metroArea } from '../../lib/metro-defs.js';
-import { groupBy, stateName, titleCase } from '../../lib/data.js';
+import { groupBy, stateName, titleCase, displayName } from '../../lib/data.js';
 import { rankClinics } from '../../lib/ranking.js';
 import { breadcrumbLd, itemListLd } from '../../lib/schema.js';
 
@@ -66,7 +66,7 @@ const mapMarkers = ranked
   .map((c) => ({
     lat: c.latitude,
     lng: c.longitude,
-    name: titleCase(c.name),
+    name: displayName(c.name),
     slug: c.slug,
     street: [c.address_1 && titleCase(c.address_1), c.address_2 && titleCase(c.address_2)]
       .filter(Boolean)

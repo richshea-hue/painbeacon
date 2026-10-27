@@ -16,6 +16,7 @@
     "preview": "astro preview",
     "test:art": "node --test src/lib/article-art.test.mjs",
     "test:state": "node --test src/lib/state-slug.test.mjs",
+    "test:names": "node --test src/lib/display-name.test.mjs",
     "test:place": "node --test src/lib/place-query.test.mjs",
     "test:practice": "node --test src/lib/practice-type.test.mjs",
     "test:backlinks": "node --test scripts/lib/backlinks.test.mjs",

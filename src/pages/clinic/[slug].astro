@@ -4,7 +4,7 @@ import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import ClinicMap from '../../components/ClinicMap.astro';
 import ClaimProfile from '../../components/ClaimProfile.astro';
 import SponsorCard from '../../components/SponsorCard.astro';
-import { getClinics, titleCase, stateName } from '../../lib/data.js';
+import { getClinics, titleCase, displayName, stateName } from '../../lib/data.js';
 import { acceptsMedicare as acceptsMedicareOf } from '../../lib/insurance.js';
 import { scoreClinic, scoreBand } from '../../lib/ranking.js';
 import { breadcrumbLd, clinicLd } from '../../lib/schema.js';
@@ -19,12 +19,16 @@ export async function getStaticPaths() {
 }
 
 const { clinic: c, byNpi } = Astro.props;
-const name = titleCase(c.name);
+const name = displayName(c.name);
 const interventional = (c.all_taxonomy_codes || '').includes('208VP0014X');
 const { score } = scoreClinic(c);
 const band = scoreBand(score);
 const scoreDetail = band.showNumber ? `${score}/100` : 'limited verified data on file';
 const addr = [c.address_1 && titleCase(c.address_1), c.address_2 && titleCase(c.address_2)].filter(Boolean).join(', ');
+// NPPES descriptions read "Group - Specialization", and 2,139 of them say "Pain
+// Medicine - Pain Medicine". Print a repeated half once.
+const [taxGroup, taxSpec] = (c.primary_taxonomy_desc || 'Pain Medicine').split(' - ');
+const specialtyLabel = taxSpec && taxSpec !== taxGroup ? `${taxGroup} - ${taxSpec}` : taxGroup;
 const yearsInPractice = c.enumeration_date
   ? Math.floor((Date.now() - new Date(c.enumeration_date).getTime()) / 3.15576e10) : null;
 
@@ -183,7 +187,7 @@ const fromGoogle = [c.latitude != null && 'map location', c.hours && 'hours',
 
     <div class="profile-head">
       <div>
-        <p class="eyebrow">{c.primary_taxonomy_desc || 'Pain Medicine'}</p>
+        <p class="eyebrow">{specialtyLabel}</p>
         <h1 style="margin-bottom:0.25rem;">{name}</h1>
         {isVerified && (
           <p class="badges">

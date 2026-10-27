@@ -29,7 +29,7 @@
 // Built inside the Astro build (same getClinics() call as the pages) so the
 // slugs here always match the clinic pages actually being generated.
 
-import { getClinics, titleCase } from '../lib/data.js';
+import { getClinics, displayName } from '../lib/data.js';
 import { scoreClinic } from '../lib/ranking.js';
 import { disciplineMask } from '../lib/practice-type.js';
 import { acceptsMedicare } from '../lib/insurance.js';
@@ -95,7 +95,7 @@ export async function GET() {
     .map((c) => [
       round5(Number(c.latitude)),
       round5(Number(c.longitude)),
-      titleCase(c.name),
+      displayName(c.name),
       c.slug || '',
       `${c.cityLabel}, ${c.state}`,
       zip5(c.postal_code),

@@ -3,7 +3,7 @@
 // is both an E-E-A-T signal and a rich-result lever for YMYL.
 
 import { SITE } from './site.js';
-import { titleCase } from './data.js';
+import { titleCase, displayName } from './data.js';
 
 export function breadcrumbLd(items) {
   return {
@@ -28,7 +28,7 @@ export function clinicLd(c, canonicalUrl) {
   const ld = {
     '@context': 'https://schema.org',
     '@type': 'MedicalClinic',
-    name: titleCase(c.name),
+    name: displayName(c.name),
     // Folded duplicates pass their primary's canonical URL so the structured
     // data agrees with the <link rel="canonical"> tag; everyone else
     // self-references as before.
@@ -112,7 +112,7 @@ export function itemListLd(clinics, baseName) {
       '@type': 'ListItem',
       position: i + 1,
       url: new URL(`/clinic/${c.slug}/`, SITE.url).href,
-      name: titleCase(c.name),
+      name: displayName(c.name),
     })),
   };
 }

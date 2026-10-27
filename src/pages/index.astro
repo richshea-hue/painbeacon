@@ -1,7 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 import { SITE } from '../lib/site.js';
-import { getClinics, groupBy, stateName, titleCase } from '../lib/data.js';
+import { getClinics, groupBy, stateName, displayName } from '../lib/data.js';
 import { rankClinics } from '../lib/ranking.js';
 import { getDesertStats } from '../lib/deserts.js';
 import { websiteLd } from '../lib/schema.js';
@@ -295,7 +295,7 @@ const total = primaries.length;
         <div class="sponsor-card">
           <p class="sponsor-label">Sponsored</p>
           <div class="sponsor-body">
-            <h3><a href={`/clinic/${sponsored.slug}/`}>{titleCase(sponsored.name)}</a></h3>
+            <h3><a href={`/clinic/${sponsored.slug}/`}>{displayName(sponsored.name)}</a></h3>
             <p>
               {sponsored.cityLabel}, {sponsored.state}
               {sponsored.aggregate_rating != null && sponsored.review_count > 0 && (

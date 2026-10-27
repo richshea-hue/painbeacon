@@ -157,6 +157,7 @@ export async function getClinics() {
 
   _cache = located.map((c) => ({
     ...c,
+    phone: formatPhone(c.phone),
     websiteHref: websiteHrefOf.get(c.npi) || null,
     websiteSafe: safety.has(websiteHrefOf.get(c.npi))
       ? safety.get(websiteHrefOf.get(c.npi))
@@ -199,13 +200,45 @@ export const PAIN_TAXONOMY_CODES = new Set([
 // the other fourteen things it also declared?
 export const isPainPrimary = (c) => PAIN_TAXONOMY_CODES.has(c.primary_taxonomy_code);
 
+// Federal records arrive in capitals ("FIRST CHOICE MEDICAL SOLUTIONS PLLC"), so
+// everything we print is title-cased, in two passes. titleCase is safe for any
+// text, addresses and cities included: it fixes only what is wrong everywhere,
+// "Physician'S" -> "Physician's" and "Mcallen" -> "McAllen" (Mc plus three or
+// more letters, so "Mcr Health" is left alone). displayName adds the acronyms,
+// and is for practice NAMES only, because the same letters mean something else
+// in an address: "PT" is a physical therapist in a name and Point in "Pt Loma
+// Ave"; "PL" is a Florida professional company in a name and Place on a street.
 export function titleCase(s) {
   return (s || '')
     .toLowerCase()
     .replace(/\b\w/g, (m) => m.toUpperCase())
+    .replace(/'S\b/g, "'s")
+    .replace(/\bMc([a-z])(?=[a-z]{2})/g, (_, l) => `Mc${l.toUpperCase()}`)
     .replace(/\bLlc\b/, 'LLC')
     .replace(/\bPc\b/, 'PC')
     .replace(/\bPa\b/, 'PA');
+}
+
+// Business suffixes and the credentials doctors put in a practice's legal name.
+// Checked against every name in clinics_public on 2026-10-27: all 114 "DO"s
+// were the credential and all 12 "US"s the country. Before this, 3,196 names
+// printed as "Pllc", "Md", "Do" and the like ("Alan D Silberberg, Md PA").
+const NAME_ACRONYMS = [
+  'LLC', 'PLLC', 'PC', 'PA', 'LLP', 'LLLP', 'LP', 'SC', 'PLC', 'PL', 'APC', 'APMC', 'PSC', 'PS', 'LC',
+  'MD', 'DO', 'DPM', 'DC', 'DDS', 'DMD', 'PHD', 'NP', 'PT', 'DPT', 'RN', 'CRNA', 'FNP', 'MPH', 'MHA', 'FACEP',
+  'II', 'III', 'IV', 'USA', 'US',
+];
+const NAME_ACRONYM_RE = new RegExp(`\\b(${NAME_ACRONYMS.join('|')})\\b`, 'gi');
+export const displayName = (s) => titleCase(s).replace(NAME_ACRONYM_RE, (m) => m.toUpperCase());
+
+// 22% of phones arrive as bare digits ("8178775353"), the rest as 817-877-5353.
+// Print them all the second way. Anything that isn't a plain ten-digit US number
+// (an extension, a letter) is left exactly as it came.
+export function formatPhone(p) {
+  if (!p || !/^[\d\s().+-]+$/.test(String(p))) return p;
+  let d = String(p).replace(/\D/g, '');
+  if (d.length === 11 && d[0] === '1') d = d.slice(1);
+  return d.length === 10 ? `${d.slice(0, 3)}-${d.slice(3, 6)}-${d.slice(6)}` : p;
 }
 
 export function groupBy(arr, keyFn) {

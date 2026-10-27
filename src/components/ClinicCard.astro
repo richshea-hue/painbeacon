@@ -1,5 +1,5 @@
 ---
-import { isPainPrimary, titleCase } from '../lib/data.js';
+import { isPainPrimary, titleCase, displayName } from '../lib/data.js';
 import { disciplineAttr } from '../lib/practice-type.js';
 import { medicareAttr } from '../lib/insurance.js';
 const { clinic, rank } = Astro.props;
@@ -25,7 +25,7 @@ const stars = c.aggregate_rating ? '★'.repeat(Math.round(Number(c.aggregate_ra
 <li class="clinic" data-disciplines={disciplineAttr(c)} data-medicare={medicareAttr(c)}>
   <div class="rank-badge">{rank || ''}</div>
   <div>
-    <h3><a href={`/clinic/${c.slug}/`}>{titleCase(c.name)}</a>
+    <h3><a href={`/clinic/${c.slug}/`}>{displayName(c.name)}</a>
     </h3>
     <p class="meta">
       {[c.address_1 && titleCase(c.address_1), c.cityLabel, c.state].filter(Boolean).join(', ')}

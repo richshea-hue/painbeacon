@@ -4,7 +4,7 @@ import Breadcrumbs from '../../../components/Breadcrumbs.astro';
 import ClinicCard from '../../../components/ClinicCard.astro';
 import ClinicMap from '../../../components/ClinicMap.astro';
 import SponsorCard from '../../../components/SponsorCard.astro';
-import { getClinics, groupBy, stateName, titleCase } from '../../../lib/data.js';
+import { getClinics, groupBy, stateName, titleCase, displayName } from '../../../lib/data.js';
 import { rankClinics } from '../../../lib/ranking.js';
 import { isRankable } from '../../../lib/practice-type.js';
 import PracticeFilter from '../../../components/PracticeFilter.astro';
@@ -62,7 +62,7 @@ const mapMarkers = ranked
   .map((c) => ({
     lat: c.latitude,
     lng: c.longitude,
-    name: titleCase(c.name),
+    name: displayName(c.name),
     slug: c.slug,
     // Street line included so that clinics sharing a building — which the map
     // groups onto one pin — are told apart by their suite in the popup.
