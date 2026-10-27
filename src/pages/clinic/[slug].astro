@@ -23,7 +23,7 @@ const name = displayName(c.name);
 const interventional = (c.all_taxonomy_codes || '').includes('208VP0014X');
 const { score } = scoreClinic(c);
 const band = scoreBand(score);
-const scoreDetail = band.showNumber ? `${score}/100` : 'limited verified data on file';
+const scoreDetail = band.showNumber ? `${score}/100` : 'limited data on file';
 const addr = [c.address_1 && titleCase(c.address_1), c.address_2 && titleCase(c.address_2)].filter(Boolean).join(', ');
 // NPPES descriptions read "Group - Specialization", and 2,139 of them say "Pain
 // Medicine - Pain Medicine". Print a repeated half once.
