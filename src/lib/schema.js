@@ -52,14 +52,11 @@ export function clinicLd(c, canonicalUrl) {
   if (c.latitude && c.longitude) {
     ld.geo = { '@type': 'GeoCoordinates', latitude: c.latitude, longitude: c.longitude };
   }
-  if (c.aggregate_rating && c.review_count) {
-    ld.aggregateRating = {
-      '@type': 'AggregateRating',
-      ratingValue: c.aggregate_rating,
-      reviewCount: c.review_count,
-      bestRating: 5,
-    };
-  }
+  // No aggregateRating. The ratings on our pages are Google's, and Google's
+  // review-snippet rules say "Don't aggregate reviews or ratings from other
+  // websites": a local business's ratings must come from the site's own users.
+  // Search Console recognized 1 such item out of ~6,700 when this was removed
+  // (2026-10-27), so it earned nothing and risked a structured-data action.
   return ld;
 }
 

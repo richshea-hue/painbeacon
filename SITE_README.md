@@ -333,8 +333,12 @@ keep the kit, which this mechanism is what makes true.
 
 ## SEO / E-E-A-T built in
 
-- `MedicalClinic` + `PostalAddress` + `GeoCoordinates` + `AggregateRating` JSON-LD
-  on every profile; `BreadcrumbList` on every page; `WebSite` on the home page.
+- `MedicalClinic` + `PostalAddress` + `GeoCoordinates` JSON-LD on every profile;
+  `BreadcrumbList` on every page; `WebSite` on the home page. **No
+  `AggregateRating` and no `FAQPage` on profiles** (removed 2026-10-27): the
+  ratings are Google's, which Google's review-snippet rules forbid marking up as
+  our own, and FAQ rich results stopped showing in Search on 2026-05-07. See
+  `notes/seo-review-2026-10-27.md`.
 - Accurate NAP rendered from the data on every clinic.
 - Named medical reviewer + last-reviewed date in the footer site-wide (set the
   real reviewer in `src/lib/site.js`).
