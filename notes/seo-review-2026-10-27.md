@@ -205,6 +205,27 @@ contact with a clinic to help you book". Each is disclosed somewhere and none
 touches the ranking. But a reader has to assemble that from four pages. One
 plain paragraph on an About page would do it.
 
+**Added the same day, after the plan went to Rich: the connection nobody
+sees.** richshea.com says Rich is Managing Director of Strategic Growth at
+Candor Healthcare, "an ASC and pain management MSO" that is acquisition-stage
+and builds physician partnerships, and calls PainBeacon "a standalone project
+that complements my work at Candor Healthcare". PainBeacon mentions Candor
+nowhere. Its disclosure page says only that "the organization behind
+PainBeacon owns no pain clinics", which may be literally true and still leaves
+out the thing a patient or a ranked clinic would most want to know: the person
+who runs the rankings works for a company buying pain practices. On a health
+site, that belongs on the About page and the disclosure page in plain words,
+whatever else those pages say. Three smaller things in the same place:
+- The Organization markup gives a `legalName` of "PainBeacon Directory", but
+  `notes/mark-mooney-ownership-termsheet.md` says "There is no PainBeacon
+  entity."
+- The ownership "tripwire" the README describes (`SITE.disclosureActive`,
+  read by `Base.astro:121`, `how-we-rank.astro`, `ownership-disclosure.astro`)
+  doesn't exist in `site.js`. It's always undefined, so the neutral text
+  always shows and there is no switch to flip.
+- richshea.com repeats "ranked on merit — board certification, interventional
+  capability, and verified reviews" (`richshea.com/index.html:337,485`).
+
 ## 4. Claims the data can't back
 
 | Claim | Where | Reach | What's true |
@@ -470,6 +491,23 @@ Effort assumes a session on Rich's computer.
    changes rankings, so it's a methodology change with a published note, not
    part of this plan.
 8. Yes or no on the sitemap change (#16).
+9. How to say the Candor connection on the About and disclosure pages
+   (section 3).
 
 The BestRaces house ad that repeats "ranked by board certification" needs the
 same fix in the BestRaces repo.
+
+## 12. Progress
+
+2026-10-27, approved by Rich ("do #1 & 2" of the order he was shown):
+- Tier 1 #1, #2, #5 and #6, #13 (display fixes) and #15's pitch removal
+  shipped in five commits on main. Ranking line used: "ranked on published
+  criteria: interventional registration, patient ratings, review volume,
+  years registered, and contact details."
+- Two published guides changed one word each ("verified patient ratings" to
+  "Google patient ratings"): `how-to-choose-a-pain-clinic.md:106`,
+  `spot-a-pill-mill-red-flags.md:117`. No editor's note, pending Rich's call.
+- BestRaces house ad fixed in that repo (3449ff3).
+- Still open: the About page and everything that waits on it (#3, #4, #7 to
+  #9), the published `how-we-rank-pain-clinics.md` that still says
+  "credential", richshea.com, and tiers 3 and 4.
