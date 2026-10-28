@@ -1,9 +1,11 @@
 # SEO and structured-data audit — the prompt to run on the other sites
-*2026-10-24, A2 rewritten the same day after the second site ran it. Written
+*Started 2026-10-24; A2 rewritten the same day, PART 0 added 2026-10-28. Written
 from what these audits actually turned up, so every check below exists because
-something was wrong, not because it sounded thorough. Sites run so far:
-PainBeacon, BestRaces — results at the bottom. Add yours when you run one, and
-fold anything new back into the prompt itself, which is what A2's rewrite was.*
+something was wrong, not because it sounded thorough. Repos run so far:
+PainBeacon, BestRaces, primary-source, hiballevents — results at the bottom.
+Add yours when you run one, and fold anything new back into the prompt itself.
+Both revisions so far came from a later run teaching the prompt something: A2
+from BestRaces, PART 0 from primary-source and hiballevents.*
 
 The other sites were built from this one's setup, so they inherit its slug
 helpers, its sitemap builder and its JSON-LD shapes — which means they may
@@ -11,7 +13,9 @@ inherit its bugs with different data behind them.
 
 **Run it one site at a time, in its own session.** See ground rule 1: the
 failure it warns about is one this session actually made, attributing one
-site's backlink history to another because the two sit next to each other.
+site's backlink history to another because the two sit next to each other. And
+see PART 0 — a repo is not necessarily a site, so decide what "one site" means
+here before you start.
 
 ---
 
@@ -33,6 +37,36 @@ GROUND RULES, and the first one cost us real time today:
    clone will have you describing a page that no longer exists.
 3. Report findings before changing anything. One findings document, then fixes
    in priority order, one PR per concern.
+
+PART 0 — ESTABLISH SCOPE BEFORE YOU AUDIT ANYTHING. Two questions.
+
+  HOW MANY SITES DOES THIS REPO HOLD?
+  Do not assume one. Check for a sites/ directory, workspaces in package.json,
+  and more than one astro.config. primary-source held THREE sites behind one
+  repo (fertility, asc-platform, dataroom) with two separate domains and two
+  separate Cloudflare projects deploying from the same branch. "One site per
+  session" and "one repo per session" are not the same thing, and the checks
+  below apply per site.
+
+  WHICH OF THEM IS ACTUALLY IN SEARCH?
+  Ask this before running a single check, because the answer changes what is a
+  defect. For each site, read its layout's <head>: does every page carry
+  noindex? Is there a robots.txt, a sitemap, a Search Console property?
+  asc-platform emits "noindex, nofollow" on all 7,101 of its pages,
+  unconditionally, and the comment above that meta tag says so in terms — "do
+  not read it as something waiting to be switched off; read it as a decision
+  about what the product is for." It is sold direct, deliberately not through
+  search.
+  That mattered: its 7,101 pages carry NO canonical at all, and on any other
+  site in this family that is a serious A5 defect. Here it is correct —
+  pairing a canonical with noindex is the contradiction the siblings avoid on
+  purpose, so emitting none is right. I was one step from filing it as the
+  headline finding of that audit.
+  It also decides where a build gate can go: wiring A8's check into that site
+  would have failed every build by design, and that site deploys, so it would
+  have broken a real pipeline rather than a local command.
+  Write the scope down in the findings document, with the evidence, before
+  anything else — including the sites you are NOT auditing and why.
 
 PART A — things you can check yourself, from the repo and the live site
 
@@ -87,6 +121,20 @@ A2. Raw data becoming a URL segment -- or a grouping key.
     belongs in ONE shared module with its own test file, imported by every
     caller -- not in the slug function alone, which would merge two URLs
     without merging the two groups behind them.
+
+    A CLEAN A2 IS A RESULT. SAY WHY, NOT JUST THAT.
+    hiballevents passed this check because the bug CANNOT occur there: no
+    slugify anywhere in the repo, no derived path segment at all. Its four
+    event slugs are hand-written literals in a data file, and the photo, logo
+    and carousel lookups key on that slug rather than on a display field. No
+    data becomes a URL.
+    That is worth writing down rather than ticking, because it is the pattern
+    the other sites could move toward: the three that failed this check all
+    generate paths from ingested fields (NPPES, RunSignup, CDC). Where a site
+    legitimately needs programmatic pages it cannot adopt this wholesale — but
+    the principle it embodies is the fix anyway. Derive the URL from ONE
+    canonical identifier, and let nothing else in the codebase key on the
+    display field.
 
     THE SYMPTOM IS NOT ALWAYS A DUPLICATE. Look for the opposite too.
     - A guard turns it into a MISSING page. BestRaces gated state slices on a
@@ -220,6 +268,51 @@ the audit reported it as one missing ranking page.
 | existing normalizer elsewhere in the repo | none | `cityVariants()`, already correct, unused by the buggy caller |
 | symptom | duplicate page | **missing** page (a threshold split under its minimum) |
 | fix | one line in `stateSlug` | a shared module + 38 tests |
+
+## Third repo: primary-source, 2026-10-26
+
+Findings in that repo at `docs/seo-audit-2026-10-26.md`; fixes in its #5 and #6.
+This is the run PART 0 comes from. Three sites in one repo, only one of them in
+search, and the near-miss described there. Its one real finding was the A2 one
+again, in its fourth variation: the city field was grouped in four separate
+files and only one built a URL — including a paid-listing equality check that
+would have cost money while nothing 404'd.
+
+Also worth copying from it: that repo had already built a post-build gate of its
+own (`check-sitemap.mjs`) enforcing four invariants including a duplicate-URL
+check, which is further than either earlier site had got, and which it added
+after its own version of the St. Louis incident.
+
+## Fourth repo: hiballevents, 2026-10-27
+
+Findings in that repo at `notes/seo-audit-2026-10-27.md`; fix in its #11.
+**The first repo to come back clean**, and the first where the central bug class
+cannot occur — see the A2 note above, which is the thing to take from this run.
+
+Its one finding was not SEO at all: `.gitignore` covered `.env*` but not
+`.dev.vars`, wrangler's local secrets file, which on a Cloudflare Worker is the
+only copy of an API key that could ever reach git. Note the shape of that —
+A7 had been the same hole in the same place on three repos (a Google
+service-account key path), and here it was a different file for a different
+reason. **Check what THIS repo's stack keeps on disk**, rather than grepping for
+the sibling's filename.
+
+Two more things that run settled:
+- A clean A4 can mean the repo got there first. Its build already failed on
+  sitemap/noindex contradictions, and `robots.txt` had no `Disallow` at all
+  because it exists to WELCOME AI crawlers — strategy, not oversight. Read the
+  comments before calling an absence a gap.
+- A3 has a floor. At 10 sitemap URLs the crawl-budget question has no subject.
+  Report the composition and say so, rather than manufacturing a
+  recommendation. The four repos submit 15,656 / 3,619 / 1,718 / 10.
+
+| | PainBeacon | BestRaces | primary-source | hiballevents |
+|---|---|---|---|---|
+| sites in the repo | 1 | 1 | **3** (1 in search) | 1 |
+| A2 groupings of the field | 1 | 4 | 4 | **0 — none derived** |
+| A2 symptom | duplicate page | missing page | duplicated row + a paid miss | n/a |
+| sitemap URLs | 15,656 | 3,619 | 1,718 | 10 |
+| had its own post-build gate already | no | no | **yes** | yes (`check:alts`) |
 
 ## What this audit did NOT explain
 
