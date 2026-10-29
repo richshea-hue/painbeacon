@@ -417,6 +417,46 @@
       ]
     },
     {
+      "page": "news/reading-pain-clinic-reviews",
+      "role": "hero",
+      "pexels_id": 5902800,
+      "src_url": "https://www.pexels.com/photo/5902800/",
+      "photographer": null,
+      "source_md5": "d2572029f934c6e87e9b7bb9071b89e2",
+      "files": [
+        {
+          "path": "/images/news/reading-pain-clinic-reviews/woman-reading-clinic-reviews-on-phone-hero.jpg",
+          "md5": "47c2e2ee11efa899fa8684da448fce0a",
+          "bytes": 99003
+        },
+        {
+          "path": "/images/news/reading-pain-clinic-reviews/woman-reading-clinic-reviews-on-phone-thumb.jpg",
+          "md5": "5b8857e5aa049429e50a7ac10c000cb7",
+          "bytes": 37988
+        },
+        {
+          "path": "/images/news/reading-pain-clinic-reviews/woman-reading-clinic-reviews-on-phone-share.jpg",
+          "md5": "155f9f71369b4bbea09c0e73f6630dca",
+          "bytes": 108670
+        }
+      ]
+    },
+    {
+      "page": "news/reading-pain-clinic-reviews",
+      "role": "inline",
+      "pexels_id": 39192335,
+      "src_url": "https://www.pexels.com/photo/39192335/",
+      "photographer": null,
+      "source_md5": "85f4ee394d376eaed2c142ab92844131",
+      "files": [
+        {
+          "path": "/images/news/reading-pain-clinic-reviews/doctor-listening-to-patient-consultation.jpg",
+          "md5": "5e1ea20bc3c89d088e5448b11e00d403",
+          "bytes": 67024
+        }
+      ]
+    },
+    {
       "page": "news/sciatica-when-to-see-a-specialist",
       "role": "hero",
       "pexels_id": 8313199,

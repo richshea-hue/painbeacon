@@ -96,7 +96,7 @@ merged.
 - [x] Questions to ask before agreeing to any pain procedure (Patient Guides) — 2026-10-01
 - [x] Radiofrequency ablation for back and neck pain: what it is and who it helps (Treatments Explained) — 2026-10-07
 - [x] Who's who at a pain clinic: anesthesiologists, physiatrists, neurologists and other pain specialists (Choosing a Clinic) — 2026-10-14
-- [ ] Reading pain clinic reviews: what star ratings can and can't tell you (Inside the Rankings)
+- [x] Reading pain clinic reviews: what star ratings can and can't tell you (Inside the Rankings) — 2026-10-21
 - [ ] Telehealth for chronic pain: what can and can't happen by video (Patient Guides)
 - [ ] Knee pain: when a pain clinic can help, and when to see an orthopedist (Patient Guides)
 - [ ] Nerve blocks explained: diagnostic vs. therapeutic, and why the difference matters (Treatments Explained)
