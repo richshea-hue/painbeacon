@@ -3,6 +3,14 @@ title: "Reading Pain Clinic Reviews: What Star Ratings Can and Can't Tell You"
 dek: 'A 4.8 can mean a great clinic or a handful of friendly reviews. Here is what stars measure in pain care, what they miss, and how to read them.'
 date: 2026-10-21
 category: 'Inside the Rankings'
+heroImg: '/images/news/reading-pain-clinic-reviews/woman-reading-clinic-reviews-on-phone-hero.jpg'
+heroAlt: 'A woman sitting on a leather sofa at home squints skeptically at her smartphone as she reads.'
+thumb: '/images/news/reading-pain-clinic-reviews/woman-reading-clinic-reviews-on-phone-thumb.jpg'
+shareImg: '/images/news/reading-pain-clinic-reviews/woman-reading-clinic-reviews-on-phone-share.jpg'
+heroCreditName: 'Kaboompics'
+heroCreditProfile: 'https://www.pexels.com/@karola-g'
+heroCreditPhoto: 'https://www.pexels.com/photo/woman-using-smart-phone-at-home-5902800/'
+heroCreditProvider: 'Pexels'
 ---
 
 A pain clinic with 4.9 stars and a clinic with 4.3 stars are not the same, but
@@ -60,6 +68,13 @@ one star after an appointment that was clinically appropriate. That does not
 make the review dishonest, but it is a different kind of complaint from "the
 doctor never examined me."
 
+<figure>
+  <img src="/images/news/reading-pain-clinic-reviews/doctor-listening-to-patient-consultation.jpg"
+       alt="A gray-haired physician in a white coat sits at his desk and listens to a patient seated across from him."
+       width="1200" height="800" loading="lazy" />
+  <figcaption>Whether the doctor listened and explained the plan is something a reviewer can judge. Whether the plan was right usually is not.</figcaption>
+</figure>
+
 ## The small-numbers problem
 
 A rating is an average, and an average of very few numbers is fragile.
@@ -79,18 +94,19 @@ We use ratings, but we limit how far they can move a clinic. The scoring in
 [how we rank pain clinics](/news/how-we-rank-pain-clinics/) and on our
 [methodology page](/how-we-rank/) works like this, and it matches the code:
 
-- **Rating is 25 of 100 points.** The aggregate rating is scaled linearly from
+- **Rating is 25 of 100 points.** The practice's Google rating is scaled linearly from
   zero to five stars. The difference between a 4.0 and a 4.5 is therefore about
   2.5 points out of 100, not a leap in the order.
-- **Review volume is another 20 points.** It is scaled logarithmically and
+- **Google review volume is another 20 points.** It is scaled logarithmically and
   capped at around 200 reviews, so a few reviews count for something, many count
   for more, and past about 200 more reviews add nothing.
 - **The remaining 55 points come from other signals:** whether the practice
-  carries the interventional pain credential, how long its national provider
-  record has existed, and whether it publishes a website and phone number.
+  is registered under interventional pain medicine in the federal provider
+  registry (a self-declared code, not a board certification), how long its
+  national provider record has existed, and whether it publishes a website and phone number.
 
 So reviews and ratings together account for under half of a clinic's score. A
-clinic with a perfect rating and no interventional credential does not
+clinic with a perfect rating and no interventional registration does not
 automatically outrank an established interventional practice with a 4.4. That
 is deliberate, for the reasons above: the stars measure experience, and the
 other signals are checkable facts.
