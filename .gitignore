@@ -28,3 +28,12 @@ __pycache__/
 # Run cache for scripts/check-backlinks.mjs. public.backlinks is the store;
 # this only exists so an interrupted run resumes.
 /data/backlinks.json
+# Sponsor report output. sponsor-report.mjs (--out/--json) and
+# sponsor-report-pdf.py write wherever they are pointed, and the usage line in
+# both scripts points at the repo root, so reports land here. The deliverable is
+# the PDF emailed to the sponsor; the .md and .json carry that sponsor's traffic
+# numbers and none of it belongs in git. Better habit: --out into
+# scripts/outreach/out/, which is already ignored.
+/s.json
+/s.pdf
+/samakow*
