@@ -1,5 +1,5 @@
 ---
-title: 'Pain Management Without Opioids: What Modern Clinics Actually Offer'
+title: 'Chronic Pain Management Without Opioids'
 dek: 'Non-opioid pain care is not one substitute pill. It is several modest treatments stacked together — and this is the honest version of how well each part works.'
 date: 2026-09-09
 category: 'Treatments Explained'
