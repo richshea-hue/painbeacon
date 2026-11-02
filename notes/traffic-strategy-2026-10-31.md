@@ -62,7 +62,7 @@ on them: `/news/how-to-choose-a-pain-clinic/` sits at **average position 4** (ou
 Inspection plus Performance, 2026-10-29). Position 4, on a site averaging 29.3. The
 article ranks; almost nobody searches that exact phrasing, so it drew 3 impressions.
 
-Sixteen articles exist in `src/content/articles/`. The topics are genuinely good — RFA,
+Sixteen article files exist in `src/content/articles/`, of which **14 are published** - the other two are `draft: true` and are filtered out of the build by `src/lib/articles.js:11`, so they have no page, sitemap line or feed entry. The topics are genuinely good — RFA,
 spinal cord stimulator trials, epidural steroid injection evidence, pill-mill red flags,
 insurance and prior authorization. **The targeting is magazine, not search.** Compare:
 
@@ -85,7 +85,7 @@ less about tactics and more about whether the business is legitimate and backed 
 trustworthy sources, and he recommends getting content reviewed by a legitimate expert
 and showing that on the page.
 
-**Ours: 0 of 16 articles has a named author or a medical reviewer.**
+**Ours: 0 of 16 article files has a named author or a medical reviewer** (14 published, 2 drafts).
 `src/pages/news/[slug].astro:49` sets `author` to an `Organization`, and line 85 prints
 "— The PainBeacon editorial desk". For consumer medical content that is the weakest
 available signal: anonymous health advice.

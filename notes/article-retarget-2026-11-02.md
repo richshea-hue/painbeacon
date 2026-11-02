@@ -74,13 +74,32 @@ already carried the secondary terms, so only two changed:
 
 The other 14 deks are good prose that already covered the ground. Left alone.
 
-## A 404 found on the way
+## Correction: the og:image "404" was not one
 
-`src/lib/article-art.js:55` falls back to `/social/<slug>.png` when an article has no
-`shareImg`, `heroRemote` or `image`. Two articles — `chronic-pain-and-mental-health` and
-`pain-after-a-car-accident` — have none of the three, **and that PNG was never committed.**
-Their `og:image` pointed at a missing file, so every share of those two rendered without a
-card. Both cards are now generated and are the only two added.
+An earlier version of this note, and commit e185eb2, claimed that
+`chronic-pain-and-mental-health` and `pain-after-a-car-accident` had a broken
+`og:image` because `src/lib/article-art.js:55` falls back to `/social/<slug>.png` and
+that PNG was never committed. **That was wrong.**
+
+Both articles are `draft: true`. `src/lib/articles.js:11` filters drafts out of the build
+entirely — no page, no sitemap line, no feed entry — so both URLs return 404 and no
+`og:image` is ever served for them. Verified against the branch preview: the two draft
+URLs are 404 while `sciatica-when-to-see-a-specialist` is 200.
+
+The tell was in the meta tags. The 404 page reports `og:image:height` 630, which is
+`Base.astro:25`'s default, while the article template passes 1200. A page rendering
+Base's defaults was never rendering through the article template at all. The reason the
+card was never committed is simply that neither article has ever been published.
+
+Two PNGs were generated and committed on that false premise and have been removed again.
+They were for unpublished drafts, and `generate-social-cards.mjs` skips a card that
+already exists, so leaving them would have risked a stale title on the day either draft
+ships. The card is generated as part of publishing an article, which is the existing
+workflow.
+
+**Published count:** 14 of the 16 files in `src/content/articles/` are live; the other
+two are the drafts above. All 16 were retitled, so the work stands either way, but any
+"16 articles" phrasing elsewhere means 14 published plus 2 drafts.
 
 Three stale, unused cards remain tracked in `public/social/` for articles that use photos
 (`first-pain-clinic-appointment`, `how-to-choose-a-pain-clinic`,
