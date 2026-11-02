@@ -125,6 +125,31 @@ export async function getClinics() {
   // are routable; drop the rest from the site (they stay in the DB).
   const located = rows.filter((c) => c.city && c.state && c.name);
 
+  // Practices whose PRIMARY registration is not pain medicine. They are here
+  // because one of their fifteen taxonomy slots carries a pain code, not
+  // because pain medicine is the business: general anesthesia groups,
+  // orthopedic surgeons, DME suppliers, chiropractors, a dentist. Measured
+  // against clinics_public on 2026-10-30: 3,116 of 14,603, or 21.3%, across
+  // 163 distinct registrations -- 584 general anesthesiology, 384 orthopedic
+  // surgery, 147 medical-supply companies, 50 chiropractors. The 2,839 in the
+  // note on PAIN_TAXONOMY_CODES below is the same count taken earlier; it has
+  // drifted by 277 rows since, so re-measure rather than quote either.
+  //
+  // Search Console for the three months to 2026-10-30 says what carrying them
+  // costs. The largest query cluster the whole site matched was anesthesia
+  // STAFFING -- "anesthesia services companies green bay" and its neighbors,
+  // 408 of the top hundred queries' 1,879 impressions -- against zero clicks.
+  // Someone sourcing an anesthesia group for a surgical center is not looking
+  // for a pain-clinic directory, so those impressions can never convert.
+  //
+  // PAIN_PRIMARY_ONLY=1 drops them. It is OFF by default on purpose: this
+  // delists 21.3% of the directory, which is Rich's call, and the dropped URLs
+  // need to answer 410 before it is taken. The split is logged either way, so
+  // an ordinary build measures the cut without making it.
+  const { primary, offPrimary } = splitByListablePrimary(located);
+  if (offPrimary.length) console.log(offPrimarySummary(offPrimary, located.length));
+  const listed = process.env.PAIN_PRIMARY_ONLY === '1' ? primary : located;
+
   // Build a clean, state-scoped URL segment for each zone, guaranteed unique
   // within its state, so URLs read /pain-clinics/nv/las-vegas/ (not the raw
   // zone_slug, which repeats the state: las-vegas-nv). Deterministic ordering
@@ -132,7 +157,7 @@ export async function getClinics() {
   const zoneUrlBySlug = new Map();
   const usedByState = new Map();
   const uniqueZones = [
-    ...new Map(located.filter((c) => c.zone_slug).map((c) => [c.zone_slug, c])).values(),
+    ...new Map(listed.filter((c) => c.zone_slug).map((c) => [c.zone_slug, c])).values(),
   ].sort((a, b) => a.zone_slug.localeCompare(b.zone_slug));
   for (const c of uniqueZones) {
     const st = stateSlug(c.state);
@@ -151,11 +176,11 @@ export async function getClinics() {
   // the why). websiteSafe: true = checked & clean, false = flagged,
   // null = not validated (no API key / API error) — treated as unlinkable.
   const websiteHrefOf = new Map(
-    located.map((c) => [c.npi, normalizeWebsite(c.website)])
+    listed.map((c) => [c.npi, normalizeWebsite(c.website)])
   );
   const safety = await checkWebsites([...websiteHrefOf.values()]);
 
-  _cache = located.map((c) => ({
+  _cache = listed.map((c) => ({
     ...c,
     phone: formatPhone(c.phone),
     websiteHref: websiteHrefOf.get(c.npi) || null,
@@ -199,6 +224,50 @@ export const PAIN_TAXONOMY_CODES = new Set([
 // Is pain medicine this practice's PRIMARY registration, rather than one of
 // the other fourteen things it also declared?
 export const isPainPrimary = (c) => PAIN_TAXONOMY_CODES.has(c.primary_taxonomy_code);
+
+// What the LISTING gate accepts as a primary registration: the five pain codes
+// above, plus 261QP3300X, "Clinic/Center - Pain". That one is a pain clinic by
+// registration even though it is not a physician subspecialty, and
+// practice-type.js already counts it under pain medicine. 63 listed practices
+// carry it as their primary and dropping them would be plainly wrong.
+//
+// Deliberately NOT folded into PAIN_TAXONOMY_CODES: isPainPrimary() answers a
+// different question -- is pain medicine this PHYSICIAN's subspecialty -- and
+// ClinicCard.astro decides whether to print a practice type from that answer.
+// Widening it there would quietly stop 63 cards showing what the practice is.
+export const LISTABLE_PRIMARY_CODES = new Set([...PAIN_TAXONOMY_CODES, '261QP3300X']);
+export const isListablePrimary = (c) => LISTABLE_PRIMARY_CODES.has(c.primary_taxonomy_code);
+
+// Split listings on that question. Pure, so the gate in getClinics() can be
+// tested without a database or an env var.
+export function splitByListablePrimary(rows) {
+  const primary = [];
+  const offPrimary = [];
+  for (const c of rows) (isListablePrimary(c) ? primary : offPrimary).push(c);
+  return { primary, offPrimary };
+}
+
+// The one build-log line: how many listings are not pain-primary, and the eight
+// registrations they most often are instead. Descriptions print as CMS wrote
+// them, CMS's own spellings included, for the reason given above.
+export function offPrimarySummary(offPrimary, total) {
+  const byDesc = new Map();
+  for (const c of offPrimary) {
+    const d = c.primary_taxonomy_desc || '(no primary taxonomy)';
+    byDesc.set(d, (byDesc.get(d) || 0) + 1);
+  }
+  const top = [...byDesc]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, 8)
+    .map(([d, n]) => `${d} ${n}`)
+    .join('; ');
+  const pct = total ? ((100 * offPrimary.length) / total).toFixed(1) : '0.0';
+  const verdict =
+    process.env.PAIN_PRIMARY_ONLY === '1'
+      ? 'PAIN_PRIMARY_ONLY=1 - dropping them'
+      : 'listed anyway - set PAIN_PRIMARY_ONLY=1 to drop them';
+  return `[data] ${offPrimary.length} of ${total} listings (${pct}%) are not pain-primary: ${top}. ${verdict}`;
+}
 
 // Federal records arrive in capitals ("FIRST CHOICE MEDICAL SOLUTIONS PLLC"), so
 // everything we print is title-cased, in two passes. titleCase is safe for any
