@@ -9,8 +9,15 @@
 // neither Facebook nor X: it merged a week after it was written, so it arrived
 // in the feed already seven days old and read as backfill (article-calendar.md
 // has the full account). This pushes instead — the deploy finishes, the post
-// goes out. No poll window, no date heuristic. It also leaves dlvr.it's two
-// free profile slots to Facebook and X, which have no comparably simple API.
+// goes out. No poll window, no date heuristic.
+//
+// This file used to say that dlvr.it's two free profile slots were deliberately
+// left to Facebook and X, "which have no comparably simple API". That is no
+// longer the arrangement: scripts/post-to-x.mjs and scripts/post-to-facebook.mjs
+// now push to both, for the same reason this one does. Neither was simple, and
+// their headers are mostly an account of why — X charges per link post and
+// Facebook's access level is an open question — but polling was the thing worth
+// getting rid of.
 //
 // STATELESS BY DESIGN. It always reads the FIRST item in the LIVE feed and asks
 // Bluesky whether that URL has been posted already, instead of keeping a "last
