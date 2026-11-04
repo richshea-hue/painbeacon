@@ -21,6 +21,7 @@
     "test:practice": "node --test src/lib/practice-type.test.mjs",
     "test:backlinks": "node --test scripts/lib/backlinks.test.mjs",
     "test:feed": "node --test scripts/lib/feed-item.test.mjs",
+    "test:oauth": "node --test scripts/lib/oauth1.test.mjs",
     "test:growth": "node --test scripts/lib/growth.test.mjs"
   },
   "dependencies": {

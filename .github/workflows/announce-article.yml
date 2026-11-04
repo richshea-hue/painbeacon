@@ -1,25 +1,50 @@
 name: Announce new article
 
-# Pushes a newly published article to Bluesky and pings the WebSub hub, once the
-# deploy carrying it is live.
+# Pushes a newly published article to Bluesky, X and the Facebook Page, and
+# pings the WebSub hub, once the deploy carrying it is live.
 #
 # WHY NOT JUST LEAVE IT TO dlvr.it. dlvr.it polls the feed on a timer and judges
 # each item by its pubDate. An article that merges a week after it was written
 # therefore arrives already stale and gets passed over — which is exactly what
-# happened on 2026-09-16 (see article-calendar.md). These two steps push instead
-# of waiting to be polled, so publishing is the trigger.
+# happened on 2026-09-16 (see article-calendar.md). These steps push instead of
+# waiting to be polled, so publishing is the trigger.
 #
-# Both steps are idempotent: post-to-bluesky.mjs asks Bluesky whether the URL is
-# already up before posting anything, and a WebSub ping with nothing new costs
-# the hub one conditional GET. Re-running this workflow is safe.
+# ONE THING TO DO IN THE dlvr.it DASHBOARD BEFORE ADDING THE SECRETS BELOW:
+# turn its Facebook and X channels OFF. Until that happens, adding either secret
+# here means every article goes out twice on that network. Nothing in this repo
+# can do it, so the order is: disable the channels, then add the secrets.
 #
-# SECRETS — Settings → Secrets and variables → Actions:
-#   BLUESKY_HANDLE        painbeacon.bsky.social, or the domain handle if set
-#   BLUESKY_APP_PASSWORD  an APP PASSWORD (Bluesky → Settings → Privacy and
-#                         security → App passwords), never the account password
-# With either one unset the Bluesky step prints what it would have posted and
-# exits clean, so this workflow is harmless before the secrets exist. The WebSub
-# ping needs no credentials and runs regardless.
+# Every step is idempotent: each poster asks its own network whether the article
+# URL is already up before posting anything, and a WebSub ping with nothing new
+# costs the hub one conditional GET. Re-running this workflow is safe.
+#
+# SECRETS — Settings → Secrets and variables → Actions. Each poster exits clean
+# when its own secrets are missing, printing what it would have sent, so this
+# workflow is harmless with none of them set and can be adopted one network at a
+# time.
+#
+#   BLUESKY_HANDLE              painbeacon.bsky.social, or the domain handle
+#   BLUESKY_APP_PASSWORD        an APP PASSWORD (Bluesky → Settings → Privacy
+#                               and security → App passwords), never the
+#                               account password
+#
+#   X_API_KEY                   the four OAuth 1.0a values from the X developer
+#   X_API_SECRET                portal. NOT OAuth 2.0 — see the header of
+#   X_ACCESS_TOKEN              scripts/post-to-x.mjs for why a rotating refresh
+#   X_ACCESS_TOKEN_SECRET       token cannot work in an unattended job.
+#                               X costs $0.20 per link post since Feb 2026;
+#                               ~$11/year at one article a week, and it needs a
+#                               payment card on the developer account.
+#
+#   FACEBOOK_PAGE_ACCESS_TOKEN  a PAGE token with pages_manage_posts, not a user
+#                               token. The Page id is read from
+#                               SITE.socials.facebook, so there is nothing else
+#                               to configure. See the header of
+#                               scripts/post-to-facebook.mjs — whether App
+#                               Review is required, and whether that account is
+#                               a Page at all, are both unconfirmed.
+#
+# The WebSub ping needs no credentials and runs regardless.
 
 on:
   push:
@@ -40,7 +65,9 @@ concurrency:
 jobs:
   announce:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # Comfortably above wait-for-article.mjs's own 15-minute cap, so a slow
+    # deploy is reported by the script's warning rather than killed by the job.
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
 
@@ -49,11 +76,12 @@ jobs:
           node-version: '22'
 
       - name: Wait for the Cloudflare Pages deploy
-        # Both scripts read the LIVE feed, so they have to run after the build
-        # that publishes the article — otherwise Bluesky gets last week's item
-        # and the hub fetches a feed that has not changed. Same 5 minutes
-        # indexnow-submit.yml waits for the same reason.
-        run: sleep 300
+        # Polls the live feed until it leads with the article this commit should
+        # have published, instead of sleeping a fixed five minutes and hoping.
+        # PR #104's deploy took 6m 10s and overran the old sleep, which made
+        # every announcer below read the PREVIOUS feed. Exits as soon as the
+        # article is live, and never fails the job.
+        run: node scripts/wait-for-article.mjs
 
       - name: Post to Bluesky
         env:
@@ -61,8 +89,24 @@ jobs:
           BLUESKY_APP_PASSWORD: ${{ secrets.BLUESKY_APP_PASSWORD }}
         run: node scripts/post-to-bluesky.mjs
 
+      - name: Post to X
+        # if: always() from here down — these announce to different audiences and
+        # none should be able to silence the others. A dead Bluesky token must
+        # not cost the article its Facebook post.
+        if: always()
+        env:
+          X_API_KEY: ${{ secrets.X_API_KEY }}
+          X_API_SECRET: ${{ secrets.X_API_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
+        run: node scripts/post-to-x.mjs
+
+      - name: Post to the Facebook Page
+        if: always()
+        env:
+          FACEBOOK_PAGE_ACCESS_TOKEN: ${{ secrets.FACEBOOK_PAGE_ACCESS_TOKEN }}
+        run: node scripts/post-to-facebook.mjs
+
       - name: Ping the WebSub hub
-        # Runs even if Bluesky failed: the two announce to different audiences
-        # and neither should be able to silence the other.
         if: always()
         run: node scripts/ping-websub.mjs
