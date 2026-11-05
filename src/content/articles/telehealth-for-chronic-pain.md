@@ -1,7 +1,7 @@
 ---
 title: 'Telehealth Pain Management: What Works by Video'
 dek: 'A video visit can handle follow-ups, medication reviews and pain psychology. It cannot examine your spine or place an injection. Here is how to tell which visit you need.'
-date: 2026-11-04
+date: 2026-11-05
 category: 'Patient Guides'
 heroImg: '/images/news/telehealth-for-chronic-pain/doctor-reviewing-x-ray-during-telehealth-visit-hero.jpg'
 heroAlt: 'A gray-haired physician in a white coat sits at a desk facing a laptop and points a stylus at a foot X-ray on a tablet, explaining the image to a patient on a video call.'
