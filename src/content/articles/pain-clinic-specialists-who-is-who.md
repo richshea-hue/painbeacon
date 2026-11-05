@@ -1,5 +1,5 @@
 ---
-title: "Who's Who at a Pain Clinic: Anesthesiologists, Physiatrists, Neurologists and Other Pain Specialists"
+title: 'What Does a Pain Management Doctor Do?'
 dek: 'Anesthesiologist, physiatrist, neurologist, nurse practitioner: who does what at a pain clinic, and how their training shapes the care you are likely to get.'
 date: 2026-10-14
 category: 'Choosing a Clinic'

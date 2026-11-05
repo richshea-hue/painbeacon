@@ -1,5 +1,5 @@
 ---
-title: 'The Mental Health Side of Chronic Pain: Why the Clinic Asks, and What Actually Helps'
+title: 'Chronic Pain and Depression: What Actually Helps'
 dek: 'Being handed a depression questionnaire at a pain clinic is not an accusation. Here is what pain and mood actually have to do with each other, which psychological treatments have evidence behind them, and what to do if you are told it is all in your head.'
 date: 2026-10-28
 category: 'Patient Guides'

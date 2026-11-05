@@ -19,6 +19,7 @@
     "test:names": "node --test src/lib/display-name.test.mjs",
     "test:place": "node --test src/lib/place-query.test.mjs",
     "test:practice": "node --test src/lib/practice-type.test.mjs",
+    "test:painprimary": "node --test src/lib/pain-primary.test.mjs",
     "test:backlinks": "node --test scripts/lib/backlinks.test.mjs",
     "test:feed": "node --test scripts/lib/feed-item.test.mjs",
     "test:oauth": "node --test scripts/lib/oauth1.test.mjs",
