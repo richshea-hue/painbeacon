@@ -566,6 +566,46 @@
       "note": "backfilled 2026-08-01 — shipped before the registry existed, Pexels id unknown; only file hashes guard this one"
     },
     {
+      "page": "news/telehealth-for-chronic-pain",
+      "role": "hero",
+      "pexels_id": 8376186,
+      "src_url": "https://www.pexels.com/photo/8376186/",
+      "photographer": null,
+      "source_md5": "b14dcc7415e553a18dd79cca799ba94e",
+      "files": [
+        {
+          "path": "/images/news/telehealth-for-chronic-pain/doctor-reviewing-x-ray-during-telehealth-visit-hero.jpg",
+          "md5": "9b5c87bf0040caa278d9352fb7c0243f",
+          "bytes": 89227
+        },
+        {
+          "path": "/images/news/telehealth-for-chronic-pain/doctor-reviewing-x-ray-during-telehealth-visit-thumb.jpg",
+          "md5": "9a89a49b055fc783a858f56fe596a136",
+          "bytes": 28903
+        },
+        {
+          "path": "/images/news/telehealth-for-chronic-pain/doctor-reviewing-x-ray-during-telehealth-visit-share.jpg",
+          "md5": "250f770eba310d9b3d01679a3ae39f53",
+          "bytes": 81831
+        }
+      ]
+    },
+    {
+      "page": "news/telehealth-for-chronic-pain",
+      "role": "inline",
+      "pexels_id": 39192424,
+      "src_url": "https://www.pexels.com/photo/39192424/",
+      "photographer": null,
+      "source_md5": "009ff0a18ba276b8a3614e9d79e19bf8",
+      "files": [
+        {
+          "path": "/images/news/telehealth-for-chronic-pain/doctor-video-call-patient-medication-review.jpg",
+          "md5": "0fd121326f3017c2749fc896df07f13a",
+          "bytes": 65776
+        }
+      ]
+    },
+    {
       "page": "news/what-interventional-pain-clinics-do",
       "role": "hero",
       "pexels_id": null,
