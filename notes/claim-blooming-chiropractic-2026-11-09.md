@@ -269,8 +269,46 @@ My read, offered not assumed: the digest, weekly, probably as the same
 GitHub-issue mechanism the confirm report uses. At this volume lateness costs
 nothing and a visible failure is worth more than speed. But the trigger is the
 right answer if the intent is to reply the same day, and that is a judgment
-about how you want to sell, not about plumbing. **Rich picks; nothing is built
-until he does.**
+about how you want to sell, not about plumbing.
+
+### Rich's decision, 2026-11-09: the trigger
+
+Asked on 2026-11-09, Rich chose **a trigger when a claim arrives**, not the
+digest. Recorded here so the reasoning does not have to be reconstructed: at
+three claims in five months the point is not volume, it is that a practice
+reaching out should get an answer the same day rather than up to a week later.
+Reply speed is a sales posture, and that was his call to make.
+
+**It is not built, and it is blocked on one thing only he can supply.** The
+trigger needs an email provider, and there is no provider key anywhere in this
+project. `.env` holds `KIT_SECRET`, `PEXELS_API_KEY`, `STRIPE_SECRET_KEY`,
+`SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_KEY` and
+`SUPABASE_SERVICE_ROLE_KEY` — no Resend, SendGrid, Postmark or Mailgun. So
+somebody has to create an account at a sending provider and mint a key before
+any Edge Function can do anything. That is an account and a billing
+relationship, so it is Rich's to open, not something to pick on his behalf.
+
+There is no way around it. Cloudflare's old free path for this (MailChannels)
+stopped serving Workers in 2024, and Supabase's built-in SMTP settings only
+send auth mail, not arbitrary messages. A trigger means a provider.
+
+Once a key exists, the build is small and is three pieces:
+
+1. A Supabase Edge Function — the project has none today, so this is a new
+   deploy surface — that takes the inserted row and sends one message.
+2. A Database Webhook on `INSERT INTO public.claims` pointed at it.
+3. The provider key stored as a Supabase secret, **not** in Cloudflare. Worth
+   being explicit about, because every other secret in this project lives on
+   the Cloudflare side and a Cloudflare env-var change needs a redeploy; this
+   one does not touch Cloudflare at all.
+
+The known weakness, carried over from the comparison above and worth designing
+against rather than discovering: nothing retries and nothing reports a failed
+send. At roughly one claim every seven weeks a silent failure could go
+unnoticed for months. The cheap mitigation is to have the function write a
+row (or set a column on the claim) recording that it sent, so there is
+something to look at later that is not the absence of an email. Worth doing in
+the same change; the trigger alone is the version that fails quietly.
 
 ---
 
