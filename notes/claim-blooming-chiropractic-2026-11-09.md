@@ -598,6 +598,27 @@ condition, and offer the badge. Psychology Today and Healthgrades both do this
 and get the links anyway, because practices like badges. It keeps almost all
 the upside and stops being an exchange.
 
+**Decided 2026-11-09: the condition is dropped.** Rich chose the unconditional
+version. The listing is free with nothing asked in return, and the badge is
+offered as something the practice can take if it wants. The draft email says
+so in those words ("No charge for that, and nothing you have to do in
+return"), which matters more than it looks — the sentence is what makes the
+link editorial rather than purchased, so it is worth keeping if the copy gets
+reworked later for the page or an outreach template.
+
+Two consequences worth writing down, because they will come up again:
+
+- **The link can stay followed.** With no exchange there is no link scheme, so
+  there is no reason to nofollow the badge. That is the opposite of where this
+  was heading a paragraph ago, and it is the better outcome: an unconditional
+  badge program can earn followed links, a conditional one cannot safely earn
+  any. Dropping the condition is what buys back the link equity, not what
+  gives it up.
+- **Nothing now hinges on the practice holding up its end**, which removes a
+  support question that had no good answer: what happens when a listing was
+  given for a link and the link later comes down. Nobody has to monitor
+  anything.
+
 **3. The database cannot hold the row.** `clinics.npi` is a `bigint` and the
 only primary key, so there is literally nowhere to put a practice without an
 NPI. This is schema work: either a separate table for self-reported listings
