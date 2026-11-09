@@ -36,8 +36,11 @@ name: Announce new article
 #                               ~$11/year at one article a week, and it needs a
 #                               payment card on the developer account.
 #
-#   FACEBOOK_PAGE_ACCESS_TOKEN  a PAGE token with pages_manage_posts, not a user
-#                               token. The Page id is read from
+#   FACEBOOK_PAGE_ACCESS_TOKEN  a PAGE token, not a user token, carrying all
+#                               three of pages_show_list,
+#                               pages_read_engagement and pages_manage_posts —
+#                               the first two are dependencies of the third.
+#                               The Page id is read from
 #                               SITE.socials.facebook, so there is nothing else
 #                               to configure. See the header of
 #                               scripts/post-to-facebook.mjs — whether App

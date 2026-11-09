@@ -24,8 +24,16 @@
 // the test. A 404 or "Unsupported post request" on the /feed edge is what a
 // personal profile looks like from here, and the error path below says so.
 //
-// ACCESS: Publishing needs pages_manage_posts and a PAGE access token (not a
-// user token). Meta's Pages API overview says "All Page-related Permissions and
+// ACCESS: Publishing needs a PAGE access token (not a user token) carrying
+// THREE permissions rather than the one you would expect. Meta's permission
+// reference states that pages_manage_posts "depends on" pages_read_engagement
+// AND pages_show_list, so all three have to be granted together. Granting only
+// pages_manage_posts is the failure worth naming, because it does not look like
+// a missing permission: without pages_show_list the Page is absent from
+// /me/accounts in step 3 below, so it reads as though the account is not a Page
+// at all — which is the one conclusion this file warns against jumping to.
+//
+// Meta's Pages API overview says "All Page-related Permissions and
 // Features require approval through the App Review process", and also that apps
 // in Development Mode "can request any Permission from any app User who has a
 // Role on the app" — which are not quite the same claim, and the docs do not say
@@ -35,11 +43,17 @@
 //
 // Getting the token, once, by hand (it is not scriptable and should not be):
 //   1. developers.facebook.com → create an app → add the Facebook Login product
-//   2. Graph API Explorer → select the app → request pages_manage_posts and
-//      pages_read_engagement → Generate Access Token (a USER token)
-//   3. GET /me/accounts with that token → the Page's id and its PAGE token
-//   4. Exchange the user token for a long-lived one, then re-read /me/accounts;
-//      Page tokens derived from a long-lived user token do not expire on a timer
+//   2. Graph API Explorer → select the app → request ALL THREE of
+//      pages_show_list, pages_read_engagement and pages_manage_posts →
+//      Generate Access Token (a USER token)
+//   3. GET /me/accounts with that token → the Page's id and its PAGE token.
+//      This step doubles as the test for the open question above: if the id is
+//      not in the list, the account is not a Page and no token will help.
+//   4. Exchange the user token for a long-lived one — the Explorer's is good
+//      for an hour or two — then RE-READ /me/accounts. A Page token inherits
+//      the expiry of the user token it was derived from, so the order matters:
+//      read from a short-lived token and the Page token dies with it, read from
+//      a long-lived one and it does not expire on a timer.
 //   5. Put the PAGE token in the FACEBOOK_PAGE_ACCESS_TOKEN repository secret
 //
 // With the token unset this exits 0 without posting, so the workflow step is a

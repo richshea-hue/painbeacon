@@ -50,8 +50,13 @@ actually cost an article its audience.
    in the repo can do it.
 2. Add the X secrets: `X_API_KEY`, `X_API_SECRET`, `X_ACCESS_TOKEN`,
    `X_ACCESS_TOKEN_SECRET` (Settings → Secrets and variables → Actions).
-3. Add `FACEBOOK_PAGE_ACCESS_TOKEN` — a **Page** token with
-   `pages_manage_posts`, not a user token. The Page id is read from
+3. Add `FACEBOOK_PAGE_ACCESS_TOKEN` — a **Page** token, not a user token,
+   carrying all three of `pages_show_list`, `pages_read_engagement` and
+   `pages_manage_posts`. The first two are dependencies of the third per Meta's
+   permission reference, and granting only `pages_manage_posts` fails in a
+   misleading way: without `pages_show_list` the Page never appears in
+   `/me/accounts`, which looks like the account not being a Page rather than a
+   permission that was not asked for. The Page id is read from
    `SITE.socials.facebook`, so there is nothing else to set.
 
 ## Three things that are not settled
