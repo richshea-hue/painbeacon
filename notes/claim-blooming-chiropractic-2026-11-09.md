@@ -543,7 +543,91 @@ Stated plainly, because guessing here is how the last incident happened.
   has been written and no cron added; section 3 is a comparison, not a
   verified plan.
 
-## 9. Sources
+## 9. Rich's counter-proposal, 2026-11-09: a non-registry listing class
+
+After reading the above, Rich proposed a route none of options A–E covered, and
+it is better than the ones I listed. Recording it in his framing:
+
+> Offer the listing, but say it's not in the NPI registry and isn't ranked,
+> but still listed. We could use a backlink so we could do it and not charge
+> him if we can get the backlink from him putting up on his site that he is
+> verified as a listing (just not NPI verified). He can always do a paid
+> option as well.
+
+**Why this is not option D.** I argued against a non-NPI join key because of
+the place_id incident. That objection does not apply here and I was wrong to
+treat the space as binary. The place_id failure was *silently linking a claim
+to the wrong existing clinic* — a false identity assertion the reader could
+not see. A separate, labeled, unranked listing class asserts nothing false: it
+says "this practice told us about itself and is not in the federal registry",
+which is true and is visible on the page. It also solves a problem the
+directory actually has — `/for-practices/` invites practices that cannot find
+themselves to get in touch, and until now there was nothing to say to them.
+
+Three things have to be settled before it can be offered to anyone, and two of
+them change what the email says.
+
+**1. The word "verified" cannot travel with it.** The existing badge asset
+reads *"Verified pain clinic on PainBeacon"* and `/verified-badge/` defines
+verified as claimed-and-verified against the registry record. Handing that
+badge to a non-registry chiropractic practice makes the badge mean two things
+at once, and the second meaning is not true — the practice is neither verified
+nor a pain clinic by the site's own definition. This is the same class of
+problem the 2026-10-27 SEO review opened with: the site claiming "board
+certification" and "verified reviews" it does not have, on a health site where
+Google weighs trust most heavily. **The fix is cheap: a second badge that says
+"Listed on PainBeacon" and nothing more.** The draft email therefore says "list
+you as a practice that isn't NPI-registered" and avoids "verified" entirely.
+If Rich wants the verified wording anyway, that is his call to make knowingly,
+but it should not slip in by reusing the existing badge.
+
+**2. Conditioning the listing on the link is a link scheme, and nofollow
+removes the benefit that made it attractive.** Google Search Essentials names
+"exchanging goods or services for links" as link spam. A free listing given
+*on condition* of a followed link is that exchange, fairly precisely. The safe
+form is `rel="nofollow"` on the badge link — but a nofollow link passes no
+ranking signal, so if the point was to improve a backlink profile that
+currently has three inbound sites, **this trade does not deliver that.** What
+it does deliver is real but different: referral traffic, brand presence on the
+practice's own site, and the Psychology Today growth loop. Both are defensible;
+they are not the same thing, and the difference is worth knowing before the
+offer is made rather than after.
+
+The lower-risk version of the same idea: give the listing free with no
+condition, and offer the badge. Psychology Today and Healthgrades both do this
+and get the links anyway, because practices like badges. It keeps almost all
+the upside and stops being an exchange.
+
+**3. The database cannot hold the row.** `clinics.npi` is a `bigint` and the
+only primary key, so there is literally nowhere to put a practice without an
+NPI. This is schema work: either a separate table for self-reported listings
+(cleanest — different provenance, different rendering, no risk of leaking into
+ranked lists or `clinics_public`) or a surrogate key on `clinics`, which
+touches `postcards.npi`, `backlinks.npi`, `kit_downloads.npi`,
+`clinics.primary_npi`, `kit:link`, the Stripe custom field and the NPPES sync.
+**A separate table is the right call** — it keeps the federal-registry
+provenance of `clinics` intact, which is the claim the whole site rests on.
+
+Unresolved, and deliberately not decided here:
+
+- Where a non-registry listing appears. Not in the ranked list, by definition —
+  so does it get a page, a separate section on area pages, or only a profile
+  reachable by direct link? Nothing is designed.
+- Whether the Practice Kit, the followed website link and Medicare
+  self-reporting travel with it. All three are currently gated on
+  `listing_tier` on a `clinics` row, so all three would need a decision.
+- Whether this opens the directory to chiropractic, PT and acupuncture
+  generally. One claim is not a policy, and this is the scope question from
+  section 7 arriving by a different door.
+- What `sync_nppes.py` does if such a practice later registers an NPI and
+  appears in `clinics` for real. There would then be two rows for one
+  practice.
+
+Nothing above is built. The email drafted on 2026-11-09 offers the route
+without naming a date, which is the right level of commitment until the schema
+question is settled.
+
+## 10. Sources
 
 - Healthgrades Elevated Profiles — https://b2b.healthgrades.com/elevated-profiles/ (price confirmed on page, 2026-11-09)
 - Healthgrades Elevated Profile — https://premium.healthgrades.com/
