@@ -238,6 +238,20 @@ const TIERS = ['free', 'verified', 'enhanced', 'featured']; // shared tier list 
       { month: 'short', day: 'numeric' }); } catch { return ''; } };
     const card = (n, l) => `<div class="card"><div class="n">${num(n)}</div><div class="l">${esc(l)}</div></div>`;
 
+    // Is this row a claim on an existing listing, or a practice asking to be
+    // added? BOTH forms write to `claims` with the same columns, so nothing in
+    // the schema separates them — the clinic-page form (ClaimProfile.astro)
+    // carries clinic_slug and npi off the page it sits on, while the
+    // /for-practices/ inquiry form sends both as null on purpose. That null is
+    // the only signal, and source_page is checked too so a clinic-page claim
+    // that somehow arrives without a slug is still read as a claim.
+    //
+    // Worth telling apart because the two need opposite answers: one is a
+    // verification of a practice already in the directory, the other is a
+    // question about whether the practice belongs in it at all. Read as the
+    // same thing, an inquiry looks like a claim with a broken NPI field.
+    const isInquiry = (r) => !r.clinic_slug && !/^\/clinic\//.test(r.source_page || '');
+
     function showRebuildBanner() { const b = $('banner'); b.classList.add('show'); b.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
 
     // ---- auth gate --------------------------------------------------------
@@ -332,6 +346,9 @@ const TIERS = ['free', 'verified', 'enhanced', 'featured']; // shared tier list 
             <div class="meta">${esc(fmtDate(r.created_at))} · ${contact || 'no name'}${ r.interest ? ' · wants: ' + esc(r.interest) : '' }</div>
             <div class="meta">${reach || 'no contact info'} ${profile}</div>
             <div class="meta">website: ${web}</div>
+            ${ isInquiry(r) ? '<div class="meta" style="color:var(--muted)">practice inquiry from '
+              + esc(r.source_page || 'the inquiry form')
+              + ' — not a claim on an existing listing, so there is no clinic record to link</div>' : '' }
             ${ r.message ? `<div class="meta">“${esc(r.message)}”</div>` : '' }
           </div>
           <div class="claim-actions">
@@ -363,7 +380,20 @@ const TIERS = ['free', 'verified', 'enhanced', 'featured']; // shared tier list 
           const npi = btn.getAttribute('data-npi');
           const row = (rows.find(x => String(x.id) === String(id)) || {});
           const tier = (document.querySelector(`select[data-tier="${id}"]`) || {}).value || 'verified';
-          if (!npi) { alert('This claim has no NPI, so it cannot be linked to a clinic record. Use the status dropdown instead.'); return; }
+          // The guard itself does not move: no NPI means no row in `clinics` to
+          // link, and inventing one is the mistake this refuses to make. Only
+          // the explanation changes, because "no NPI" is a defect on a real
+          // claim and the normal state of an inquiry.
+          if (!npi) {
+            alert(isInquiry(row)
+              ? 'This came from the ' + (row.source_page || 'practice inquiry') + ' form, not a clinic page, so it is not a claim on an '
+                + 'existing listing — it is a practice asking to be added. There is no clinic record to link, '
+                + 'and nothing here is broken.\n\nAsk for their NPI and check whether it carries a pain taxonomy '
+                + 'before anything else. Use the status dropdown to track the row meanwhile — it writes only '
+                + 'the status and grants the claimant nothing.'
+              : 'This claim has no NPI, so it cannot be linked to a clinic record. Use the status dropdown instead.');
+            return;
+          }
           const clinicPatch = { listing_tier: tier };
           if (row.website) clinicPatch.website = row.website;
           if (row.work_email) clinicPatch.contact_email = row.work_email;

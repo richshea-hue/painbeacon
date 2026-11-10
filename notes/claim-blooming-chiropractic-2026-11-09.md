@@ -50,6 +50,16 @@ backlog.
 the reason approve refuses. That part of the task is done as a one-off; see
 section 3 for the standing version, which is a question not a build.
 
+**Update, 2026-11-10.** Rich sent the reply to the practice: the free listing
+offered with nothing asked in return and the verified badge optional, as
+section 9 settled it. **Option A is done**, and the row is now waiting on an
+NPI from them rather than on us. **Option E is in the dashboard** as of this
+date — an inquiry-form row says what it is on the card, and approve explains
+why there is nothing to link instead of reporting a missing field. The guard
+is exactly as strict as it was. **Option B is the one thing still open**:
+setting the row to `verifying` is a click on the status dropdown, and it was
+left to Rich rather than written straight to the table.
+
 ---
 
 ## 2. The blocker is not a missing field
