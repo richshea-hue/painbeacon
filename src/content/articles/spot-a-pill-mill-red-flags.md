@@ -1,5 +1,5 @@
 ---
-title: 'Red Flags: How to Spot a Pill Mill Before You Book'
+title: 'Pain Management Red Flags: Spotting a Pill Mill'
 dek: 'Most of the warning signs of a bad pain practice are visible from your couch — on the website, in one phone call, before you ever sit in the waiting room. Here is what to look for, and what looks alarming but is actually good care.'
 date: 2026-07-30
 category: 'Choosing a Clinic'

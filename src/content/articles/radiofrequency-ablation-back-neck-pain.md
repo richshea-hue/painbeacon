@@ -1,6 +1,6 @@
 ---
-title: 'Radiofrequency Ablation for Back and Neck Pain: What It Is and Who It Helps'
-dek: 'Radiofrequency ablation quiets the small nerves that carry pain from worn spine joints. Who it suits, why you are tested first, and how long relief tends to last.'
+title: 'Radiofrequency Ablation: How Long Does It Last?'
+dek: 'Radiofrequency ablation quiets the small nerves that carry pain from worn spine joints. How long relief tends to last, who it suits, why you are tested first, and the side effects to discuss.'
 date: 2026-10-07
 category: 'Treatments Explained'
 heroImg: '/images/news/radiofrequency-ablation-back-neck-pain/man-holding-lower-back-facet-joint-pain-hero.jpg'

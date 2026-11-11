@@ -1,5 +1,5 @@
 ---
-title: 'How to Choose a Pain Clinic: A Practical Guide to Finding the Right Kind of Care'
+title: 'How to Find a Good Pain Management Doctor'
 dek: 'Not all pain clinics do the same thing. Here is how to tell an interventional practice from a medication-management clinic, what credentials actually mean, and the red flags worth walking away from.'
 date: 2026-07-16
 category: 'Choosing a Clinic'

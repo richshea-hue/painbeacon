@@ -31,6 +31,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { execFileSync } from "node:child_process";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -47,6 +48,29 @@ const SKIP_DIRS = new Set([
 const SKIP_FILES = new Set(["package-lock.json", "us-english.mjs"]);
 const EXT = new Set([".md", ".mjs", ".js", ".ts", ".astro", ".json", ".txt", ".css", ".html", ".yml", ".yaml", ".py"]);
 const ESCAPE = "us-english-ok";
+/* Files git ignores are not ours to spell either. Sponsor reports, scratch
+ * JSON and downloaded source data land in the working directory and are
+ * already excluded from the repo, so the build on Cloudflare never sees them.
+ * Letting them fail the gate therefore only ever breaks a LOCAL
+ * `npm run build`, which is what happened: a sponsor PDF run dropped s.json
+ * and samakow-day19.md at the root and blocked every local build until they
+ * were moved. One git call, and no change in behaviour when git is missing or
+ * this is not a checkout. An explicit path argument still gets scanned, since
+ * asking for a file by name outranks the ignore list. */
+const tracked = (() => {
+  try {
+    const out = execFileSync(
+      "git", ["ls-files", "--cached", "--others", "--exclude-standard", "-z"],
+      { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] },
+    );
+    const set = new Set(out.split("\0").filter(Boolean));
+    return set.size ? set : null;
+  } catch {
+    return null;
+  }
+})();
+const gitIgnored = (p) =>
+  tracked !== null && !tracked.has(path.relative(ROOT, p).split(path.sep).join("/"));
 
 /** stem + the suffixes that actually occur, so the list stays whole-word. */
 const ise = (stem) => [
@@ -218,7 +242,7 @@ function walk(dir) {
     const p = path.join(dir, e.name);
     if (e.isDirectory()) {
       if (!SKIP_DIRS.has(e.name)) walk(p);
-    } else if (EXT.has(path.extname(e.name)) && !SKIP_FILES.has(e.name)) {
+    } else if (EXT.has(path.extname(e.name)) && !SKIP_FILES.has(e.name) && !gitIgnored(p)) {
       scanFile(p);
     }
   }
