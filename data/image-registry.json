@@ -257,6 +257,46 @@
       "note": "DUPLICATE SHOOT, must be replaced: this is the same photo session as the home hero and news/how-to-choose-a-pain-clinic hero (same room, same doctor and patient, different frame). Caught 2026-08-22 by the perceptual check in verify-images.mjs at dHash distance 12; the Pexels id and byte hashes all differ, so no exact check could see it. Waived only so the existing page keeps building - swap in an unrelated photo and delete this waiver."
     },
     {
+      "page": "news/knee-pain-pain-clinic-or-orthopedist",
+      "role": "hero",
+      "pexels_id": 7446986,
+      "src_url": "https://www.pexels.com/photo/7446986/",
+      "photographer": null,
+      "source_md5": "af4ccfc2db2c7abbf608bf24451a4cb8",
+      "files": [
+        {
+          "path": "/images/news/knee-pain-pain-clinic-or-orthopedist/doctor-reviewing-knee-x-ray-hero.jpg",
+          "md5": "97890484dedd1bbd1749df6cffb9e584",
+          "bytes": 48352
+        },
+        {
+          "path": "/images/news/knee-pain-pain-clinic-or-orthopedist/doctor-reviewing-knee-x-ray-thumb.jpg",
+          "md5": "45d2a12561530a349fa44b78c8cda5a1",
+          "bytes": 17400
+        },
+        {
+          "path": "/images/news/knee-pain-pain-clinic-or-orthopedist/doctor-reviewing-knee-x-ray-share.jpg",
+          "md5": "3c7da4a71c0339a54fbe320c2cb689f5",
+          "bytes": 45958
+        }
+      ]
+    },
+    {
+      "page": "news/knee-pain-pain-clinic-or-orthopedist",
+      "role": "inline",
+      "pexels_id": 20860609,
+      "src_url": "https://www.pexels.com/photo/20860609/",
+      "photographer": null,
+      "source_md5": "b236244ce77a0a4eab37f58df9b9b5d7",
+      "files": [
+        {
+          "path": "/images/news/knee-pain-pain-clinic-or-orthopedist/clinician-examining-patient-knee-range-of-motion.jpg",
+          "md5": "ece16a961bdb2ef9cd56c4689a585a77",
+          "bytes": 40481
+        }
+      ]
+    },
+    {
       "page": "news/pain-clinic-specialists-who-is-who",
       "role": "hero",
       "pexels_id": 6129644,

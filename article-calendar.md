@@ -98,5 +98,5 @@ merged.
 - [x] Who's who at a pain clinic: anesthesiologists, physiatrists, neurologists and other pain specialists (Choosing a Clinic) — 2026-10-14
 - [x] Reading pain clinic reviews: what star ratings can and can't tell you (Inside the Rankings) — 2026-10-21
 - [x] Telehealth for chronic pain: what can and can't happen by video (Patient Guides) — 2026-11-05
-- [ ] Knee pain: when a pain clinic can help, and when to see an orthopedist (Patient Guides)
+- [x] Knee pain: when a pain clinic can help, and when to see an orthopedist (Patient Guides) — 2026-11-11
 - [ ] Nerve blocks explained: diagnostic vs. therapeutic, and why the difference matters (Treatments Explained)
