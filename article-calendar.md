@@ -23,10 +23,44 @@ head branch starts with `news/draft-`. Use whatever GitHub access the session
 has — the GitHub MCP tools (`list_pull_requests`, state `open`) or `gh pr list
 --state open`.
 
-- An open `news/draft-*` PR exists → STOP. Do not write a second article on the
-  same topic. Report the open PR and ask whether to merge it, rebase it, or
-  close it. That decision is the human's, not the routine's.
-- No open draft → proceed with the top unchecked topic below.
+- An open `news/draft-*` PR exists → do not write a second article. If it
+  passes every condition under "MERGE AUTOMATICALLY" below, merge it and stop
+  for this run — one article a week, and the next run takes the next topic.
+  If it fails any condition, STOP, leave it alone, and report the open PR and
+  the reason.
+- No open draft → proceed with the top unchecked topic below, and merge the
+  finished PR under the same conditions.
+
+## MERGE AUTOMATICALLY
+
+Rich's standing instruction, given 2026-11-11 after the routine stopped on
+PR #110 and waited for him: "Merge it. Do this automatically in the future."
+Before that date the rule was that merging was always his call; this section
+replaces that rule, and it overrides any older wording — in this file or in a
+stored routine prompt — that says not to merge.
+
+Merging publishes to painbeacon.com/news/ and announces the article on Facebook
+and X, and none of that can be taken back. So the routine merges a weekly
+article PR only when ALL of these hold:
+
+- The head branch is `news/draft-*` and the PR changes nothing except one
+  article in `src/content/articles/`, its images under `public/images/news/`,
+  `data/image-registry.json`, and the checkoff line in this file.
+- GitHub reports it mergeable with no conflicts, and every check on the head
+  commit has finished green.
+- Every verification step the routine runs before opening a PR passed. For a
+  draft left by an earlier run, re-run them on that branch rather than trusting
+  the PR description.
+- No review comment or PR comment from a human is unanswered.
+- `date:` and the checkoff date are the merge day (see the next section). If
+  the draft has sat, re-date it on its branch first and wait for the checks.
+
+Squash-merge, as the rest of this repo's history does. Then confirm the article
+is on `main`, and tell Rich what was published, with the link.
+
+If any condition fails, do not merge and do not work around it. Leave the PR
+open and tell Rich which condition failed. To go back to manual merging, delete
+this section and restore the STOP wording in the guard above.
 
 ### If the GitHub API is unreachable
 
