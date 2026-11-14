@@ -22,7 +22,10 @@
     "test:backlinks": "node --test scripts/lib/backlinks.test.mjs",
     "test:feed": "node --test scripts/lib/feed-item.test.mjs",
     "test:oauth": "node --test scripts/lib/oauth1.test.mjs",
-    "test:growth": "node --test scripts/lib/growth.test.mjs"
+    "test:growth": "node --test scripts/lib/growth.test.mjs",
+    "test:research": "node --test src/lib/research-rules.test.mjs scripts/lib/europepmc.test.mjs",
+    "research:find": "node scripts/find-research-candidates.mjs",
+    "research:scaffold": "node scripts/scaffold-research.mjs"
   },
   "dependencies": {
     "@astrojs/rss": "^4.0.19",

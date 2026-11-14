@@ -54,4 +54,61 @@ const articles = defineCollection({
   }),
 });
 
-export const collections = { articles };
+// Featured research at /research/<slug>/. One .md per study in
+// src/content/research/: the frontmatter is the study AS PUBLISHED (title,
+// authors, abstract — quoted, never edited), the body is OUR plain-English
+// summary. The rules that make quoting somebody else's abstract legitimate —
+// a reusable license or a recorded permission, and an abstract that still
+// matches the hash taken when it was fetched — live in src/lib/research-rules.js
+// and fail the build through src/lib/research.js.
+//
+// PainBeacon's own data studies (pain-care-deserts) are NOT in this collection.
+// They are computed at build time from the directory and stay hand-built pages.
+//
+// New entries come from `npm run research:scaffold -- <PMID or DOI>`, which
+// fills every quoted field from Europe PMC and the paper's own license block.
+const research = defineCollection({
+  type: 'content',
+  schema: z.object({
+    // --- ours ---------------------------------------------------------------
+    headline: z.string(), // the page <title> and the card headline: the finding, in plain English
+    dek: z.string(), // meta description
+    cardDek: z.string().optional(), // longer standfirst for the /research/ card; falls back to dek
+    date: z.coerce.date(), // the day WE featured it, not the day it was published
+    draft: z.boolean().optional(), // true keeps it out of the build — see src/lib/research.js
+    crumb: z.string().optional(), // short breadcrumb label; falls back to headline
+    // Funding and conflicts of interest as the paper declares them, in our
+    // words. Required before a licensed study can go live: a device trial
+    // written by the manufacturer's employees is still worth featuring, but
+    // not without saying so.
+    disclosure: z.string().optional(),
+
+    // --- the study, as published ----------------------------------------------
+    studyTitle: z.string(),
+    authors: z
+      .array(z.object({ name: z.string(), url: z.string().url().optional() }))
+      .min(1),
+    journal: z.string(),
+    publisher: z.string().optional(),
+    year: z.number().int(),
+    published: z.coerce.date().optional(), // the paper's own publication date, when known
+    doi: z.string().optional(),
+    pmid: z.string().optional(),
+    pmcid: z.string().optional(),
+    sourceUrl: z.string().url(), // the version of record
+    // Everything up to the journal name: "Ray, B.M. (2026). Title in sentence case."
+    // The template appends the journal in italics and the link.
+    citation: z.string(),
+    abstract: z.string(), // verbatim; paragraphs separated by a blank line
+    abstractSha256: z.string().regex(/^[0-9a-f]{64}$/),
+
+    // --- why we may print it ----------------------------------------------------
+    license: z.enum(['CC BY', 'CC0', 'permission']),
+    licenseUrl: z.string().url().optional(), // required unless license is "permission"
+    copyright: z.string().optional(), // the paper's own copyright statement
+    permissionNote: z.string().optional(), // who agreed, when, and to what. Not rendered.
+    abstractCredit: z.string().optional(), // overrides the generated credit line
+  }),
+});
+
+export const collections = { articles, research };

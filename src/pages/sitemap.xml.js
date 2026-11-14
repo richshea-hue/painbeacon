@@ -1,15 +1,20 @@
 import { getArticles } from '../lib/articles.js';
 import { getClinics, groupBy } from '../lib/data.js';
 import { getMetroIndex } from '../lib/metros.js';
+import { getStudies } from '../lib/research.js';
 import { SITE } from '../lib/site.js';
 import { ALL_TOPICS, MIN_CLINICS_FOR_TOPIC_PAGE } from '../lib/topics.js';
 
 export async function GET() {
   const clinics = await getClinics();
-  const urls = new Set(['/', '/pain-clinics/', '/map/', '/news/', '/research/', '/research/pain-care-deserts/', '/research/chronic-pain-prevalence-2019-2023/', '/how-we-rank/', '/for-practices/', '/advertise/', '/verified-badge/', '/practice-kit/', '/ownership-disclosure/', '/privacy/']);
+  const urls = new Set(['/', '/pain-clinics/', '/map/', '/news/', '/research/', '/research/pain-care-deserts/', '/how-we-rank/', '/for-practices/', '/advertise/', '/verified-badge/', '/practice-kit/', '/ownership-disclosure/', '/privacy/']);
 
   // News articles: /news/[slug]/
   for (const a of await getArticles()) urls.add(`/news/${a.slug}/`);
+
+  // Featured studies: /research/[slug]/. The data studies beside them are
+  // hand-built pages and stay in the static list above.
+  for (const st of await getStudies()) urls.add(`/research/${st.slug}/`);
 
   // State hubs: /pain-clinics/[state]/
   const byState = groupBy(clinics, (c) => c.stateSlug);
