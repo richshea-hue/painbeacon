@@ -1,0 +1,136 @@
+---
+import Base from '../../layouts/Base.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import { breadcrumbLd } from '../../lib/schema.js';
+import { SITE } from '../../lib/site.js';
+import { getStudies } from '../../lib/research.js';
+import { abstractCredit, classifyLicense } from '../../lib/research-rules.js';
+
+// One page per featured study in src/content/research/. Started life as a
+// hand-written page for the first one (Michael Ray's, featured by permission);
+// the layout and wording below are that page's, generalized so the next study
+// is a content file rather than a copy of this one.
+//
+// The page has two voices and keeps them apart: the abstract is the authors',
+// printed unchanged; the summary is ours, and says so twice. Pain care deserts,
+// our own data study, is a separate hand-built page beside this route.
+export async function getStaticPaths() {
+  return (await getStudies()).map((s) => ({ params: { slug: s.slug }, props: { study: s } }));
+}
+
+const { study } = Astro.props;
+const { Content } = await study.render();
+const d = study.data;
+
+const pagePath = `/research/${study.slug}/`;
+const pageUrl = new URL(pagePath, SITE.url).href;
+const byPermission = d.license === 'permission';
+const licenseVersion = byPermission ? null : classifyLicense(d.licenseUrl).version;
+const licenseName = d.license === 'CC0' ? 'CC0' : `CC BY ${licenseVersion}`;
+const journalLine = d.publisher ? `${d.journal} (${d.publisher})` : d.journal;
+const paragraphs = d.abstract.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
+// A consortium paper can have forty authors. The byline names the first three
+// and counts the rest; every one of them is still in the citation at the foot
+// of the page and in the structured data.
+const byline = d.authors.length > 10 ? d.authors.slice(0, 3) : d.authors;
+const unnamed = d.authors.length - byline.length;
+
+const crumbs = [
+  { name: 'Home', href: '/' },
+  { name: 'Research', href: '/research/' },
+  { name: d.crumb || d.headline, href: pagePath },
+];
+
+// mainEntityOfPage names the page this markup DESCRIBES. Pointing it at the
+// journal said our page was not the home of this content while the HTML
+// canonical said it was — two contradictory signals, and we lose that argument.
+// The version of record is still credited, as sameAs and as the link in the
+// body: it is the same work at another URL, which is exactly what sameAs means.
+// scripts/check-structured-data.mjs fails the build if this drifts back.
+const people = d.authors.map((a) => ({ '@type': 'Person', name: a.name, ...(a.url ? { url: a.url } : {}) }));
+const articleLd = {
+  '@context': 'https://schema.org',
+  '@type': 'ScholarlyArticle',
+  headline: d.studyTitle,
+  author: people.length === 1 ? people[0] : people,
+  datePublished: d.published ? d.published.toISOString().slice(0, 10) : String(d.year),
+  isPartOf: {
+    '@type': 'Periodical',
+    name: d.journal,
+    ...(d.publisher ? { publisher: { '@type': 'Organization', name: d.publisher } } : {}),
+  },
+  ...(d.licenseUrl ? { license: d.licenseUrl } : {}),
+  url: pageUrl,
+  mainEntityOfPage: pageUrl,
+  sameAs: d.sourceUrl,
+};
+---
+
+<Base title={d.headline} description={d.dek} jsonld={[breadcrumbLd(crumbs), articleLd]}>
+  <div class="wrap narrow prose">
+    <Breadcrumbs items={crumbs} />
+    <p class="eyebrow">Featured research · Published in {d.journal}</p>
+    <h1>{d.studyTitle}</h1>
+    <p class="muted">
+      {d.authors.length === 1 ? 'Author' : 'Authors'}:{' '}
+      {byline.map((a, i) => (
+        <Fragment>
+          {i > 0 && ', '}
+          {a.url ? <a href={a.url} target="_blank" rel="noopener">{a.name}</a> : a.name}
+        </Fragment>
+      ))}{unnamed > 0 && ` and ${unnamed} co-authors`} ·
+      {journalLine}, {d.year} ·
+      {' '}<a href={d.sourceUrl} target="_blank" rel="noopener">Read the full published article</a>
+    </p>
+
+    <blockquote>
+      {byPermission ? (
+        <Fragment>
+          Featured on PainBeacon with the author's permission. The abstract below is
+          reproduced from the published article; the plain-English summary that follows is
+          written by PainBeacon and reflects our editorial interpretation, not the
+          author's words.
+        </Fragment>
+      ) : (
+        <Fragment>
+          Featured on PainBeacon under the article's open license
+          (<a href={d.licenseUrl} target="_blank" rel="noopener license">{licenseName}</a>).
+          The abstract below is reproduced unchanged from the published article; the
+          plain-English summary that follows is written by PainBeacon and reflects our
+          editorial interpretation, not the authors' words. The authors did not review
+          it and do not endorse PainBeacon.
+        </Fragment>
+      )}
+    </blockquote>
+
+    <h2>Abstract</h2>
+    {paragraphs.map((p) => <p>{p}</p>)}
+    <p class="muted">
+      <em>{abstractCredit(d)} Read the
+      full article at <a href={d.sourceUrl} target="_blank" rel="noopener">{d.journal}</a>.</em>
+    </p>
+
+    <hr class="rule" />
+    <h2>The PainBeacon plain-English summary</h2>
+    <p><em>
+      This summary is ours, not the {d.authors.length === 1 ? "author's" : "authors'"}. For the study itself, see the abstract
+      above and the <a href={d.sourceUrl} target="_blank" rel="noopener">published
+      article</a>.
+    </em></p>
+
+    <Content />
+
+    {d.disclosure && (
+      <Fragment>
+        <h2>Funding and conflicts of interest</h2>
+        <p>{d.disclosure}</p>
+      </Fragment>
+    )}
+
+    <h2>How to cite</h2>
+    <p class="muted">
+      {d.citation} <em>{d.journal}</em>.
+      {' '}<a href={d.sourceUrl} target="_blank" rel="noopener">{d.sourceUrl}</a>
+    </p>
+  </div>
+</Base>

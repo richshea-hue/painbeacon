@@ -277,7 +277,11 @@ p { margin: 0 0 1rem; }
   box-shadow: var(--shadow); text-decoration: none; }
 .article-kicker { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em;
   text-transform: uppercase; color: var(--teal-deep); margin: 0 0 0.5rem; }
-.article-card h2 { font-size: 1.35rem; margin: 0 0 0.4rem; color: var(--ink); }
+.article-card h2, .article-card h3 { font-size: 1.35rem; margin: 0 0 0.4rem; color: var(--ink); }
+/* /research/ groups its cards under section headings, so the card titles there
+   are h3. The feed's own top margin would double up under a heading. */
+.research-section { font-size: 1.05rem; margin: 2.25rem 0 0; color: var(--ink-soft); }
+.research-section + .article-feed { margin-top: 0.9rem; }
 .article-dek { color: var(--ink-soft); margin: 0 0 0.6rem; }
 .article-more { font-size: 0.88rem; font-weight: 600; color: var(--teal-deep); }
 
