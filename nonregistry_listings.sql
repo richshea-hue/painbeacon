@@ -126,4 +126,17 @@ create or replace view public.nonregistry_listings_public as
 
 alter view public.nonregistry_listings_public set (security_invoker = off);
 
+-- READ-ONLY, and this has to be said out loud. Supabase's default privileges
+-- hand anon and authenticated INSERT, UPDATE and DELETE on every new relation
+-- in `public`, views included. A one-table view with a plain WHERE is
+-- auto-updatable in Postgres, and with security_invoker off a write through it
+-- runs as the view's owner, straight past the table's RLS. Left alone, anyone
+-- holding the public key could rewrite a published listing through the view.
+-- (clinics_public carries the same default grants and is safe only because its
+-- JOIN makes it non-updatable.) Found by checking privileges after the first
+-- run on 2026-11-16, before any row existed.
+revoke all on public.nonregistry_listings_public from anon, authenticated;
 grant select on public.nonregistry_listings_public to anon, authenticated;
+
+-- Verify with the anon key: GET on the view returns 200; POST, PATCH and DELETE
+-- on the view, and anything at all on the table, return 401 / 42501.

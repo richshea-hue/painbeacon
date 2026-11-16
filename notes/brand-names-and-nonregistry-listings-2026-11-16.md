@@ -206,10 +206,23 @@ deploy down with 42501 when it was flipped once before.
 
 ## 5. Not verified
 
-- Nothing has been run against the production database. Both SQL files were
-  written against the live schema as read on 2026-11-16 (the view definition,
-  the `is_admin()` function, `claims.id` being a uuid) but neither has been
-  executed.
+- **Both SQL files were run on production on 2026-11-16**, at Rich's
+  instruction, and checked afterwards: `clinics_public` still reads
+  `{security_invoker=off}` with all 14,697 rows and 44 columns, and the anon
+  key reads `brand_name` through it. With the anon key, the new public view
+  returns 200 and an empty list; reading the table, and inserting, updating or
+  deleting through either the table or the view, all return 401 / 42501.
+- That last check caught a real defect in the first version of
+  `nonregistry_listings.sql`: the public view was writable. Supabase grants
+  anon INSERT, UPDATE and DELETE on new views by default, a one-table view is
+  auto-updatable, and a definer view writes past RLS. It was closed with a
+  REVOKE in the same sitting, before any row existed, and the file now carries
+  the revoke and the reason. **Any future one-table public view needs the same
+  two lines.**
+- Supabase's Security Advisor will list `nonregistry_listings_public` as a
+  "Security Definer View", as it does `clinics_public`. That is the intended
+  design. Accepting its suggested fix flips `security_invoker` on, which is
+  the change that once took every deploy down with 42501.
 - The dashboard changes were syntax-checked and read, not exercised signed in.
   The dashboard needs an admin session and, for the new section, the table.
 - The local build uses fictional sample data: one sample clinic carries a
