@@ -39,7 +39,7 @@ export async function GET() {
   const svg =
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${VIEW_BOX}" role="img" ` +
     `aria-label="Map of the United States with a dot at every pain clinic location">` +
-    `<g fill="#ece7db" stroke="#f7f4ed" stroke-width="1" stroke-linejoin="round">${states}</g>` +
+    `<g fill="#dfeaee" stroke="#f1f7f9" stroke-width="1" stroke-linejoin="round">${states}</g>` +
     `<path d="${dots}" fill="none" stroke="#17a08c" stroke-width="3.2" ` +
     `stroke-linecap="round" opacity="0.82"/>` +
     `</svg>`;

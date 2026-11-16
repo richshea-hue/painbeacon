@@ -86,7 +86,7 @@ const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || '';
   .lc-panel { position: absolute; right: 0; bottom: calc(100% + .6rem);
     width: min(360px, calc(100vw - 1.6rem)); max-height: min(560px, calc(100vh - 6rem));
     overflow-y: auto; overscroll-behavior: contain;
-    background: var(--card, #fff); border: 1px solid var(--line, #e3ddcf);
+    background: var(--card, #fff); border: 1px solid var(--line, #d1e0e5);
     border-radius: 16px; box-shadow: 0 16px 44px rgba(15,46,58,.22);
     opacity: 0; visibility: hidden; transform: translateY(10px); pointer-events: none;
     transition: opacity .18s ease, transform .18s ease, visibility .18s; }
@@ -118,13 +118,13 @@ const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || '';
   .lc-bot { margin: .2rem 0 .7rem; }
   .lc-muted { color: var(--ink-faint, #7c8a87); font-weight: 400; }
   .lc-tiny { font-size: .78rem; margin: .1rem 0 .2rem; }
-  .lc-input { width: 100%; padding: .6rem .7rem; margin: .3rem 0; border: 1px solid var(--line, #e3ddcf);
+  .lc-input { width: 100%; padding: .6rem .7rem; margin: .3rem 0; border: 1px solid var(--line, #d1e0e5);
     border-radius: 9px; font-size: 1rem; font-family: inherit; box-sizing: border-box;
-    background: var(--paper, #f7f4ed); color: var(--ink, #1c2b2a); }
+    background: var(--paper, #f1f7f9); color: var(--ink, #1c2b2a); }
   .lc-input:focus { outline: none; border-color: var(--teal, #0e6e62); }
   .lc-options { display: flex; flex-direction: column; gap: .45rem; }
-  .lc-opt { text-align: left; padding: .6rem .75rem; border: 1px solid var(--line, #e3ddcf);
-    border-radius: 9px; background: var(--paper, #f7f4ed); cursor: pointer; font-size: .95rem;
+  .lc-opt { text-align: left; padding: .6rem .75rem; border: 1px solid var(--line, #d1e0e5);
+    border-radius: 9px; background: var(--paper, #f1f7f9); cursor: pointer; font-size: .95rem;
     color: var(--ink, #1c2b2a); font-family: inherit; }
   .lc-opt:hover { border-color: var(--teal, #0e6e62); }
   .lc .btn { margin-top: .5rem; }

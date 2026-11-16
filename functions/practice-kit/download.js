@@ -38,7 +38,7 @@ function page(status, title, body) {
   const html = `<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex">
 <title>${title} — PainBeacon</title>
-<style>body{margin:0;background:#f7f4ed;color:#1c2b2a;font:17px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+<style>body{margin:0;background:#f1f7f9;color:#1c2b2a;font:17px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 main{max-width:34rem;margin:12vh auto;padding:0 1.25rem}h1{font-size:1.5rem;margin:0 0 .6rem}p{margin:0 0 1rem;color:#4c5b59}
 a{color:#0a4f46;font-weight:600}.brand{font-weight:700;color:#0a4f46;margin-bottom:2rem}</style></head>
 <body><main><div class="brand">PainBeacon</div><h1>${title}</h1>${body}
