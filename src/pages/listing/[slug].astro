@@ -1,0 +1,172 @@
+---
+// A non-registry listing: a practice listed at its own request that has no
+// record of its own in the federal NPI registry. See src/lib/listings.js and
+// notes/brand-names-and-nonregistry-listings-2026-11-16.md.
+//
+// This page is not a thinner clinic profile. A clinic profile is assembled
+// from a federal record and says so; this one is what the practice told us,
+// and the first thing it does is say THAT. There is no score, no rank, no
+// rating, no Verified badge, no claim form and no FAQ built from registry
+// fields, because none of those would be true here.
+import Base from '../../layouts/Base.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import ClinicMap from '../../components/ClinicMap.astro';
+import { titleCase, stateName } from '../../lib/data.js';
+import { getListings } from '../../lib/listings.js';
+import { breadcrumbLd } from '../../lib/schema.js';
+import { SITE } from '../../lib/site.js';
+
+export async function getStaticPaths() {
+  return (await getListings()).map((l) => ({ params: { slug: l.slug }, props: { listing: l } }));
+}
+
+const { listing: l } = Astro.props;
+const addr = [l.address_1 && titleCase(l.address_1), l.address_2 && titleCase(l.address_2)].filter(Boolean).join(', ');
+const cityLine = `${l.cityLabel}, ${l.state}${l.zip ? ` ${l.zip}` : ''}`;
+const pageUrl = new URL(`/listing/${l.slug}/`, SITE.url).href;
+const areaHref = l.zoneUrlSlug ? `/pain-clinics/${l.stateSlug}/${l.zoneUrlSlug}/` : `/pain-clinics/${l.stateSlug}/`;
+const areaLabel = l.zoneLabel ? `${l.zoneLabel}, ${l.state}` : stateName(l.state);
+
+const crumbs = [
+  { name: 'Home', href: '/' },
+  { name: 'States', href: '/pain-clinics/' },
+  { name: stateName(l.state), href: `/pain-clinics/${l.stateSlug}/` },
+  ...(l.zoneUrlSlug ? [{ name: l.zoneLabel, href: areaHref }] : []),
+  { name: l.name },
+];
+
+const mapHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${l.name} ${addr} ${l.cityLabel} ${l.state}`)}`;
+const mapMarkers = l.latitude != null && l.longitude != null
+  ? [{ lat: l.latitude, lng: l.longitude, name: l.name, address: [addr, cityLine].filter(Boolean).join(', ') }]
+  : [];
+
+let websiteHost = '';
+if (l.websiteHref) {
+  try { websiteHost = new URL(l.websiteHref).hostname.replace(/^www\./, ''); } catch { websiteHost = ''; }
+}
+// Linked only when this build's Safe Browsing check came back clean, and then
+// nofollow: the followed link is what a verified registry clinic earns by
+// claiming its listing, and a listing we could not check against the registry
+// does not get a better deal than they do.
+const linkableWebsite = (SITE.linkClinicWebsites && l.websiteSafe === true && l.websiteHref) || '';
+
+const description = `${l.name} in ${l.cityLabel}, ${l.state}: ${['address', l.phone && 'phone'].filter(Boolean).join(' and ')}. ` +
+  `Listed on PainBeacon at the practice's request. Not in the federal NPI registry and not ranked.`;
+
+// LocalBusiness, not MedicalClinic: the type is a claim too, and the only
+// thing we know about what this practice does is what it told us.
+const ld = {
+  '@context': 'https://schema.org',
+  '@type': 'LocalBusiness',
+  name: l.name,
+  url: pageUrl,
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: addr,
+    addressLocality: l.cityLabel,
+    addressRegion: l.state,
+    ...(l.zip ? { postalCode: l.zip } : {}),
+    addressCountry: 'US',
+  },
+  ...(l.phone ? { telephone: l.phone } : {}),
+  ...(mapMarkers.length ? { geo: { '@type': 'GeoCoordinates', latitude: l.latitude, longitude: l.longitude } } : {}),
+  ...(l.parent ? { parentOrganization: { '@type': 'MedicalClinic', name: l.parent.name, url: new URL(`/clinic/${l.parent.slug}/`, SITE.url).href } } : {}),
+};
+
+// The embed badge. Built at build time so the page needs no script to show it.
+const badgeSrc = new URL('/brand/listed-badge.svg', SITE.url).href;
+const attr = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const badgeSnippet = [
+  `<a href="${pageUrl}?src=badge"`,
+  `   title="${attr(l.name)} is listed on PainBeacon">`,
+  `  <img src="${badgeSrc}"`,
+  `       alt="${attr(l.name)} is listed on PainBeacon"`,
+  `       width="230" height="60" style="border:0" loading="lazy">`,
+  `</a>`,
+].join('\n');
+---
+<Base title={`${l.name} — ${l.cityLabel}, ${l.state}`}
+      description={description}
+      jsonld={[breadcrumbLd(crumbs), ld]}>
+  <div class="wrap narrow">
+    <Breadcrumbs items={crumbs} />
+
+    <div class="profile-head">
+      <div>
+        {l.practiceType && <p class="eyebrow">{l.practiceType}</p>}
+        <h1 style="margin-bottom:0.25rem;">{l.name}</h1>
+        <p class="badges"><span class="badge-listed">Listed · not ranked</span></p>
+        <p class="nap">
+          <strong>{addr || 'Address not supplied'}</strong><br />
+          {cityLine}<br />
+          {l.phone && <>{l.phone}<br /></>}
+          {websiteHost && (linkableWebsite
+            ? <a href={linkableWebsite} rel="nofollow noopener" target="_blank">{websiteHost} ↗</a>
+            : <span class="muted" style="font-size:0.9rem;">{websiteHost}</span>)}
+        </p>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:0.6rem;margin:1.5rem 0;flex-wrap:wrap;">
+      <a class="btn ghost" href={mapHref} rel="nofollow noopener" target="_blank">Get directions</a>
+      {l.phone && <a class="btn ghost" href={`tel:${l.phone.replace(/[^0-9+]/g, '')}`}>Call</a>}
+    </div>
+
+    <aside class="listing-note">
+      <h2>About this listing</h2>
+      <p>
+        {l.name} asked to be listed on PainBeacon.
+        {l.parent
+          ? <> It is an additional location of <a href={`/clinic/${l.parent.slug}/`}>{l.parent.name}</a> in {l.parent.cityLabel}, {l.parent.state}, which is in the federal NPI registry. This location has no registry record of its own.</>
+          : <> It has no record of its own in the federal NPI registry.</>}
+      </p>
+      <p>
+        PainBeacon’s <a href="/how-we-rank/">rankings</a> are built from that registry, so this practice
+        is shown separately and is <strong>not ranked</strong>. The details on this page were supplied
+        by the practice and confirmed with it directly. They are not drawn from the registry, and we
+        have not reviewed the practice’s credentials or care.
+      </p>
+    </aside>
+
+    {l.description && (
+      <section>
+        <h2>From the practice</h2>
+        <p>{l.description}</p>
+      </section>
+    )}
+
+    <ClinicMap markers={mapMarkers} zoom={14} />
+
+    <p class="listing-more">
+      Looking for ranked options? See <a href={areaHref}>pain clinics in {areaLabel}</a>.
+    </p>
+
+    <details class="listing-badge">
+      <summary>Is this your practice? Add a “Listed on PainBeacon” badge to your website</summary>
+      <div class="badge-preview">
+        <img src="/brand/listed-badge.svg" alt="Listed on PainBeacon" width="230" height="60" />
+      </div>
+      <p>Copy this into your site wherever you’d like the badge to appear. It’s a plain image and
+        link back to this page: no scripts and no tracking. It’s optional, and your listing doesn’t
+        depend on it.</p>
+      <textarea class="listing-code" rows="6" readonly spellcheck="false" set:text={badgeSnippet}></textarea>
+      <p class="muted">Something on this page out of date, or want the listing taken down?
+        Tell us through the <a href="/for-practices/">practice contact form</a>.</p>
+    </details>
+  </div>
+
+  <style>
+    .listing-note { margin:1.5rem 0; padding:1rem 1.15rem; border:1px solid var(--line); border-left:3px solid var(--amber);
+      border-radius:4px; background:var(--card); }
+    .listing-note h2 { font-size:1.05rem; margin:0 0 .5rem; }
+    .listing-note p { margin:0 0 .6rem; font-size:.95rem; color:var(--ink-soft); }
+    .listing-note p:last-child { margin-bottom:0; }
+    .listing-more { margin:1.5rem 0; }
+    .listing-badge { margin:2rem 0; padding:.9rem 1.15rem; border:1px solid var(--line); border-radius:4px; background:var(--card); }
+    .listing-badge summary { cursor:pointer; font-weight:600; }
+    .listing-badge .badge-preview { margin:1rem 0; padding:1.25rem; border:1px dashed var(--line); border-radius:14px;
+      background:var(--paper-2); display:flex; justify-content:center; }
+    .listing-code { width:100%; font-family:var(--mono); font-size:.78rem; line-height:1.5; padding:.7rem .8rem;
+      border:1px solid var(--line); border-radius:9px; background:var(--paper); color:var(--ink); resize:vertical; }
+  </style>
+</Base>

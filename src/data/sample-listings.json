@@ -1,0 +1,36 @@
+[
+  {
+    "slug": "ri-warwick-ocean-state-pain-relief-sample",
+    "name": "Ocean State Pain Relief (Sample)",
+    "practice_type": "Pain management",
+    "address_1": "75 Centerville Rd",
+    "address_2": "Suite 4",
+    "city": "Warwick",
+    "state": "RI",
+    "postal_code": "02886",
+    "phone": "4015550142",
+    "website": "example.com",
+    "description": "Second office of the Providence practice. Open Tuesday and Friday.",
+    "parent_npi": 1000000002,
+    "latitude": 41.7,
+    "longitude": -71.46,
+    "updated_at": "2026-11-16T00:00:00Z"
+  },
+  {
+    "slug": "ri-cranston-narragansett-family-chiropractic-sample",
+    "name": "Narragansett Family Chiropractic (Sample)",
+    "practice_type": "Chiropractic",
+    "address_1": "20 Sockanosset Cross Rd",
+    "address_2": null,
+    "city": "Cranston",
+    "state": "RI",
+    "postal_code": "02920",
+    "phone": "401-555-0188",
+    "website": null,
+    "description": null,
+    "parent_npi": null,
+    "latitude": null,
+    "longitude": null,
+    "updated_at": "2026-11-16T00:00:00Z"
+  }
+]

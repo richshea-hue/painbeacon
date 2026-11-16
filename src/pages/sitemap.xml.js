@@ -1,5 +1,6 @@
 import { getArticles } from '../lib/articles.js';
 import { getClinics, groupBy } from '../lib/data.js';
+import { getListings } from '../lib/listings.js';
 import { getMetroIndex } from '../lib/metros.js';
 import { getStudies } from '../lib/research.js';
 import { SITE } from '../lib/site.js';
@@ -50,6 +51,10 @@ export async function GET() {
 
   // Clinic profiles: /clinic/[slug]/ (built for every clinic)
   for (const c of clinics) urls.add(`/clinic/${c.slug}/`);
+
+  // Non-registry listings: /listing/[slug]/. A handful of hand-reviewed pages,
+  // each published only after the practice itself confirmed it.
+  for (const l of await getListings()) urls.add(`/listing/${l.slug}/`);
 
   const body =
     `<?xml version="1.0" encoding="UTF-8"?>\n` +
