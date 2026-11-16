@@ -2,7 +2,7 @@
 // PRIMARY clinic that has coordinates, as a compact array-of-arrays:
 //
 //   [lat, lng, "Clinic Name", "clinic-slug", "City, ST", "02906",
-//    score, tier, rating, reviews, "480-1020|480-1020|...|", disc, medicare]
+//    score, tier, rating, reviews, "480-1020|480-1020|...|", disc, medicare, aka]
 //
 //   score   0-100 rank from src/lib/ranking.js, rounded — lets the map's
 //           results list order itself with no second request
@@ -21,6 +21,13 @@
 //           file is not evidence of refusal, so the map offers "Accepts
 //           Medicare" and no opposite. See src/lib/insurance.js.
 //
+//   aka     the registered name, present ONLY when the name in slot 2 is a
+//           verified brand name standing in front of it (see publicName in
+//           src/lib/data.js). The map's search box matches either, so a
+//           practice is findable under the name on its door and the name on
+//           its federal record. Omitted, not "", for every other row: it is
+//           the last slot, so leaving it off costs nothing at directory scale.
+//
 // Kept deliberately lean — this file is fetched by the map page for every
 // visitor, and at directory scale the field names would outweigh the data.
 // Coordinates are rounded to 5 decimal places (~1 m), the ZIP is included so
@@ -29,7 +36,7 @@
 // Built inside the Astro build (same getClinics() call as the pages) so the
 // slugs here always match the clinic pages actually being generated.
 
-import { getClinics, displayName } from '../lib/data.js';
+import { getClinics, publicName, registeredAs } from '../lib/data.js';
 import { scoreClinic } from '../lib/ranking.js';
 import { disciplineMask } from '../lib/practice-type.js';
 import { acceptsMedicare } from '../lib/insurance.js';
@@ -95,7 +102,7 @@ export async function GET() {
     .map((c) => [
       round5(Number(c.latitude)),
       round5(Number(c.longitude)),
-      displayName(c.name),
+      publicName(c),
       c.slug || '',
       `${c.cityLabel}, ${c.state}`,
       zip5(c.postal_code),
@@ -106,6 +113,7 @@ export async function GET() {
       encodeHours(c.hours),
       disciplineMask(c),
       acceptsMedicare(c) === true ? 1 : 0,
+      ...(registeredAs(c) ? [registeredAs(c)] : []),
     ])
     .filter((r) => Number.isFinite(r[0]) && Number.isFinite(r[1]));
 

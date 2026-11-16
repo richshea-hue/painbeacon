@@ -671,7 +671,10 @@ import { DISCIPLINES } from '../lib/practice-type.js';
           }
           var clinics = [];
           for (var i = 0; i < rows.length && clinics.length < 6; i++) {
-            if (rows[i][2].toLowerCase().indexOf(s) !== -1) clinics.push(i);
+            // Slot 13 is the registered name, present only where a verified
+            // brand name leads (map-clinics.json.js): match under either.
+            if (rows[i][2].toLowerCase().indexOf(s) !== -1 ||
+                (rows[i][13] && rows[i][13].toLowerCase().indexOf(s) !== -1)) clinics.push(i);
           }
           return { cities: cities, clinics: clinics, zip: null, state: null };
         }
@@ -741,7 +744,7 @@ import { DISCIPLINES } from '../lib/practice-type.js';
           if (m.clinics.length) {
             group('Clinics');
             m.clinics.forEach(function (i) {
-              add('clinic', rows[i][2], rows[i][4], function () { goClinic(i); });
+              add('clinic', rows[i][2], (rows[i][13] ? 'registered as ' + rows[i][13] + ' · ' : '') + rows[i][4], function () { goClinic(i); });
             });
           }
           out.hidden = !any;

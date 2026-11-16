@@ -3,7 +3,7 @@
 // is both an E-E-A-T signal and a rich-result lever for YMYL.
 
 import { SITE } from './site.js';
-import { titleCase, displayName } from './data.js';
+import { titleCase, publicName, registeredAs } from './data.js';
 
 export function breadcrumbLd(items) {
   return {
@@ -28,7 +28,7 @@ export function clinicLd(c, canonicalUrl) {
   const ld = {
     '@context': 'https://schema.org',
     '@type': 'MedicalClinic',
-    name: displayName(c.name),
+    name: publicName(c),
     // Folded duplicates pass their primary's canonical URL so the structured
     // data agrees with the <link rel="canonical"> tag; everyone else
     // self-references as before.
@@ -43,6 +43,13 @@ export function clinicLd(c, canonicalUrl) {
       addressCountry: c.country || 'US',
     },
   };
+  // A verified brand name leads; the registry's name stays on the record as the
+  // legal name, so the entity is the same one under either search.
+  const registered = registeredAs(c);
+  if (registered) {
+    ld.legalName = registered;
+    ld.alternateName = registered;
+  }
   if (c.phone) ld.telephone = c.phone;
   // sameAs only for URLs that passed the build-time Safe Browsing check —
   // an unvalidated or flagged URL never appears in structured data either.
@@ -112,7 +119,7 @@ export function itemListLd(clinics, baseName) {
       '@type': 'ListItem',
       position: i + 1,
       url: new URL(`/clinic/${c.slug}/`, SITE.url).href,
-      name: displayName(c.name),
+      name: publicName(c),
     })),
   };
 }
