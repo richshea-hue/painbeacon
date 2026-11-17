@@ -4,13 +4,15 @@ import Breadcrumbs from '../../../components/Breadcrumbs.astro';
 import ClinicCard from '../../../components/ClinicCard.astro';
 import ClinicMap from '../../../components/ClinicMap.astro';
 import SponsorCard from '../../../components/SponsorCard.astro';
-import { getClinics, groupBy, stateName, titleCase, displayName } from '../../../lib/data.js';
+import { getClinics, groupBy, stateName, titleCase, publicName } from '../../../lib/data.js';
 import { rankClinics } from '../../../lib/ranking.js';
 import { isRankable } from '../../../lib/practice-type.js';
 import PracticeFilter from '../../../components/PracticeFilter.astro';
 import { breadcrumbLd, itemListLd } from '../../../lib/schema.js';
 import { getMetroIndex } from '../../../lib/metros.js';
 import { metroLabel, bestMetroFor } from '../../../lib/metro-defs.js';
+import ListedCard from '../../../components/ListedCard.astro';
+import { getListingsByZone } from '../../../lib/listings.js';
 
 export async function getStaticPaths() {
   const clinics = await getClinics();
@@ -18,17 +20,21 @@ export async function getStaticPaths() {
   // NPPES records never appear twice or inflate the count.
   const primaries = clinics.filter((c) => c.isPrimary && c.zoneSlug);
   const byZone = groupBy(primaries, (c) => c.zoneSlug);
-  return [...byZone.entries()].map(([, list]) => {
+  // Non-registry listings that fall in this area. They ride along as their own
+  // prop and are never merged into `clinics`: everything below that counts,
+  // ranks, maps or filters reads `clinics`, and none of it should see them.
+  const listedByZone = await getListingsByZone();
+  return [...byZone.entries()].map(([zoneSlug, list]) => {
     const c0 = list[0];
     return {
       params: { state: c0.stateSlug, zone: c0.zoneUrlSlug },
-      props: { clinics: list },
+      props: { clinics: list, listed: listedByZone.get(zoneSlug) || [] },
     };
   });
 }
 
 const { state, zone } = Astro.params;
-const { clinics } = Astro.props;
+const { clinics, listed: nonRegistry = [] } = Astro.props;
 const c0 = clinics[0];
 const name = stateName(c0.state);
 const zoneLabel = c0.zoneLabel;
@@ -62,7 +68,7 @@ const mapMarkers = ranked
   .map((c) => ({
     lat: c.latitude,
     lng: c.longitude,
-    name: displayName(c.name),
+    name: publicName(c),
     slug: c.slug,
     // Street line included so that clinics sharing a building — which the map
     // groups onto one pin — are told apart by their suite in the popup.
@@ -131,6 +137,27 @@ const crumbs = [
         </p>
         <ul class="clinic-list">
           {alsoHere.map((c) => <ClinicCard clinic={c} />)}
+        </ul>
+      </section>
+    )}
+
+    {/* Practices listed at their own request that have no record of their own
+        in the federal registry (src/lib/listings.js). Last on the page, under
+        its own heading, unnumbered, and outside the practice filter: they
+        declared no taxonomy to filter on, and they are not part of the list
+        the count and the ranking above describe. */}
+    {nonRegistry.length > 0 && (
+      <section class="also-here listed-here">
+        <h2>Listed, not ranked</h2>
+        <p class="also-note">
+          {nonRegistry.length === 1 ? 'This practice' : 'These practices'} asked to be listed.
+          {nonRegistry.length === 1 ? ' It has' : ' They have'} no record of {nonRegistry.length === 1 ? 'its' : 'their'} own
+          in the federal NPI registry, which is what our <a href="/how-we-rank/">rankings</a> are built
+          from, so {nonRegistry.length === 1 ? 'it is' : 'they are'} shown separately and
+          {nonRegistry.length === 1 ? ' is' : ' are'} not ranked against the clinics above.
+        </p>
+        <ul class="clinic-list">
+          {nonRegistry.map((l) => <ListedCard listing={l} />)}
         </ul>
       </section>
     )}

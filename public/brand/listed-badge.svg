@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="230" height="60" viewBox="0 0 230 60" role="img" aria-label="Listed on PainBeacon">
+  <!-- Embed badge for non-registry listings. Same shape as verified-badge.svg
+       and deliberately a different claim: this one says "listed" and nothing
+       more. No check mark and no "verified" - a practice with no record of
+       its own in the federal NPI registry has not been verified against one.
+       Self-contained: system fonts only, no external requests. -->
+  <rect x="1" y="1" width="228" height="58" rx="12" fill="#fffefb" stroke="#e3ddcf" stroke-width="2"/>
+  <circle cx="30" cy="30" r="15" fill="none" stroke="#0e6e62" stroke-width="2.6"/>
+  <circle cx="30" cy="30" r="5.2" fill="#0e6e62"/>
+  <text x="54" y="26" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="600" letter-spacing="1.6" fill="#4c5b59">LISTED ON</text>
+  <text x="54" y="45" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="16" font-weight="700" letter-spacing="-0.2" fill="#1c2b2a">PainBeacon<tspan fill="#0e6e62">.</tspan></text>
+</svg>

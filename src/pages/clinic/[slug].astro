@@ -4,22 +4,33 @@ import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import ClinicMap from '../../components/ClinicMap.astro';
 import ClaimProfile from '../../components/ClaimProfile.astro';
 import SponsorCard from '../../components/SponsorCard.astro';
-import { getClinics, titleCase, displayName, stateName } from '../../lib/data.js';
+import { getClinics, titleCase, publicName, registeredAs, stateName } from '../../lib/data.js';
 import { acceptsMedicare as acceptsMedicareOf } from '../../lib/insurance.js';
 import { scoreClinic, scoreBand } from '../../lib/ranking.js';
 import { breadcrumbLd, clinicLd } from '../../lib/schema.js';
 import { SITE } from '../../lib/site.js';
+import { getListingsByParent } from '../../lib/listings.js';
 
 export async function getStaticPaths() {
   const clinics = await getClinics();
   // Build a lookup by NPI once, so every page can resolve its primary's slug
   // (for folded duplicates) without re-scanning the full list per page.
   const byNpi = new Map(clinics.map((c) => [c.npi, c]));
-  return clinics.map((c) => ({ params: { slug: c.slug }, props: { clinic: c, byNpi } }));
+  // Extra locations of this practice that have no registry record of their own
+  // (non-registry listings whose parent_npi is this clinic).
+  const extraByNpi = await getListingsByParent();
+  return clinics.map((c) => ({
+    params: { slug: c.slug },
+    props: { clinic: c, byNpi, otherLocations: extraByNpi.get(String(c.npi)) || [] },
+  }));
 }
 
-const { clinic: c, byNpi } = Astro.props;
-const name = displayName(c.name);
+const { clinic: c, byNpi, otherLocations = [] } = Astro.props;
+// The name patients know the practice by when a verified claim supplied one,
+// otherwise the registered name. registeredName is set only in the first case,
+// and is then printed beside it: see publicName in src/lib/data.js.
+const name = publicName(c);
+const registeredName = registeredAs(c);
 const interventional = (c.all_taxonomy_codes || '').includes('208VP0014X');
 const { score } = scoreClinic(c);
 const band = scoreBand(score);
@@ -113,7 +124,8 @@ const fullAddr = [addr, `${c.cityLabel}, ${c.state} ${(c.postal_code || '').slic
 faqs.push({
   q: `Where is ${name} located?`,
   a: `${name} is a pain medicine clinic located at ${fullAddr}.` +
-     (c.phone ? ` You can reach the office at ${c.phone}.` : ''),
+     (c.phone ? ` You can reach the office at ${c.phone}.` : '') +
+     (registeredName ? ` It is registered in the federal NPI registry as ${registeredName}.` : ''),
 });
 
 faqs.push({
@@ -172,7 +184,7 @@ if (ins.length > 0) {
 // every profile: no clinic has credentials on file, over half have no reviews,
 // and the reviews that exist are Google's, not ours to call verified.
 const listOf = (xs) => xs.length < 3 ? xs.join(' and ') : `${xs.slice(0, -1).join(', ')}, and ${xs.at(-1)}`;
-const description = `${name}, a pain medicine practice in ${c.cityLabel}, ${c.state}: ` +
+const description = `${name}${registeredName ? ` (registered as ${registeredName})` : ''}, a pain medicine practice in ${c.cityLabel}, ${c.state}: ` +
   listOf(['address', c.phone && 'phone', c.hours && 'hours', c.aggregate_rating && 'Google rating',
     acceptsMedicare != null && 'Medicare status'].filter(Boolean)) + '.';
 const fromGoogle = [c.latitude != null && 'map location', c.hours && 'hours',
@@ -189,6 +201,9 @@ const fromGoogle = [c.latitude != null && 'map location', c.hours && 'hours',
       <div>
         <p class="eyebrow">{specialtyLabel}</p>
         <h1 style="margin-bottom:0.25rem;">{name}</h1>
+        {registeredName && (
+          <p class="registered-as">Registered in the federal NPI registry as <strong>{registeredName}</strong></p>
+        )}
         {isVerified && (
           <p class="badges">
             <span class="badge-verified">✓ Verified</span>
@@ -261,6 +276,19 @@ const fromGoogle = [c.latitude != null && 'map location', c.hours && 'hours',
     )}
 
     <ClinicMap markers={mapMarkers} height="320px" zoom={15} />
+
+    {otherLocations.length > 0 && (
+      <section class="other-locations">
+        <h2>Other locations</h2>
+        <p class="muted">Supplied by the practice. {otherLocations.length === 1 ? 'This location has' : 'These locations have'} no
+          federal registry record of {otherLocations.length === 1 ? 'its' : 'their'} own, so {otherLocations.length === 1 ? 'it is' : 'they are'} listed separately and not ranked.</p>
+        <ul>
+          {otherLocations.map((l) => (
+            <li><a href={`/listing/${l.slug}/`}>{[l.address_1 && titleCase(l.address_1), l.cityLabel, l.state].filter(Boolean).join(', ')}</a></li>
+          ))}
+        </ul>
+      </section>
+    )}
 
     <ul class="facts">
       <li><div class="k">Specialty</div><div class="v">{interventional ? 'Interventional pain' : 'Pain medicine'}</div></li>

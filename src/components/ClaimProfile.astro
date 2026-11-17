@@ -56,6 +56,15 @@ const { npi = '', slug = '', clinicName = 'this practice' } = Astro.props;
       </span>
       <input class="claim-in" data-f="website" type="url" inputmode="url" autocomplete="url" placeholder="https://yourclinic.com" />
     </label>
+    <label class="claim-web">
+      <span class="claim-web-head">Name patients know you by
+        <span class="claim-muted">(only if it differs from {clinicName})</span>
+        <span class="claim-pub-badge">shown publicly on your listing</span>
+      </span>
+      <input class="claim-in" data-f="brand_name" type="text" maxlength="80" autocomplete="organization" placeholder="The name on your door and website" />
+      <span class="claim-muted">Listings use the legal name in the federal NPI registry. Once you’re verified, your
+        own name leads and the registered name stays beside it, so patients find you under either.</span>
+    </label>
     <label>What are you interested in?
       <select class="claim-in" data-f="interest">
         <option value="Claim &amp; verify (free)">Claim &amp; verify my listing (free)</option>
@@ -186,7 +195,12 @@ const { npi = '', slug = '', clinicName = 'this practice' } = Astro.props;
         phone: get('phone'),
         interest: get('interest'),
         website: normWebsite(get('website')),
-        message: get('message'),
+        // The brand name rides in the message as one labeled line, not a column
+        // of its own: this is the anonymous public write, and a column the
+        // database does not have yet would turn every claim into a silent 400.
+        // The dashboard reads the line back (brandFromMessage).
+        message: [get('brand_name') && 'Known to patients as: ' + get('brand_name').replace(/\s+/g, ' '), get('message')]
+          .filter(Boolean).join('\n'),
         source_page: location.pathname + location.search,
         user_agent: navigator.userAgent,
       };

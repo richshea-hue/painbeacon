@@ -181,6 +181,11 @@ p { margin: 0 0 1rem; }
 .clinic h3 { margin: 0 0 0.2rem; font-size: 1.18rem; }
 .clinic h3 a { color: var(--ink); }
 .clinic .meta { font-size: 0.88rem; color: var(--ink-soft); margin: 0; }
+/* The registry's name, printed beside a verified brand name (publicName in
+   src/lib/data.js). Quiet, but never hidden: it is the provenance. */
+.registered-as { font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 0.6rem; }
+.registered-as strong { font-weight: 600; color: var(--ink); }
+.clinic .registered-as { font-size: 0.82rem; margin: 0 0 0.15rem; }
 .clinic .tags { margin-top: 0.5rem; display: flex; flex-wrap: wrap; gap: 0.4rem; }
 .tag { font-size: 0.72rem; letter-spacing: 0.03em; padding: 0.15rem 0.5rem; border-radius: 3px;
   background: var(--paper-2); color: var(--ink-soft); border: 1px solid var(--line-soft); }
@@ -317,6 +322,17 @@ hr.rule { border: 0; border-top: 1px solid var(--line); margin: 2.5rem 0; }
 
 /* ---- verified badge + enhanced (paid) listing block ---- */
 .badges { display: flex; gap: 0.4rem; margin: 0.1rem 0 0.5rem; }
+/* Non-registry listings (src/lib/listings.js). Amber, never the teal of
+   Verified: the two must not be mistakable for each other at a glance. */
+.badge-listed, .tag.listed-tag { font-weight: 600; color: #6b4a22;
+  background: color-mix(in srgb, var(--amber, #b86f2e) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--amber, #b86f2e) 40%, transparent); }
+.badge-listed { display: inline-flex; align-items: center; font-size: 0.78rem;
+  padding: 0.15rem 0.55rem; border-radius: 999px; }
+.other-locations { margin: 1.5rem 0; }
+.other-locations h2 { font-size: 1.05rem; margin: 0 0 0.35rem; }
+.other-locations p { font-size: 0.9rem; margin: 0 0 0.5rem; }
+.other-locations ul { margin: 0; padding-left: 1.1rem; }
 .badge-verified { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.78rem;
   font-weight: 600; color: var(--teal-deep, #0a4f46); padding: 0.15rem 0.55rem; border-radius: 999px;
   background: color-mix(in srgb, var(--teal, #0e6e62) 16%, transparent);

@@ -1,0 +1,28 @@
+---
+// A non-registry listing on an area page (see src/lib/listings.js).
+//
+// Deliberately NOT a ClinicCard, though it sits in the same list markup. A
+// ClinicCard carries a rank slot, a rating, a Verified tag and the filter
+// attributes, and every one of those would say something about this practice
+// that is not true: it is not ranked, we hold no rating for it, nobody
+// verified it against the registry, and it declared no taxonomy to filter on.
+// The empty rank column is kept so the card lines up with the ones above it.
+import { titleCase } from '../lib/data.js';
+const { listing: l } = Astro.props;
+---
+<li class="clinic listed">
+  <div class="rank-badge"></div>
+  <div>
+    <h3><a href={`/listing/${l.slug}/`}>{l.name}</a></h3>
+    <p class="meta">
+      {[l.address_1 && titleCase(l.address_1), l.cityLabel, l.state].filter(Boolean).join(', ')}
+      {l.phone && <> · {l.phone}</>}
+    </p>
+    <div class="tags">
+      <span class="tag listed-tag">Listed · not ranked</span>
+      {l.practiceType && <span class="tag">{l.practiceType}</span>}
+      {l.parent && <span class="tag">Additional location</span>}
+    </div>
+  </div>
+  <div class="rating"><div class="count">{l.parent ? 'No registry record for this location' : 'Not in the NPI registry'}</div></div>
+</li>

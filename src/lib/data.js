@@ -231,6 +231,53 @@ const NAME_ACRONYMS = [
 const NAME_ACRONYM_RE = new RegExp(`\\b(${NAME_ACRONYMS.join('|')})\\b`, 'gi');
 export const displayName = (s) => titleCase(s).replace(NAME_ACRONYM_RE, (m) => m.toUpperCase());
 
+// The name patients know a practice by, next to the name the registry holds.
+//
+// The federal record carries a LEGAL name, and for a lot of practices that is
+// not what is on the door. The case that prompted this: "Interventional Pain
+// Management" in Houston is registered as M&M CLINICAL GROUP. Nobody searches
+// for the second one, and its own marketing firm could not find the listing.
+//
+// So a clinic may carry `brand_name`. Three rules keep that from weakening the
+// one claim every page rests on, that listings come from the registry:
+//
+//   1. It is honored only on a verified (or paid) listing. It arrives through a
+//      claim we confirmed with the practice, never from a guess or a match, and
+//      it stops printing the day the listing stops being verified.
+//   2. The registered name never goes away. Wherever the brand name leads, the
+//      registered name follows, labeled as such: on the profile, on cards, in
+//      structured data (legalName) and in the map's search index. That is also
+//      what makes the practice findable under either name.
+//   3. The slug does not change. The URL was minted from the registered name and
+//      is what the NPI maps to everywhere else (kit links, badge links, the
+//      sitemap); renaming it would break every link the practice already has.
+//
+// A brand name is printed as the practice typed it, not title-cased: "iSpine"
+// and "MD Pain Care" are theirs to capitalize.
+export const VERIFIED_TIERS = new Set(['verified', 'enhanced', 'featured']);
+const nameKey = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+
+export function cleanBrandName(raw, registered = '') {
+  const s = String(raw ?? '').replace(/\s+/g, ' ').trim();
+  if (s.length < 2 || s.length > 80) return null;
+  // A name, not a pitch: no links, addresses of any kind, markup or phone numbers.
+  if (/https?:|www\.|@|[<>{}]|\d{3}[\s.-]?\d{3}[\s.-]?\d{4}/i.test(s)) return null;
+  if (!/[a-z]/i.test(s)) return null;
+  // Same name as the registry's, give or take punctuation and case: nothing to add.
+  if (nameKey(s) === nameKey(registered)) return null;
+  return s;
+}
+
+export const brandNameOf = (c) =>
+  c && VERIFIED_TIERS.has(c.listing_tier) ? cleanBrandName(c.brand_name, c.name) : null;
+
+// What to call the practice everywhere a single name is printed.
+export const publicName = (c) => brandNameOf(c) || displayName(c.name);
+
+// The registered name, but only when a brand name is standing in front of it.
+// Null means "the name you already printed IS the registered one".
+export const registeredAs = (c) => (brandNameOf(c) ? displayName(c.name) : null);
+
 // 22% of phones arrive as bare digits ("8178775353"), the rest as 817-877-5353.
 // Print them all the second way. Anything that isn't a plain ten-digit US number
 // (an extension, a letter) is left exactly as it came.

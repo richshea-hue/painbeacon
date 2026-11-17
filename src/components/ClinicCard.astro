@@ -1,5 +1,5 @@
 ---
-import { isPainPrimary, titleCase, displayName } from '../lib/data.js';
+import { isPainPrimary, titleCase, publicName, registeredAs } from '../lib/data.js';
 import { disciplineAttr } from '../lib/practice-type.js';
 import { medicareAttr } from '../lib/insurance.js';
 const { clinic, rank } = Astro.props;
@@ -14,6 +14,9 @@ const interventional = (c.all_taxonomy_codes || '').includes('208VP0014X');
 // it, so the extra tag would only repeat itself.
 const showPracticeType = Boolean(c.primary_taxonomy_desc)
   && (!isPainPrimary(c) || !interventional);
+// Set only when a verified brand name leads; the card then says so, which is
+// also what lets someone find the practice on this page under either name.
+const registeredName = registeredAs(c);
 const stars = c.aggregate_rating ? '★'.repeat(Math.round(Number(c.aggregate_rating))) : '';
 ---
 {/* data-disciplines carries EVERY discipline this practice declared, not
@@ -25,8 +28,9 @@ const stars = c.aggregate_rating ? '★'.repeat(Math.round(Number(c.aggregate_ra
 <li class="clinic" data-disciplines={disciplineAttr(c)} data-medicare={medicareAttr(c)}>
   <div class="rank-badge">{rank || ''}</div>
   <div>
-    <h3><a href={`/clinic/${c.slug}/`}>{displayName(c.name)}</a>
+    <h3><a href={`/clinic/${c.slug}/`}>{publicName(c)}</a>
     </h3>
+    {registeredName && <p class="meta registered-as">Registered as {registeredName}</p>}
     <p class="meta">
       {[c.address_1 && titleCase(c.address_1), c.cityLabel, c.state].filter(Boolean).join(', ')}
       {c.phone && <> · {c.phone}</>}

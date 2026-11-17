@@ -122,11 +122,30 @@ const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
     .tag.featured { background: rgba(245,185,74,.18); color: var(--amber); }
     .tag.enhanced { background: rgba(45,212,191,.16); color: var(--teal); }
     .tag.verified { background: rgba(78,201,138,.16); color: var(--green); }
-    select.ctl {
+    select.ctl, input.ctl {
       background: var(--bg); border: 1px solid var(--line); color: var(--ink);
       border-radius: 8px; padding: 8px 10px; font-size: 14px; font-weight: 600;
     }
-    select.ctl:focus { outline: none; border-color: var(--teal); }
+    input.ctl { font-weight: 500; min-width: 190px; }
+    select.ctl:focus, input.ctl:focus { outline: none; border-color: var(--teal); }
+
+    /* Non-registry listings: the add/edit form */
+    .nr-form { margin-top: 12px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
+    .nr-form summary { cursor: pointer; font-weight: 700; }
+    .nr-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px 12px; margin: 14px 0; }
+    .nr-grid label { display: block; font-size: 12px; color: var(--muted); }
+    .nr-grid label.wide { grid-column: 1 / -1; }
+    .nr-grid input, .nr-grid textarea, .nr-grid select {
+      display: block; width: 100%; margin-top: 4px; background: var(--bg); border: 1px solid var(--line);
+      color: var(--ink); border-radius: 8px; padding: 8px 10px; font-size: 14px; font-family: inherit;
+    }
+    .nr-grid input:focus, .nr-grid textarea:focus { outline: none; border-color: var(--teal); }
+    .nr-note { font-size: 13px; color: var(--muted); margin: 6px 0 0; }
+    .nr-err { color: var(--red); font-size: 13px; margin: 8px 0 0; min-height: 18px; white-space: pre-line; }
+    .tag.published { background: rgba(78,201,138,.16); color: var(--green); }
+    .tag.draft { background: rgba(245,185,74,.18); color: var(--amber); }
+    .btn-mini { background: transparent; color: var(--teal); border: 1px solid var(--line); border-radius: 7px; padding: 7px 12px; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .btn-mini:hover { border-color: var(--teal); }
     .saved { font-size: 12px; color: var(--green); opacity: 0; transition: opacity .2s; }
     .saved.show { opacity: 1; }
 
@@ -191,6 +210,44 @@ const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
           <div id="paid" class="list"></div>
         </section>
 
+        <section id="nrSection">
+          <div class="sec-head"><h2>Listed, not ranked</h2><span id="nrPill" class="pill">0</span></div>
+          <div id="nr" class="list"></div>
+          <details id="nrFormWrap" class="nr-form">
+            <summary id="nrFormTitle">Add a non-registry listing</summary>
+            <p class="nr-note">For a practice that asked to be listed and has no record of its own in the federal NPI
+              registry. It gets its own page at /listing/…/ and a labeled spot below the ranked list on its area page.
+              It is never ranked and never called verified. Check the registry first: if the practice has an NPI with a
+              pain taxonomy it belongs in the ranked directory, not here.</p>
+            <input type="hidden" id="nr-id" /><input type="hidden" id="nr-claim_id" />
+            <div class="nr-grid">
+              <label>Practice name<input id="nr-name" maxlength="120" /></label>
+              <label>Practice type (e.g. Chiropractic, Pain management)<input id="nr-practice_type" maxlength="60" /></label>
+              <label>Street address<input id="nr-address_1" /></label>
+              <label>Suite / unit<input id="nr-address_2" /></label>
+              <label>City<input id="nr-city" /></label>
+              <label>State (2 letters)<input id="nr-state" maxlength="2" style="text-transform:uppercase" /></label>
+              <label>ZIP<input id="nr-postal_code" maxlength="10" /></label>
+              <label>Phone<input id="nr-phone" /></label>
+              <label>Website<input id="nr-website" placeholder="https://" /></label>
+              <label>Additional location of (registry NPI, optional)<input id="nr-parent_npi" inputmode="numeric" maxlength="10" /></label>
+              <label>Latitude (optional)<input id="nr-latitude" inputmode="decimal" /></label>
+              <label>Longitude (optional)<input id="nr-longitude" inputmode="decimal" /></label>
+              <label class="wide">From the practice (optional, 400 characters, shown publicly)<textarea id="nr-description" rows="2" maxlength="400"></textarea></label>
+              <label>URL slug (filled in for you)<input id="nr-slug" /></label>
+              <label>Their email (private)<input id="nr-contact_email" type="email" /></label>
+              <label>Confirmed with the practice on (required to publish)<input id="nr-confirmed_on" type="date" /></label>
+              <label>How it was confirmed (required to publish)<input id="nr-confirmed_how" placeholder="e.g. email from info@theirdomain.com" /></label>
+              <label class="wide">Notes (private)<textarea id="nr-internal_notes" rows="2"></textarea></label>
+            </div>
+            <button id="nrSave" class="btn primary" type="button">Save as draft</button>
+            <button id="nrReset" class="btn ghost" type="button">Clear</button>
+            <p class="nr-note">Saving never publishes. Set the status to “published” in the list above once the practice
+              itself has confirmed the details, then rebuild.</p>
+            <p id="nrErr" class="nr-err"></p>
+          </details>
+        </section>
+
         <section>
           <div class="sec-head"><h2>Recent leads</h2><span id="leadsPill" class="pill">0</span></div>
           <div id="leads" class="list"></div>
@@ -251,6 +308,13 @@ const TIERS = ['free', 'verified', 'enhanced', 'featured']; // shared tier list 
     // question about whether the practice belongs in it at all. Read as the
     // same thing, an inquiry looks like a claim with a broken NPI field.
     const isInquiry = (r) => !r.clinic_slug && !/^\/clinic\//.test(r.source_page || '');
+    // The claim form folds "the name patients know us by" into the message as
+    // one labeled line rather than a column of its own, so the public write
+    // path never depends on a migration having run. Read it back out here.
+    const brandFromMessage = (r) => {
+      const m = /^Known to patients as:\s*(.+)$/m.exec(r.message || '');
+      return m ? m[1].trim() : '';
+    };
 
     function showRebuildBanner() { const b = $('banner'); b.classList.add('show'); b.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
 
@@ -289,17 +353,26 @@ const TIERS = ['free', 'verified', 'enhanced', 'featured']; // shared tier list 
     async function load() {
       $('loading').classList.remove('hidden'); $('content').classList.add('hidden');
       try {
-        const [stats, claims, paid, leads] = await Promise.all([
+        const [stats, claims, paid, leads, listed] = await Promise.all([
           sb.rpc('admin_stats'),
           sb.from('claims').select('*').order('created_at', { ascending: false }).limit(100),
-          sb.from('clinics').select('npi,name,city,state,slug,listing_tier')
+          // '*' rather than a column list: brand_name is read here, and naming a
+          // column that a database has not been migrated to yet fails the whole
+          // dashboard. This is the signed-in admin reading a handful of rows.
+          sb.from('clinics').select('*')
             .neq('listing_tier', 'free').order('listing_tier', { ascending: false }).limit(200),
           sb.from('leads').select('*').order('created_at', { ascending: false }).limit(15),
+          // Resolves with { error } rather than throwing, and renderListed()
+          // reads it: a database that has not had nonregistry_listings.sql run
+          // shows a one-line notice in that section and the rest loads as usual.
+          sb.from('nonregistry_listings').select('*').order('created_at', { ascending: false }).limit(200),
         ]);
         if (stats.error) throw new Error('stats: ' + stats.error.message);
         renderCards(stats.data || {});
         renderClaims(claims.data || []);
         renderPaid(paid.data || []);
+        claimRows = claims.data || [];
+        renderListed(listed);
         renderLeads(leads.data || []);
         $('loading').classList.add('hidden'); $('content').classList.remove('hidden');
       } catch (e) {
@@ -352,9 +425,12 @@ const TIERS = ['free', 'verified', 'enhanced', 'featured']; // shared tier list 
             ${ r.message ? `<div class="meta">“${esc(r.message)}”</div>` : '' }
           </div>
           <div class="claim-actions">
+            ${ r.npi ? `<input class="ctl" data-brand="${esc(r.id)}" type="text" maxlength="80" value="${esc(brandFromMessage(r))}"
+              placeholder="Brand name (optional)" title="The name patients know the practice by. Shown first, with the registered name beside it. Leave blank to show the registered name only." />` : '' }
             <select class="ctl" data-tier="${esc(r.id)}" title="Tier to set on approve">${tierSel}</select>
             <button class="btn-approve" data-approve="${esc(r.id)}" data-npi="${esc(r.npi || '')}">✓ Approve</button>
             <button class="btn-reject" data-reject="${esc(r.id)}">✕ Reject</button>
+            ${ isInquiry(r) ? `<button class="btn-mini" data-nr-from="${esc(r.id)}" title="Start a non-registry listing from this inquiry. Opens the form below, filled in; nothing is saved or published until you say so.">＋ List, not ranked</button>` : '' }
             <select class="ctl" data-claim="${esc(r.id)}" title="Or set status manually">${opts}</select>
             <span class="saved" id="cs-${esc(r.id)}">saved</span>
             <span class="decided" id="cd-${esc(r.id)}" ${decided ? '' : 'hidden'}>${esc(r.status||'')}</span>
@@ -397,7 +473,12 @@ const TIERS = ['free', 'verified', 'enhanced', 'featured']; // shared tier list 
           const clinicPatch = { listing_tier: tier };
           if (row.website) clinicPatch.website = row.website;
           if (row.work_email) clinicPatch.contact_email = row.work_email;
-          if (!confirm('Approve "' + (row.clinic_name || npi) + '"?\n\n• tier -> ' + tier + '\n• website -> ' + (row.website || '(none)') + '\n• contact email -> ' + (row.work_email || '(none)') + '\n\nThen click "Rebuild site" to push it live, and send the Practice Kit link (npm run kit:link -- ' + npi + ').')) return;
+          // Written only when something was typed, so approving a claim that has
+          // no brand name never touches the column (and works before the
+          // brand_name migration has run).
+          const brand = ((document.querySelector(`input[data-brand="${id}"]`) || {}).value || '').replace(/\s+/g, ' ').trim();
+          if (brand) clinicPatch.brand_name = brand;
+          if (!confirm('Approve "' + (row.clinic_name || npi) + '"?\n\n• tier -> ' + tier + '\n• website -> ' + (row.website || '(none)') + '\n• contact email -> ' + (row.work_email || '(none)') + '\n• brand name -> ' + (brand || '(none, registered name only)') + '\n\nThen click "Rebuild site" to push it live, and send the Practice Kit link (npm run kit:link -- ' + npi + ').')) return;
           btn.disabled = true; btn.textContent = '…';
           const r1 = await sb.from('clinics').update(clinicPatch).eq('npi', npi);
           if (r1.error) { btn.disabled = false; btn.textContent = '✓ Approve'; alert('Clinic update failed: ' + r1.error.message); return; }
@@ -449,11 +530,35 @@ const TIERS = ['free', 'verified', 'enhanced', 'featured']; // shared tier list 
             <div class="meta">${loc} · <a href="https://painbeacon.com/clinic/${esc(r.slug)}/" target="_blank" rel="noopener">view profile ↗</a></div>
           </div>
           <div style="display:flex;align-items:center;gap:8px">
+            <input class="ctl" data-brand-npi="${esc(r.npi)}" type="text" maxlength="80" value="${esc(r.brand_name || '')}"
+              placeholder="Brand name (optional)" title="The name patients know the practice by. Shown first, with the registered name beside it. Clear it to show the registered name only." />
             <select class="ctl" data-npi="${esc(r.npi)}">${opts}</select>
             <span class="saved" id="ps-${esc(r.npi)}">saved</span>
           </div>
         </div>`;
       }).join('');
+
+      // Brand name: saved when the field loses focus with a changed value.
+      // Empty clears it (null), which puts the registered name back in front.
+      $('paid').querySelectorAll('input[data-brand-npi]').forEach(inp => {
+        let last = inp.value;
+        inp.addEventListener('change', async () => {
+          const npi = inp.getAttribute('data-brand-npi');
+          const val = inp.value.replace(/\s+/g, ' ').trim();
+          inp.disabled = true;
+          const { error } = await sb.from('clinics').update({ brand_name: val || null }).eq('npi', npi);
+          inp.disabled = false;
+          if (error) {
+            inp.value = last;
+            alert('Could not save the brand name: ' + error.message +
+              (/brand_name/.test(error.message) ? '\n\nThe brand_name column is missing: run brand_name.sql first.' : ''));
+            return;
+          }
+          last = inp.value = val;
+          flash('ps-' + npi);
+          showRebuildBanner();
+        });
+      });
 
       $('paid').querySelectorAll('select[data-npi]').forEach(sel => {
         sel.addEventListener('change', async () => {
@@ -467,6 +572,181 @@ const TIERS = ['free', 'verified', 'enhanced', 'featured']; // shared tier list 
         });
       });
     }
+
+    // ---- non-registry listings ("listed, not ranked") ----------------------
+    // Practices that asked to be listed and have no record of their own in the
+    // federal registry. Their own table, their own page, never a rank: see
+    // nonregistry_listings.sql and src/lib/listings.js. The public site reads
+    // only rows whose status is "published", and the table refuses that status
+    // until confirmed_on / confirmed_how say the practice itself confirmed it.
+    let claimRows = [];
+    let listedRows = [];
+    const NR_FIELDS = ['name', 'practice_type', 'address_1', 'address_2', 'city', 'state', 'postal_code', 'phone',
+      'website', 'parent_npi', 'latitude', 'longitude', 'description', 'slug', 'contact_email', 'confirmed_on',
+      'confirmed_how', 'internal_notes'];
+    const NR_STATUSES = ['draft', 'published', 'removed'];
+    const nrVal = (f) => ($('nr-' + f).value || '').replace(/\s+/g, ' ').trim();
+    // Same shape as listingSlug() in src/lib/listing-rules.js (this script is
+    // inline and cannot import it). The build re-checks every slug regardless.
+    const nrSlug = (state, city, name) => [state, city, name].filter(Boolean).join('-')
+      .replace(/&/g, ' and ').replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-+|-+$/g, '').toLowerCase().slice(0, 120).replace(/-+$/, '');
+
+    function nrFill(row) {
+      $('nr-id').value = row.id || '';
+      $('nr-claim_id').value = row.claim_id || '';
+      NR_FIELDS.forEach(f => { $('nr-' + f).value = row[f] == null ? '' : row[f]; });
+      $('nrFormTitle').textContent = row.id ? 'Edit: ' + (row.name || 'listing') : 'Add a non-registry listing';
+      $('nrSave').textContent = row.id ? 'Save changes' : 'Save as draft';
+      $('nrErr').textContent = '';
+    }
+    function nrOpen() { const w = $('nrFormWrap'); w.open = true; w.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+
+    function renderListed(res) {
+      const box = $('nr');
+      if (res.error) {
+        listedRows = [];
+        $('nrPill').textContent = '–';
+        const missing = /does not exist|schema cache|PGRST205|42P01/i.test((res.error.code || '') + ' ' + (res.error.message || ''));
+        box.innerHTML = '<div class="empty">' + (missing
+          ? 'Not set up on this database yet. Run <b>nonregistry_listings.sql</b> in the Supabase SQL editor, then reload.'
+          : 'Could not load: ' + esc(res.error.message)) + '</div>';
+        $('nrFormWrap').hidden = missing;
+        return;
+      }
+      $('nrFormWrap').hidden = false;
+      listedRows = res.data || [];
+      const live = listedRows.filter(r => r.status === 'published').length;
+      $('nrPill').textContent = live + ' live' + (listedRows.length > live ? ' · ' + (listedRows.length - live) + ' not' : '');
+      if (!listedRows.length) { box.innerHTML = '<div class="empty">No non-registry listings yet.</div>'; return; }
+
+      box.innerHTML = listedRows.map(r => {
+        const opts = NR_STATUSES.map(st => `<option value="${st}"${r.status === st ? ' selected' : ''}>${st}</option>`).join('');
+        const loc = [r.address_1, r.city, r.state].filter(Boolean).map(esc).join(', ');
+        const conf = r.confirmed_on
+          ? 'confirmed ' + esc(r.confirmed_on) + (r.confirmed_how ? ' · ' + esc(r.confirmed_how) : '')
+          : '<span style="color:var(--amber)">not yet confirmed with the practice</span>';
+        return `<div class="item ${r.status === 'removed' ? 'resolved' : ''}">
+          <div class="main">
+            <div class="name"><span class="tag ${esc(r.status)}">${esc(r.status)}</span> ${esc(r.name)}
+              ${ r.practice_type ? `<span class="who" style="font-weight:500">${esc(r.practice_type)}</span>` : '' }</div>
+            <div class="meta">${loc}${ r.parent_npi ? ' · additional location of NPI ' + esc(r.parent_npi) : '' }
+              ${ r.status === 'published' ? `· <a href="https://painbeacon.com/listing/${esc(r.slug)}/" target="_blank" rel="noopener">view listing ↗</a>` : '' }</div>
+            <div class="meta">${conf}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <button class="btn-mini" data-nr-edit="${esc(r.id)}">Edit</button>
+            <select class="ctl" data-nr-status="${esc(r.id)}">${opts}</select>
+            <span class="saved" id="ns-${esc(r.id)}">saved</span>
+          </div>
+        </div>`;
+      }).join('');
+
+      box.querySelectorAll('button[data-nr-edit]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const row = listedRows.find(x => String(x.id) === btn.getAttribute('data-nr-edit'));
+          if (row) { nrFill(row); nrOpen(); }
+        });
+      });
+
+      box.querySelectorAll('select[data-nr-status]').forEach(sel => {
+        sel.addEventListener('change', async () => {
+          const id = sel.getAttribute('data-nr-status');
+          const row = listedRows.find(x => String(x.id) === id) || {};
+          const was = row.status;
+          if (sel.value === 'published') {
+            if (!row.confirmed_on || !(row.confirmed_how || '').trim()) {
+              sel.value = was;
+              alert('Not published.\n\nRecord when and how the practice itself confirmed this listing first (Edit, then the two "Confirmed" fields). A request from a marketing firm or anyone else writing on the practice\'s behalf is not a confirmation.');
+              return;
+            }
+            if (!confirm('Publish "' + row.name + '"?\n\nIt will get a public page at /listing/' + row.slug + '/ and appear below the ranked list on its area page, labeled as listed and not ranked. Live after the next rebuild.')) { sel.value = was; return; }
+          }
+          sel.disabled = true;
+          const { error } = await sb.from('nonregistry_listings')
+            .update({ status: sel.value, updated_at: new Date().toISOString() }).eq('id', id);
+          sel.disabled = false;
+          if (error) { sel.value = was; alert('Could not save: ' + error.message); return; }
+          row.status = sel.value;
+          renderListed({ data: listedRows }); // redraws the row, so flash after it
+          flash('ns-' + id);
+          if (was === 'published' || sel.value === 'published') showRebuildBanner();
+        });
+      });
+    }
+
+    // Slug follows state/city/name until someone edits it by hand.
+    let nrSlugTouched = false;
+    $('nr-slug').addEventListener('input', () => { nrSlugTouched = true; });
+    ['name', 'city', 'state'].forEach(f => $('nr-' + f).addEventListener('input', () => {
+      if (!$('nr-id').value && !nrSlugTouched) $('nr-slug').value = nrSlug(nrVal('state'), nrVal('city'), nrVal('name'));
+    }));
+    $('nrReset').addEventListener('click', () => { nrSlugTouched = false; nrFill({}); });
+
+    $('nrSave').addEventListener('click', async () => {
+      const id = $('nr-id').value;
+      const row = {};
+      NR_FIELDS.forEach(f => { row[f] = nrVal(f) || null; });
+      row.state = (row.state || '').toUpperCase() || null;
+      if (!row.slug) row.slug = nrSlug(row.state, row.city, row.name) || null;
+      const errs = [];
+      if (!row.name || row.name.length < 2) errs.push('A practice name is required.');
+      if (!row.city) errs.push('A city is required.');
+      if (!/^[A-Z]{2}$/.test(row.state || '')) errs.push('State must be two letters.');
+      if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(row.slug || '')) errs.push('The URL slug may hold only lowercase letters, digits and single hyphens.');
+      if (row.parent_npi && !/^\d{10}$/.test(row.parent_npi)) errs.push('The registry NPI must be ten digits.');
+      for (const f of ['latitude', 'longitude']) {
+        if (row[f] != null && !Number.isFinite(Number(row[f]))) errs.push(f + ' must be a number.');
+        row[f] = row[f] == null ? null : Number(row[f]);
+      }
+      if ((row.latitude == null) !== (row.longitude == null)) errs.push('Give both latitude and longitude, or neither.');
+      row.parent_npi = row.parent_npi ? Number(row.parent_npi) : null;
+      if (errs.length) { $('nrErr').textContent = errs.join('\n'); return; }
+
+      row.updated_at = new Date().toISOString();
+      if (!id) { row.status = 'draft'; row.claim_id = $('nr-claim_id').value || null; }
+      const btn = $('nrSave'); btn.disabled = true;
+      const res = id
+        ? await sb.from('nonregistry_listings').update(row).eq('id', id).select().single()
+        : await sb.from('nonregistry_listings').insert(row).select().single();
+      btn.disabled = false;
+      if (res.error) {
+        $('nrErr').textContent = /duplicate key|23505/.test(res.error.message + res.error.code)
+          ? 'Another listing already uses that URL slug. Change the slug and save again.'
+          : /published_listing_was_confirmed/.test(res.error.message)
+            ? 'This listing is published, so the two "Confirmed" fields cannot be emptied. Set it to draft first.'
+            : /foreign key|23503/.test(res.error.message + res.error.code)
+              ? 'No clinic in the directory has that NPI. Leave the field empty, or check the number.'
+              : 'Could not save: ' + res.error.message;
+        return;
+      }
+      const saved = res.data;
+      const i = listedRows.findIndex(x => String(x.id) === String(saved.id));
+      if (i >= 0) listedRows[i] = saved; else listedRows.unshift(saved);
+      renderListed({ data: listedRows });
+      if (saved.status === 'published') showRebuildBanner();
+      nrSlugTouched = false; nrFill({}); $('nrFormWrap').open = false;
+    });
+
+    // "＋ List, not ranked" on an inquiry: open the form filled in from the row.
+    // Nothing is written until Save, and Save only ever writes a draft.
+    document.addEventListener('click', (ev) => {
+      const btn = ev.target.closest && ev.target.closest('button[data-nr-from]');
+      if (!btn) return;
+      if ($('nrFormWrap').hidden) { alert('Run nonregistry_listings.sql first: this database has no table for these yet.'); return; }
+      const r = claimRows.find(x => String(x.id) === btn.getAttribute('data-nr-from'));
+      if (!r) return;
+      nrSlugTouched = false;
+      nrFill({
+        claim_id: r.id,
+        name: r.clinic_name || '',
+        phone: r.phone || '',
+        website: r.website || '',
+        contact_email: r.work_email || '',
+        internal_notes: 'From the ' + (r.source_page || 'inquiry') + ' form, ' + fmtDate(r.created_at) + ', sent by ' +
+          [r.contact_name, r.role].filter(Boolean).join(' / ') + '.' + (r.message ? ' They wrote: ' + r.message : ''),
+      });
+      nrOpen();
+    });
 
     function renderLeads(rows) {
       $('leadsPill').textContent = rows.length;
