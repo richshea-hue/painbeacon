@@ -3,17 +3,17 @@
    clean technical sans for body. Restraint over flash (it's YMYL health). */
 
 :root {
-  --paper: #f7f4ed;
-  --paper-2: #efeadd;
-  --card: #fffefb;
+  --paper: #f1f7f9;
+  --paper-2: #e3eef2;
+  --card: #ffffff;
   --ink: #1c2b2a;
   --ink-soft: #4c5b59;
   --ink-faint: #7c8a87;
   --teal: #0e6e62;
   --teal-deep: #0a4f46;
   --amber: #b86f2e;
-  --line: #e3ddcf;
-  --line-soft: #ece7da;
+  --line: #d1e0e5;
+  --line-soft: #dfeaee;
   --good: #1f7a45;
 
   --serif: 'Newsreader', Georgia, 'Times New Roman', serif;
@@ -309,7 +309,7 @@ hr.rule { border: 0; border-top: 1px solid var(--line); margin: 2.5rem 0; }
 
 /* ---- featured (paid) placement slot on city pages ---- */
 .featured-slot { margin: 0 0 1.5rem; padding: 0.9rem 1rem 0.5rem; border-radius: 14px;
-  border: 1px solid color-mix(in srgb, var(--teal, #0e6e62) 35%, var(--line, #e3ddcf));
+  border: 1px solid color-mix(in srgb, var(--teal, #0e6e62) 35%, var(--line, #d1e0e5));
   background: color-mix(in srgb, var(--teal, #0e6e62) 5%, var(--card, #fff)); }
 .featured-head { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.4rem; flex-wrap: wrap; }
 .featured-pill { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
@@ -339,18 +339,18 @@ hr.rule { border: 0; border-top: 1px solid var(--line); margin: 2.5rem 0; }
   border: 1px solid color-mix(in srgb, var(--teal, #0e6e62) 38%, transparent); }
 .badge-featured { font-size: 0.78rem; font-weight: 600; color: #fff;
   background: var(--teal-deep, #0a4f46); padding: 0.15rem 0.55rem; border-radius: 999px; }
-.enhanced { border: 1px solid var(--line, #e3ddcf); border-left: 3px solid var(--teal, #0e6e62);
+.enhanced { border: 1px solid var(--line, #d1e0e5); border-left: 3px solid var(--teal, #0e6e62);
   border-radius: 12px; background: var(--card, #fff); padding: 1.1rem 1.2rem; margin: 1.25rem 0; }
 .enhanced-label { font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase;
   color: var(--teal-deep, #0a4f46); font-weight: 600; margin: 0 0 0.6rem; }
 .enhanced-desc { margin: 0 0 0.9rem; }
 .gallery { display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 0.3rem 0 1rem; }
 .gallery img { width: 150px; height: 110px; object-fit: cover; border-radius: 8px;
-  border: 1px solid var(--line, #e3ddcf); }
+  border: 1px solid var(--line, #d1e0e5); }
 .enh-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 0.5rem 0; }
 .enh-grid h3 { font-size: 0.95rem; margin: 0 0 0.4rem; }
 .chips { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 0.35rem; }
-.chips li { font-size: 0.82rem; background: var(--paper, #f7f4ed); border: 1px solid var(--line, #e3ddcf);
+.chips li { font-size: 0.82rem; background: var(--paper, #f1f7f9); border: 1px solid var(--line, #d1e0e5);
   border-radius: 999px; padding: 0.2rem 0.55rem; }
 .providers { margin-top: 1rem; }
 .provider { margin: 0.5rem 0; }
@@ -445,14 +445,14 @@ hr.rule { border: 0; border-top: 1px solid var(--line); margin: 2.5rem 0; }
 }
 .hero-dark .search input:focus { outline: 2px solid #2fd4bf; }
 /* live search results on the dark surface */
-.hero-dark .tile { background: rgba(247, 244, 237, 0.06); border-color: rgba(247, 244, 237, 0.18); }
+.hero-dark .tile { background: rgba(241, 247, 249, 0.06); border-color: rgba(241, 247, 249, 0.18); }
 .hero-dark .tile:hover { border-color: #2fd4bf; }
 .hero-dark .tile .label { color: var(--paper); }
 .hero-dark .tile .n { color: #9fb4b8; }
 /* trust row inside the hero bottom */
 .hero-dark .hero-trust {
   position: relative; z-index: 2; display: flex; flex-wrap: wrap; gap: 0.5rem 1.75rem;
-  padding: 0.9rem 0 1.4rem; border-top: 1px solid rgba(247, 244, 237, 0.14);
+  padding: 0.9rem 0 1.4rem; border-top: 1px solid rgba(241, 247, 249, 0.14);
   font-size: 0.84rem; color: #cfe0de;
 }
 .hero-dark .hero-trust b { color: #ffffff; font-weight: 600; }

@@ -136,7 +136,7 @@ import { DISCIPLINES } from '../lib/practice-type.js';
       height: min(74vh, 46rem);
       min-height: 26rem;
       background: #e9eef2;
-      border-block: 1px solid var(--line, #e3ddcf);
+      border-block: 1px solid var(--line, #d1e0e5);
       z-index: 0;
     }
 
@@ -158,9 +158,9 @@ import { DISCIPLINES } from '../lib/practice-type.js';
     #natmap-q {
       flex: 1;
       padding: 0.6rem 0.75rem;
-      border: 1px solid var(--line, #e3ddcf);
+      border: 1px solid var(--line, #d1e0e5);
       border-radius: var(--radius, 6px);
-      background: var(--card, #fffefb);
+      background: var(--card, #ffffff);
       box-shadow: var(--shadow, 0 1px 4px rgba(15, 46, 58, 0.18));
       font: inherit;
       font-size: 0.95rem;
@@ -171,23 +171,23 @@ import { DISCIPLINES } from '../lib/practice-type.js';
       display: grid;
       place-items: center;
       width: 2.6rem;
-      border: 1px solid var(--line, #e3ddcf);
+      border: 1px solid var(--line, #d1e0e5);
       border-radius: var(--radius, 6px);
-      background: var(--card, #fffefb);
+      background: var(--card, #ffffff);
       box-shadow: var(--shadow, 0 1px 4px rgba(15, 46, 58, 0.18));
       color: var(--ink, #1c2b2a);
       cursor: pointer;
     }
-    #natmap-locate:hover { background: var(--paper, #f7f4ed); }
+    #natmap-locate:hover { background: var(--paper, #f1f7f9); }
     #natmap-suggest {
       margin: 0.35rem 0 0;
       padding: 0.25rem;
       list-style: none;
       max-height: 17rem;
       overflow-y: auto;
-      border: 1px solid var(--line, #e3ddcf);
+      border: 1px solid var(--line, #d1e0e5);
       border-radius: var(--radius, 6px);
-      background: var(--card, #fffefb);
+      background: var(--card, #ffffff);
       box-shadow: var(--shadow, 0 2px 10px rgba(15, 46, 58, 0.2));
     }
     #natmap-suggest li { margin: 0; }
@@ -213,7 +213,7 @@ import { DISCIPLINES } from '../lib/practice-type.js';
       cursor: pointer;
     }
     #natmap-suggest button:hover,
-    #natmap-suggest button.nm-active { background: var(--paper, #f7f4ed); }
+    #natmap-suggest button.nm-active { background: var(--paper, #f1f7f9); }
     #natmap-suggest .nm-n { color: var(--ink-faint, #7c8a87); font-size: 0.8rem; }
     #natmap-status {
       margin: 0.35rem 0 0;
@@ -262,32 +262,32 @@ import { DISCIPLINES } from '../lib/practice-type.js';
     }
     .nm-toggle {
       padding: 0.4rem 0.8rem;
-      border: 1px solid var(--line, #e3ddcf);
+      border: 1px solid var(--line, #d1e0e5);
       border-radius: 999px;
-      background: var(--card, #fffefb);
+      background: var(--card, #ffffff);
       font: inherit;
       font-size: 0.88rem;
       color: var(--ink, #1c2b2a);
       cursor: pointer;
     }
-    .nm-toggle:hover { border-color: color-mix(in srgb, var(--teal, #17a08c) 40%, var(--line, #e3ddcf)); }
+    .nm-toggle:hover { border-color: color-mix(in srgb, var(--teal, #17a08c) 40%, var(--line, #d1e0e5)); }
     /* Matches .nm-toggle's shape so the row reads as one set of controls,
        but stays a real <select>: nineteen disciplines will not fit as chips. */
     .nm-select {
       font: inherit; font-size: 0.86rem; line-height: 1;
       padding: 0.45rem 1.9rem 0.45rem 0.75rem; border-radius: 999px;
       color: var(--ink, #1d2b29); background: var(--card, #fff);
-      border: 1px solid var(--line, #e3ddcf); cursor: pointer;
+      border: 1px solid var(--line, #d1e0e5); cursor: pointer;
       appearance: none;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%237c8a87' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
       background-repeat: no-repeat; background-position: right 0.7rem center;
     }
-    .nm-select:hover { border-color: color-mix(in srgb, var(--teal, #17a08c) 40%, var(--line, #e3ddcf)); }
+    .nm-select:hover { border-color: color-mix(in srgb, var(--teal, #17a08c) 40%, var(--line, #d1e0e5)); }
     .nm-select:focus-visible { outline: 2px solid var(--teal, #17a08c); outline-offset: 2px; }
     .nm-select.is-on {
       color: var(--teal-ink, #0f6f62); font-weight: 600;
       background-color: color-mix(in srgb, var(--teal, #17a08c) 12%, var(--card, #fff));
-      border-color: color-mix(in srgb, var(--teal, #17a08c) 40%, var(--line, #e3ddcf));
+      border-color: color-mix(in srgb, var(--teal, #17a08c) 40%, var(--line, #d1e0e5));
     }
     .nm-toggle[aria-pressed='true'] {
       background: var(--ink, #0f2e3a);
@@ -334,9 +334,9 @@ import { DISCIPLINES } from '../lib/practice-type.js';
       align-items: center;
       gap: 0.5rem 1.25rem;
       padding: 0.9rem 1.1rem;
-      border: 1px solid var(--line, #e3ddcf);
+      border: 1px solid var(--line, #d1e0e5);
       border-radius: var(--radius, 6px);
-      background: var(--card, #fffefb);
+      background: var(--card, #ffffff);
       font-family: var(--sans);
     }
     .nm-card.nm-active { border-color: var(--teal, #17a08c); box-shadow: 0 0 0 2px color-mix(in srgb, var(--teal, #17a08c) 30%, transparent); }
@@ -349,7 +349,7 @@ import { DISCIPLINES } from '../lib/practice-type.js';
     .nm-card-show {
       flex-shrink: 0;
       padding: 0.45rem 0.85rem;
-      border: 1px solid var(--line, #e3ddcf);
+      border: 1px solid var(--line, #d1e0e5);
       border-radius: var(--radius, 6px);
       background: none;
       font: inherit;
@@ -359,8 +359,8 @@ import { DISCIPLINES } from '../lib/practice-type.js';
     }
     .nm-card-show:hover { border-color: var(--teal, #17a08c); color: var(--teal-ink, #0f6f62); }
     .nm-card.nm-sponsored {
-      border-color: color-mix(in srgb, #965e1f 35%, var(--line, #e3ddcf));
-      background: color-mix(in srgb, #965e1f 4%, var(--card, #fffefb));
+      border-color: color-mix(in srgb, #965e1f 35%, var(--line, #d1e0e5));
+      background: color-mix(in srgb, #965e1f 4%, var(--card, #ffffff));
     }
     .nm-sponsor-chip {
       display: inline-block;
@@ -370,13 +370,13 @@ import { DISCIPLINES } from '../lib/practice-type.js';
       letter-spacing: 0.06em;
       text-transform: uppercase;
       color: var(--ink-faint, #7c8a87);
-      border: 1px solid var(--line, #e3ddcf);
+      border: 1px solid var(--line, #d1e0e5);
       border-radius: 3px;
       padding: 0.12rem 0.4rem;
     }
     .nm-empty {
       padding: 1.5rem 1rem;
-      border: 1px dashed var(--line, #e3ddcf);
+      border: 1px dashed var(--line, #d1e0e5);
       border-radius: var(--radius, 6px);
       color: var(--ink-soft, #51605d);
       font-family: var(--sans);
