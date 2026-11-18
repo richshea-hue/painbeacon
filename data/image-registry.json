@@ -297,6 +297,46 @@
       ]
     },
     {
+      "page": "news/nerve-blocks-diagnostic-vs-therapeutic",
+      "role": "hero",
+      "pexels_id": 3985166,
+      "src_url": "https://www.pexels.com/photo/3985166/",
+      "photographer": null,
+      "source_md5": "f0eca140eb1ac682b3f9d0c807d51a30",
+      "files": [
+        {
+          "path": "/images/news/nerve-blocks-diagnostic-vs-therapeutic/clinician-preparing-nerve-block-injection-syringe-hero.jpg",
+          "md5": "b405b644b865d463debf1c30fd346c5b",
+          "bytes": 57111
+        },
+        {
+          "path": "/images/news/nerve-blocks-diagnostic-vs-therapeutic/clinician-preparing-nerve-block-injection-syringe-thumb.jpg",
+          "md5": "306d343e056fc31b15bf318a7d617ce9",
+          "bytes": 19514
+        },
+        {
+          "path": "/images/news/nerve-blocks-diagnostic-vs-therapeutic/clinician-preparing-nerve-block-injection-syringe-share.jpg",
+          "md5": "81aba8e1b6ac74585ddb1fd1fb99414e",
+          "bytes": 52612
+        }
+      ]
+    },
+    {
+      "page": "news/nerve-blocks-diagnostic-vs-therapeutic",
+      "role": "inline",
+      "pexels_id": 6692831,
+      "src_url": "https://www.pexels.com/photo/6692831/",
+      "photographer": null,
+      "source_md5": "5da0e264b4ff5230461e000718cb9706",
+      "files": [
+        {
+          "path": "/images/news/nerve-blocks-diagnostic-vs-therapeutic/patient-writing-pain-log-after-nerve-block.jpg",
+          "md5": "302b861df98e29f58df4bf775d8d1d98",
+          "bytes": 67092
+        }
+      ]
+    },
+    {
       "page": "news/pain-clinic-specialists-who-is-who",
       "role": "hero",
       "pexels_id": 6129644,
