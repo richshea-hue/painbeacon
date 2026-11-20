@@ -115,3 +115,44 @@ test('it never borrows an area from another state, or from a clinic with no area
   assert.equal(zoneClinicFor(katy({ state: 'OK' }), clinics), null);
   assert.equal(zoneClinicFor(katy({ city: 'Austin', postal_code: '78701' }), clinics), null);
 });
+
+// --- offices of a registry practice ----------------------------------------
+import { siteOf, officeProblems } from './listing-rules.js';
+
+const painPrimary = (c) => c.primary_taxonomy_code === '207LP2900X';
+const parent = { npi: 1316348501, primary_taxonomy_code: '207LP2900X', website: 'https://www.drs-example.com/' };
+const office = {
+  parent_npi: 1316348501, state: 'TX', website: 'drs-example.com',
+  office_evidence_url: 'https://drs-example.com/locations/pasadena',
+};
+
+test('siteOf folds www and subdomains onto one site', () => {
+  assert.equal(siteOf('https://www.drs-example.com/x'), 'drs-example.com');
+  assert.equal(siteOf('offices.drs-example.com'), 'drs-example.com');
+  assert.equal(siteOf(''), '');
+  assert.equal(siteOf('not a url'), '');
+});
+
+test('an office of a pain-primary practice, shown on its own site, qualifies', () => {
+  assert.deepEqual(officeProblems(office, parent, painPrimary), []);
+});
+
+test('evidence on the parent site counts when the listing has no website', () => {
+  assert.deepEqual(officeProblems({ ...office, website: null }, parent, painPrimary), []);
+});
+
+test('an office needs a page on the practice site that lists it', () => {
+  assert.equal(officeProblems({ ...office, office_evidence_url: null }, parent, painPrimary).length, 1);
+  const p = officeProblems({ ...office, office_evidence_url: 'https://yelp.com/biz/x' }, parent, painPrimary);
+  assert.match(p[0], /not the practice's own site/);
+});
+
+test('a parent whose primary registration is not pain medicine does not lend its rank', () => {
+  const p = officeProblems(office, { ...parent, primary_taxonomy_code: '111N00000X' }, painPrimary);
+  assert.match(p[0], /not pain medicine/);
+});
+
+test('no parent, or a parent missing from the directory, is not an office', () => {
+  assert.deepEqual(officeProblems({ ...office, parent_npi: null }, parent, painPrimary), ['no parent practice']);
+  assert.match(officeProblems(office, null, painPrimary)[0], /not in the directory/);
+});

@@ -15,7 +15,9 @@ let _cache = null;
 export async function getDesertStats() {
   if (_cache) return _cache;
   const { counties, zipToCounty, vintage } = countyData;
-  const clinics = (await getClinics()).filter((c) => c.isPrimary);
+  // Registry records only. The deserts study counts what the federal registry
+  // says exists; an office a practice told us about is not part of its method.
+  const clinics = (await getClinics()).filter((c) => c.isPrimary && !c.isOffice);
 
   // Count clinics per county.
   const countPerCounty = new Map();
