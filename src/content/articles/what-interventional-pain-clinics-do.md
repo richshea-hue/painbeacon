@@ -1,5 +1,5 @@
 ---
-title: 'Injections, Nerve Blocks, and Ablation: What an Interventional Pain Clinic Actually Does'
+title: 'What Is Interventional Pain Management?'
 dek: 'A plain-English tour of the procedures behind the phrase "interventional pain" — what each one is, what it treats, and what a well-run procedural workup looks like.'
 date: 2026-07-16
 category: 'Treatments Explained'

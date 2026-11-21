@@ -1,5 +1,5 @@
 ---
-title: "Reading Pain Clinic Reviews: What Star Ratings Can and Can't Tell You"
+title: 'How to Read Pain Clinic Reviews'
 dek: 'A 4.8 can mean a great clinic or a handful of friendly reviews. Here is what stars measure in pain care, what they miss, and how to read them.'
 date: 2026-10-21
 category: 'Inside the Rankings'

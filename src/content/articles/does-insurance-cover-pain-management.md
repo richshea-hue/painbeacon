@@ -1,5 +1,5 @@
 ---
-title: 'Does Insurance Cover Pain Management? Referrals, Prior Authorization, and What You Will Actually Pay'
+title: 'Does Insurance Cover Pain Management?'
 dek: 'Most pain care is covered — but between referrals, prior authorization, and per-year limits, the path matters. What to verify with your insurer and your clinic before the first appointment.'
 date: 2026-07-22
 category: 'Patient Guides'

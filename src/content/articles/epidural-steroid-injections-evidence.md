@@ -1,6 +1,6 @@
 ---
-title: 'Epidural Steroid Injections: What the Evidence Actually Says'
-dek: 'Epidural steroid injections work best for one thing: leg pain from an irritated nerve root. The relief is real, often partial, and usually temporary.'
+title: 'Epidural Steroid Injections: Do They Work?'
+dek: 'Epidural steroid injections work best for one thing: leg pain from an irritated nerve root. What the evidence says about how often they work, how long relief lasts, and the risks in proportion.'
 date: 2026-08-26
 category: 'Treatments Explained'
 heroImg: '/images/news/epidural-steroid-injections-evidence/doctor-reviewing-mri-scans-with-patient-hero.jpg'

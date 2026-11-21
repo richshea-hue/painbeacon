@@ -1,5 +1,5 @@
 ---
-title: 'Spinal Cord Stimulators: Who They''re For and What a Trial Involves'
+title: 'Spinal Cord Stimulator Trial: What to Expect'
 dek: 'A spinal cord stimulator gets a test run before anything is implanted. Here is who the device is really for, what the trial week involves, and what it cannot promise.'
 date: 2026-09-23
 category: 'Treatments Explained'

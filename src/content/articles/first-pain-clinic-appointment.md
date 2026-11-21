@@ -1,5 +1,5 @@
 ---
-title: 'Your First Pain Clinic Appointment: What to Bring, What to Expect, What to Ask'
+title: 'What to Expect at a Pain Clinic Appointment'
 dek: 'The first visit sets the course for everything after it. A checklist for arriving prepared — and the questions that reveal whether you picked the right clinic.'
 date: 2026-07-16
 category: 'Patient Guides'

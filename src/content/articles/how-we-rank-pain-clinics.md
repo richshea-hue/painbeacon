@@ -1,5 +1,5 @@
 ---
-title: 'How We Rank Pain Clinics — and Why Nobody Can Buy a Spot'
+title: 'How We Rank Pain Clinics'
 dek: 'Every clinic in our directory gets a score built from five checkable signals. Here is the whole formula, what it can and cannot see, and the line between the ranking and the money.'
 date: 2026-08-18
 category: 'Inside the Rankings'

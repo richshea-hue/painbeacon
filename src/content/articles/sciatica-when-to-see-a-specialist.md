@@ -1,5 +1,5 @@
 ---
-title: 'Sciatica: When to See a Pain Specialist and When to Wait It Out'
+title: 'Sciatica: When to See a Doctor'
 dek: 'Most sciatica gets better on its own within a few weeks. Knowing which symptoms mean wait, which mean call, and which mean go now is the part nobody explains.'
 date: 2026-09-02
 category: 'Patient Guides'

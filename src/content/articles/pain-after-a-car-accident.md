@@ -1,5 +1,5 @@
 ---
-title: 'Pain After a Car Accident: When to See a Specialist, and Why the Paper Trail Matters'
+title: 'Delayed Pain After a Car Accident: What to Do'
 dek: 'Crash pain often shows up a day or two late, and the first weeks decide both how well you recover and whether anyone else pays for it. What to watch for, who to see, and what to write down.'
 date: 2026-09-16
 category: 'Patient Guides'
