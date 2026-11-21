@@ -7,7 +7,10 @@
 
 param(
     [string]$UrlFile,
-    [switch]$FromSitemap
+    [switch]$FromSitemap,
+    [string]$Previous,
+    [string]$SaveTo,
+    [switch]$DryRun   # list what would be sent, send nothing
 )
 
 $siteHost = "painbeacon.com"
@@ -56,9 +59,37 @@ if ($FromSitemap) {
     exit 1
 }
 
+# Pages whose content moves on most deploys (new articles, counts, rankings).
+$hubs = @("https://$siteHost/", "https://$siteHost/pain-clinics/", "https://$siteHost/news/", "https://$siteHost/research/")
+if ($SaveTo) {
+    $all = $urls
+}
+if ($Previous) {
+    if (Test-Path $Previous) {
+        $seen = @{}
+        Get-Content $Previous | ForEach-Object { $seen[$_.Trim()] = $true }
+        $new = @($urls | Where-Object { -not $seen.ContainsKey($_) })
+        Write-Host "$($new.Count) new URL(s) since the last run, plus $($hubs.Count) hub pages."
+    } else {
+        # First run with no saved list: the engines already have the sitemap,
+        # so send only the hubs and start keeping the list.
+        $new = @()
+        Write-Host "No previous URL list; sending the hub pages and saving the list."
+    }
+    $urls = @($hubs + $new | Select-Object -Unique)
+}
+if ($SaveTo) {
+    $all | Set-Content -Path $SaveTo -Encoding utf8
+}
+
 if ($urls.Count -eq 0) {
     Write-Error "No URLs to submit."
     exit 1
+}
+if ($DryRun) {
+    $urls | Select-Object -First 20 | ForEach-Object { Write-Host "  would send $_" }
+    Write-Host "Dry run: $($urls.Count) URL(s), nothing sent."
+    exit 0
 }
 
 # Verify the key file is live before submitting -- a missing key file makes
