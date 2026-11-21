@@ -34,7 +34,7 @@ test('then the site name, then the name is clipped; never over the limit', () =>
 
 test('descriptions are filled to the minimum and never past the maximum', () => {
   const base = 'Orthopedic Surgeons Ltd, a pain medicine practice in Harrisburg, PA: address and phone.';
-  const d = fillDescription(base, [null, 'Compare it with other pain clinics near Harrisburg.', 'Registered specialty: Orthopaedic Surgery.']);
+  const d = fillDescription(base, [null, 'Compare it with other pain clinics near Harrisburg.', 'Registered specialty: Orthopedic Surgery.']);
   assert.ok(d.length >= 120 && d.length <= 160, `${d.length}: ${d}`);
   assert.ok(d.startsWith(base));
   assert.equal(fillDescription('x'.repeat(130), ['more']), 'x'.repeat(130));
