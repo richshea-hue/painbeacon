@@ -570,7 +570,19 @@ const TIERS = ['free', 'verified', 'enhanced', 'featured']; // shared tier list 
       const asOf = (x) => new Date(x.captured_at).toLocaleDateString();
       const delta = (p) => (p == null ? 'no earlier period' : `${p > 0 ? '+' : ''}${p}% vs previous 28 days`);
       const tiles = [];
-      if (k) {
+      // Steady numbers (scripts/lib/gsc-steady.mjs): one-day bursts and
+      // page-eight positions out, so a flat month does not read as a halving.
+      // Older snapshots without them fall back to the raw totals below.
+      const st = k && k.steady;
+      if (st) {
+        const c = st.current, raw = k.totals;
+        tiles.push(tile(c.clicks, 'Google clicks, 28 days', delta(st.pct.clicks)));
+        tiles.push(tile(c.median_daily_impressions, 'Impressions on a typical day',
+          `${delta(st.pct.median_daily_impressions)} · median day; ${raw.impressions.toLocaleString()} in all`));
+        tiles.push(tile(c.page1_impressions, 'Shown on page one of Google', delta(st.pct.page1_impressions)));
+        tiles.push(tile(c.position == null ? '—' : c.position, 'Position when in the top ' + st.visible_position,
+          `previous ${st.previous.position == null ? '—' : st.previous.position} · ${raw.position == null ? '—' : raw.position} counting every result`));
+      } else if (k) {
         tiles.push(tile(k.totals.clicks, 'Google clicks, 28 days', delta(k.pct && k.pct.clicks)));
         tiles.push(tile(k.totals.impressions, 'Google impressions', delta(k.pct && k.pct.impressions)));
         tiles.push(tile(k.totals.position == null ? '—' : k.totals.position, 'Average position',
@@ -578,6 +590,10 @@ const TIERS = ['free', 'verified', 'enhanced', 'featured']; // shared tier list 
       }
       if (t) tiles.push(tile(t.current.pageviews, 'Page views, 28 days', delta(t.pct && t.pct.pageviews) + ' · includes robots'));
       let html = `<div class="cards">${tiles.join('')}</div>`;
+      if (st && st.spike_days.length) {
+        html += `<p class="hint">Left out as one-day bursts (not patients searching): ${st.spike_days
+          .map(d => `${esc(d.date)} (${d.impressions.toLocaleString()} impressions)`).join(', ')}.</p>`;
+      }
       if (k && (k.daily || []).length > 1) {
         const days = k.daily, W = 560, H = 100, P = 6, half = Math.floor(days.length / 2);
         const max = Math.max(1, ...days.map(x => x.clicks));

@@ -22,7 +22,7 @@
     "test:backlinks": "node --test scripts/lib/backlinks.test.mjs",
     "test:feed": "node --test scripts/lib/feed-item.test.mjs",
     "test:oauth": "node --test scripts/lib/oauth1.test.mjs",
-    "test:growth": "node --test scripts/lib/growth.test.mjs",
+    "test:growth": "node --test scripts/lib/growth.test.mjs scripts/lib/gsc-steady.test.mjs",
     "test:research": "node --test src/lib/research-rules.test.mjs scripts/lib/europepmc.test.mjs",
     "test:listings": "node --test src/lib/listing-rules.test.mjs",
     "research:find": "node scripts/find-research-candidates.mjs",

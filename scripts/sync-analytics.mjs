@@ -23,6 +23,7 @@
 // Writes need the service-role key under any of its names (scripts/lib/sb-key.mjs).
 import { gscClient, latestSettledDay } from './lib/gsc.mjs';
 import { serviceKey } from './lib/sb-key.mjs';
+import { steadyTotals } from './lib/gsc-steady.mjs';
 
 const SUPA_URL = (process.env.SUPABASE_URL || '').replace(/\/$/, '');
 const SK = serviceKey();
@@ -134,11 +135,22 @@ async function searchConsole() {
     clicks: r.clicks, impressions: r.impressions, position: Math.round(r.position * 10) / 10,
   }));
 
+  // Page-by-day rows for the steady numbers (scripts/lib/gsc-steady.mjs):
+  // spike days out, deep positions out of the average. Paged, since a busy
+  // window can pass the API's 25,000-row cap.
+  const pageDays = [];
+  for (let startRow = 0; ; startRow += 25000) {
+    const batch = await gsc.query(prevStart, end, { dimensions: ['page', 'date'], rowLimit: 25000, startRow });
+    pageDays.push(...batch);
+    if (batch.length < 25000) break;
+  }
+  const steady = steadyTotals(pageDays, { previous: [prevStart, prevEnd], current: [curStart, end] });
+
   await saveSnapshot('keywords', {
     site: gsc.site, range: { start: curStart, end }, window_days: WINDOW,
     totals, previous,
     pct: { clicks: pct(totals.clicks, previous.clicks), impressions: pct(totals.impressions, previous.impressions) },
-    daily, queries, pages,
+    steady, daily, queries, pages,
   });
 }
 
