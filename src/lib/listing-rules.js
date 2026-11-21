@@ -115,3 +115,58 @@ export function zoneClinicFor(listing, clinics) {
   }
   return null;
 }
+
+// ---------------------------------------------------------------------------
+// Offices of a registry practice (decided 2026-11-20)
+// ---------------------------------------------------------------------------
+//
+// A listing with a parent_npi is a location of a practice that IS in the
+// federal registry. The ranking scores the practice, not the street address:
+// its registry specialty, how long it has been registered, whether it carries
+// the interventional code. Those are as true at its second office as at its
+// first, and most group practices bill every office under one organization
+// NPI without filing the optional secondary locations. So an office ranks,
+// on the parent's registry signals, when all of this holds:
+//
+//   1. the parent's PRIMARY registration is pain medicine (isPainPrimary);
+//   2. the practice itself confirmed the office (confirmed_on / confirmed_how,
+//      which the database already requires before a row is published);
+//   3. the office appears on the practice's own website: office_evidence_url
+//      is a page on the same site as the listing's or the parent's website;
+//   4. it is scored on the parent's registry signals only. It carries no
+//      Google rating of its own (a loose address match is how 2,094 clinics
+//      once got the wrong hours; see notes/), so it earns none of those points.
+//
+// A row with a parent that fails any of these stays a "listed, not ranked"
+// listing, exactly as before.
+
+/** The site a URL belongs to, for "is this page on the practice's own site?" */
+export function siteOf(raw) {
+  const href = websiteHrefOf(raw);
+  if (!href) return '';
+  const host = new URL(href).hostname.toLowerCase().replace(/^www\./, '');
+  // Last two labels: drs-smith.com and offices.drs-smith.com are one site.
+  // US practice domains only; a .co.uk practice is not a case this directory has.
+  return host.split('.').slice(-2).join('.');
+}
+
+/**
+ * Every reason this listing cannot be ranked as an office of `parent`.
+ * Empty array = it qualifies. `isPainPrimary` is passed in so this module stays
+ * free of the data layer (and testable under plain `node --test`).
+ */
+export function officeProblems(row, parent, isPainPrimary) {
+  const out = [];
+  const r = row || {};
+  if (r.parent_npi == null) return ['no parent practice'];
+  if (!parent) return [`parent NPI ${r.parent_npi} is not in the directory`];
+  if (!isPainPrimary(parent)) out.push("the parent's primary registration is not pain medicine");
+  const evidence = siteOf(r.office_evidence_url);
+  if (!evidence) out.push('no page on the practice website lists this office (office_evidence_url)');
+  else {
+    const own = new Set([siteOf(r.website), siteOf(parent.website)].filter(Boolean));
+    if (!own.has(evidence)) out.push(`office_evidence_url is on ${evidence}, not the practice's own site`);
+  }
+  if (!String(r.state || '').match(/^[A-Z]{2}$/)) out.push('state must be a two-letter code');
+  return out;
+}

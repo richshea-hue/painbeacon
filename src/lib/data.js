@@ -11,6 +11,8 @@ import { fileURLToPath } from 'node:url';
 // bare JSON import on its own. Vite and Node 20+ both accept `with`.
 import sampleData from '../data/sample.json' with { type: 'json' };
 import { normalizeWebsite, checkWebsites } from './safebrowsing.js';
+import { getListingRows } from './listing-rows.js';
+import { officeProblems, zoneClinicFor, listingProblems } from './listing-rules.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -173,7 +175,108 @@ export async function getClinics() {
     // A row is a primary (deduped) practice if it isn't folded into another NPI.
     isPrimary: c.primary_npi == null || c.primary_npi === c.npi,
   }));
+
+  // Offices of registry practices: listings that point at a pain-primary
+  // parent and are shown on the practice's own website. They rank, on the
+  // parent's registry signals; see officeProblems in listing-rules.js for the
+  // rule and why. Appended after every registry row, so nothing above (zone
+  // URL segments, Safe Browsing for clinic sites) is computed from them.
+  _cache.push(...(await buildOffices(_cache)));
   return _cache;
+}
+
+// Registry fields an office takes from its parent practice: what the federal
+// record says about the PRACTICE. Everything about the place (address, phone,
+// coordinates, hours, ratings) is the office's own or absent.
+const PRACTICE_FIELDS = [
+  'enumeration_type', 'name', 'primary_taxonomy_code', 'primary_taxonomy_desc',
+  'all_taxonomy_codes', 'enumeration_date', 'nppes_last_updated',
+];
+
+async function buildOffices(registry) {
+  // A real fetch error throws here and fails the build, as getListings() would.
+  const rows = (await getListingRows()).filter((r) => r.parent_npi != null);
+  if (!rows.length) return [];
+
+  const byNpi = new Map(registry.map((c) => [String(c.npi), c]));
+  const slugs = new Set(registry.map((c) => c.slug));
+  const candidates = [];
+  for (const r of rows) {
+    let parent = byNpi.get(String(r.parent_npi)) || null;
+    // Follow a folded duplicate to the practice's primary record.
+    if (parent && parent.primary_npi != null && parent.primary_npi !== parent.npi) {
+      parent = byNpi.get(String(parent.primary_npi)) || parent;
+    }
+    const problems = [...listingProblems(r), ...officeProblems(r, parent, isPainPrimary)];
+    if (slugs.has(r.slug)) problems.push(`slug ${r.slug} is already a clinic page`);
+    if (problems.length) {
+      // Not an error: it stays a "listed, not ranked" listing (listings.js).
+      console.log(`[offices] "${r.name}" stays listed, not ranked: ${problems.join('; ')}`);
+      continue;
+    }
+    slugs.add(r.slug);
+    candidates.push({ r, parent });
+  }
+  if (!candidates.length) return [];
+
+  const hrefs = new Map(candidates.map(({ r }) => [r.slug, normalizeWebsite(r.website)]));
+  const safety = await checkWebsites([...hrefs.values()]);
+
+  return candidates.map(({ r, parent }) => {
+    const zc = zoneClinicFor(r, registry);
+    const href = hrefs.get(r.slug) || null;
+    const practice = Object.fromEntries(PRACTICE_FIELDS.map((f) => [f, parent[f] ?? null]));
+    const office = {
+      ...practice,
+      // No NPI of its own. The practice's NPI is on officeOf, and every page
+      // that prints this office says whose office it is.
+      npi: null,
+      primary_npi: null,
+      slug: r.slug,
+      listingSlug: r.slug,
+      address_1: r.address_1 || null,
+      address_2: r.address_2 || null,
+      city: r.city,
+      state: r.state,
+      postal_code: r.postal_code || null,
+      country: 'US',
+      phone: formatPhone(r.phone),
+      website: r.website || null,
+      websiteHref: href,
+      websiteSafe: href && safety.has(href) ? safety.get(href) : null,
+      latitude: r.latitude ?? null,
+      longitude: r.longitude ?? null,
+      // No rating, reviews, hours or Google match of its own: see the rule.
+      aggregate_rating: null, review_count: null, hours: null,
+      google_place_id: null, google_maps_uri: null,
+      accepts_medicare_cms: null, accepts_medicare_self_reported: null,
+      listing_tier: 'free',
+      // The name the practice gave this office. Prints with the registered
+      // name beside it (brandNameOf), on the same terms as a verified brand name.
+      brand_name: r.name,
+      description: (r.description || '').replace(/\s+/g, ' ').trim() || null,
+      stateSlug: stateSlug(r.state),
+      citySlug: citySlug(r.city),
+      cityLabel: titleCase(r.city),
+      zoneSlug: zc ? zc.zoneSlug : null,
+      zoneName: zc ? zc.zoneName : null,
+      zoneLabel: zc ? zc.zoneLabel : titleCase(r.city),
+      zoneUrlSlug: zc ? zc.zoneUrlSlug : null,
+      isPrimary: true,
+      isOffice: true,
+      officeOf: {
+        npi: parent.npi,
+        slug: parent.slug,
+        name: publicName(parent),
+        registeredName: displayName(parent.name),
+        cityLabel: parent.cityLabel,
+        state: parent.state,
+        verified: VERIFIED_TIERS.has(parent.listing_tier),
+      },
+    };
+    console.log(`[offices] "${r.name}" ranks as an office of NPI ${parent.npi} (${office.zoneLabel})`);
+    return office;
+  });
 }
 
 // The five pain taxonomy codes the NPPES sync filters the directory on
@@ -268,8 +371,10 @@ export function cleanBrandName(raw, registered = '') {
   return s;
 }
 
+// An office (see buildOffices) prints the name the practice gave it on the same
+// terms: confirmed with the practice, registered name always beside it.
 export const brandNameOf = (c) =>
-  c && VERIFIED_TIERS.has(c.listing_tier) ? cleanBrandName(c.brand_name, c.name) : null;
+  c && (c.isOffice || VERIFIED_TIERS.has(c.listing_tier)) ? cleanBrandName(c.brand_name, c.name) : null;
 
 // What to call the practice everywhere a single name is printed.
 export const publicName = (c) => brandNameOf(c) || displayName(c.name);

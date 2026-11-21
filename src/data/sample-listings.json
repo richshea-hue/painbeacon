@@ -32,5 +32,23 @@
     "latitude": null,
     "longitude": null,
     "updated_at": "2026-11-16T00:00:00Z"
+  },
+  {
+    "slug": "ri-east-greenwich-providence-pain-spine-east-greenwich-office-sample",
+    "name": "Providence Pain & Spine, East Greenwich (Sample)",
+    "practice_type": "Pain management",
+    "address_1": "1351 S County Trl",
+    "address_2": "Suite 200",
+    "city": "East Greenwich",
+    "state": "RI",
+    "postal_code": "02818",
+    "phone": "4015550177",
+    "website": "example.com",
+    "description": "Our East Greenwich office. Injections and follow-up visits, Monday and Thursday.",
+    "parent_npi": 1000000002,
+    "latitude": 41.64,
+    "longitude": -71.47,
+    "updated_at": "2026-11-20T00:00:00Z",
+    "office_evidence_url": "https://example.com/locations/east-greenwich"
   }
 ]

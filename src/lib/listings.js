@@ -13,54 +13,21 @@
 // getListings(), so the rules in listing-rules.js are applied once and cannot
 // be skipped by a page that forgot to.
 
-import sampleListings from '../data/sample-listings.json' with { type: 'json' };
 import { getClinics, stateSlug, titleCase, formatPhone, publicName } from './data.js';
 import { checkWebsites } from './safebrowsing.js';
 import { listingProblems, websiteHrefOf, zoneClinicFor, zip5 } from './listing-rules.js';
-
-// PostgREST's answers for "there is no such relation": the migration has not
-// been run on this database yet. That is a normal state, not a failure, and
-// the site builds without listings until it has.
-const NO_SUCH_VIEW = new Set(['PGRST205', '42P01']);
-
-async function fetchRows(url, key) {
-  const res = await fetch(`${url.replace(/\/$/, '')}/rest/v1/nonregistry_listings_public?select=*`, {
-    headers: { apikey: key, Authorization: `Bearer ${key}` },
-  });
-  if (res.ok) return await res.json();
-  const body = await res.text();
-  let code = '';
-  try { code = JSON.parse(body).code || ''; } catch { /* not JSON */ }
-  if (res.status === 404 || NO_SUCH_VIEW.has(code)) {
-    console.warn(
-      '[listings] nonregistry_listings_public does not exist on this database yet — ' +
-        'building with no non-registry listings. Run nonregistry_listings.sql to turn them on.'
-    );
-    return [];
-  }
-  // Anything else (a permissions change, an outage) is a real problem: a build
-  // that quietly dropped every listing would look exactly like one with none.
-  throw new Error(`[listings] Supabase ${res.status}: ${body}`);
-}
+import { getListingRows } from './listing-rows.js';
 
 let _cache = null;
 
 export async function getListings() {
   if (_cache) return _cache;
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_KEY;
-
-  let rows;
-  if (url && key) {
-    rows = await fetchRows(url, key);
-    console.log(`[listings] loaded ${rows.length} non-registry listing(s)`);
-  } else {
-    // getClinics() has already refused to build sample data on Cloudflare, so
-    // reaching this branch means a laptop build. The samples are fictional.
-    rows = sampleListings;
-  }
-
   const clinics = await getClinics();
+  // A row that qualified as an office of a registry practice is a ranked
+  // clinic entry now (data.js buildOffices), with a page at /clinic/<slug>/.
+  // It must not also appear here as a listing.
+  const offices = new Set(clinics.filter((c) => c.isOffice).map((c) => c.listingSlug));
+  const rows = (await getListingRows()).filter((r) => !offices.has(r.slug));
   const byNpi = new Map(clinics.map((c) => [String(c.npi), c]));
 
   const good = [];

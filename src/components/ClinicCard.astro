@@ -30,7 +30,9 @@ const stars = c.aggregate_rating ? '★'.repeat(Math.round(Number(c.aggregate_ra
   <div>
     <h3><a href={`/clinic/${c.slug}/`}>{publicName(c)}</a>
     </h3>
-    {registeredName && <p class="meta registered-as">Registered as {registeredName}</p>}
+    {c.isOffice
+      ? <p class="meta registered-as">Office of {c.officeOf.registeredName} · registered practice</p>
+      : registeredName && <p class="meta registered-as">Registered as {registeredName}</p>}
     <p class="meta">
       {[c.address_1 && titleCase(c.address_1), c.cityLabel, c.state].filter(Boolean).join(', ')}
       {c.phone && <> · {c.phone}</>}
