@@ -1,11 +1,15 @@
 ---
 import '../styles/global.css';
 import { SITE } from '../lib/site.js';
+import { TITLE_MAX } from '../lib/page-meta.js';
 import { sameAsLinks } from '../lib/schema.js';
 import LeadChat from '../components/LeadChat.astro';
 
 const {
   title,
+  // A complete <title>, used as is (no " — PainBeacon" added). For pages
+  // that fit their own title to the length search engines show (page-meta.js).
+  fullTitle: exactTitle,
   description = SITE.description,
   canonical,
   jsonld = [],
@@ -27,7 +31,12 @@ const {
 const ogImageUrl = new URL(ogImage, SITE.url).href;
 const twitterCard = ogImageWidth > ogImageHeight ? 'summary_large_image' : 'summary';
 
-const fullTitle = title ? `${title} — ${SITE.name}` : `${SITE.name} — ${SITE.tagline}`;
+// The site name goes on the end only while the whole title stays within what
+// search engines show (TITLE_MAX, 70; Bing's report flags longer ones).
+const withSite = title && `${title} — ${SITE.name}`;
+const fullTitle = exactTitle ? exactTitle
+  : title ? (withSite.length <= TITLE_MAX ? withSite : title)
+  : `${SITE.name} — ${SITE.tagline}`;
 const canonicalUrl = canonical || new URL(Astro.url.pathname, SITE.url).href;
 
 /**

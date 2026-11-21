@@ -9,6 +9,7 @@ import { acceptsMedicare as acceptsMedicareOf } from '../../lib/insurance.js';
 import { scoreClinic, scoreBand } from '../../lib/ranking.js';
 import { breadcrumbLd, clinicLd } from '../../lib/schema.js';
 import { SITE } from '../../lib/site.js';
+import { practiceTitle, fillDescription } from '../../lib/page-meta.js';
 import { getListingsByParent } from '../../lib/listings.js';
 
 export async function getStaticPaths() {
@@ -184,13 +185,22 @@ if (ins.length > 0) {
 // every profile: no clinic has credentials on file, over half have no reviews,
 // and the reviews that exist are Google's, not ours to call verified.
 const listOf = (xs) => xs.length < 3 ? xs.join(' and ') : `${xs.slice(0, -1).join(', ')}, and ${xs.at(-1)}`;
-const description = `${name}${registeredName ? ` (registered as ${registeredName})` : ''}, a pain medicine practice in ${c.cityLabel}, ${c.state}: ` +
+const baseDescription = `${name}${registeredName ? ` (registered as ${registeredName})` : ''}, a pain medicine practice in ${c.cityLabel}, ${c.state}: ` +
   listOf(['address', c.phone && 'phone', c.hours && 'hours', c.aggregate_rating && 'Google rating',
     acceptsMedicare != null && 'Medicare status'].filter(Boolean)) + '.';
+// Bing flags descriptions this short; add what else the page holds, all true
+// of every profile (page-meta.js).
+const description = fillDescription(baseDescription, [
+  `Compare it with other pain clinics near ${c.cityLabel}.`,
+  c.primary_taxonomy_desc && `Registered specialty: ${specialtyLabel}.`,
+  yearsInPractice >= 1 && `In the federal NPI registry for ${yearsInPractice} year${yearsInPractice === 1 ? '' : 's'}.`,
+]);
+const pageTitle = practiceTitle(name, `${c.cityLabel}, ${c.state}`, SITE.name);
 const fromGoogle = [c.latitude != null && 'map location', c.hours && 'hours',
   c.aggregate_rating && 'rating', c.website && 'website'].filter(Boolean);
 ---
 <Base title={`${name} — ${c.cityLabel}, ${c.state}`}
+      fullTitle={pageTitle}
       description={description}
       canonical={canonicalUrl}
       jsonld={[breadcrumbLd(crumbs), clinicLd(c, canonicalUrl)]}>

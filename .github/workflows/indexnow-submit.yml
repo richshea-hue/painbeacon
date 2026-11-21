@@ -1,6 +1,8 @@
 name: IndexNow submit
 
-# Notifies Bing/Yandex/Seznam/Naver of the full sitemap after every deploy.
+# Notifies Bing/Yandex/Seznam/Naver of NEW sitemap URLs (plus the hub pages)
+# after every deploy. The last run's URL list is kept in the Actions cache.
+# Sending all 15,000 URLs each time is what Bing's report calls "batch mode".
 # Covers both deploy paths: direct pushes to main (Cloudflare Pages git
 # integration) and the NPPES monthly sync, which rebuilds via deploy hook.
 # Submissions are idempotent and quota-free, so over-submitting is harmless.
@@ -29,6 +31,19 @@ jobs:
         # automatically on the next deploy. 5 minutes covers typical builds.
         run: sleep 300
 
-      - name: Submit sitemap to IndexNow
+      - name: Restore the last submitted URL list
+        uses: actions/cache/restore@v4
+        with:
+          path: indexnow-last-urls.txt
+          key: indexnow-urls-${{ github.run_id }}
+          restore-keys: indexnow-urls-
+
+      - name: Submit new URLs to IndexNow
         shell: pwsh
-        run: ./scripts/indexnow_submit_urls.ps1 -FromSitemap
+        run: ./scripts/indexnow_submit_urls.ps1 -FromSitemap -Previous indexnow-last-urls.txt -SaveTo indexnow-last-urls.txt
+
+      - name: Save the URL list for next time
+        uses: actions/cache/save@v4
+        with:
+          path: indexnow-last-urls.txt
+          key: indexnow-urls-${{ github.run_id }}
