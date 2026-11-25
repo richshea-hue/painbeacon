@@ -100,3 +100,4 @@ merged.
 - [x] Telehealth for chronic pain: what can and can't happen by video (Patient Guides) — 2026-11-05
 - [x] Knee pain: when a pain clinic can help, and when to see an orthopedist (Patient Guides) — 2026-11-11
 - [x] Nerve blocks explained: diagnostic vs. therapeutic, and why the difference matters (Treatments Explained) — 2026-11-18
+- [x] Neck pain: when to see a pain specialist, and when to wait (Patient Guides) — 2026-11-25
