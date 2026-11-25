@@ -297,6 +297,46 @@
       ]
     },
     {
+      "page": "news/neck-pain-when-to-see-a-pain-specialist",
+      "role": "hero",
+      "pexels_id": 11352554,
+      "src_url": "https://www.pexels.com/photo/11352554/",
+      "photographer": null,
+      "source_md5": "9b1ff12381280bf979162b2c378beca6",
+      "files": [
+        {
+          "path": "/images/news/neck-pain-when-to-see-a-pain-specialist/woman-holding-back-of-neck-in-pain-hero.jpg",
+          "md5": "ac8228056b51ecffb52aeeb1e673acac",
+          "bytes": 87521
+        },
+        {
+          "path": "/images/news/neck-pain-when-to-see-a-pain-specialist/woman-holding-back-of-neck-in-pain-thumb.jpg",
+          "md5": "120256d411abba121770dbf6694720a9",
+          "bytes": 29612
+        },
+        {
+          "path": "/images/news/neck-pain-when-to-see-a-pain-specialist/woman-holding-back-of-neck-in-pain-share.jpg",
+          "md5": "d0b1d289c61da4746bc4fca8e914d4d0",
+          "bytes": 110372
+        }
+      ]
+    },
+    {
+      "page": "news/neck-pain-when-to-see-a-pain-specialist",
+      "role": "inline",
+      "pexels_id": 5452223,
+      "src_url": "https://www.pexels.com/photo/5452223/",
+      "photographer": null,
+      "source_md5": "43dc8800be1f76d29c0ec1bbbea836ce",
+      "files": [
+        {
+          "path": "/images/news/neck-pain-when-to-see-a-pain-specialist/clinician-reviewing-neck-x-ray-on-tablet.jpg",
+          "md5": "a731db7d3c9d25c476af55bfdcabf835",
+          "bytes": 50306
+        }
+      ]
+    },
+    {
       "page": "news/nerve-blocks-diagnostic-vs-therapeutic",
       "role": "hero",
       "pexels_id": 3985166,
