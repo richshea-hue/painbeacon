@@ -669,3 +669,48 @@ question is settled.
 - Psychology Today charges (third-party) — https://www.brex.com/tools/charge-finder/psychology-today
 - Featured-listing pricing, and the GBP 180 cautionary case — https://turnkeydirectories.com/how-much-to-charge-for-featured-business-directory-listings/ and https://www.jasminedirectory.com/blog/should-i-pay-for-a-directory-listing/
 - NPPES public registry API — https://npiregistry.cms.hhs.gov/api/ (queried 2026-11-09)
+
+## 11. Listed, 2026-11-18
+
+The practice accepted the free listing. Rich's follow-up of 2026-11-17 offered
+two routes: send an NPI so we could check it, or reply "yes" for a listing
+that is shown separately and not ranked. The reply on 2026-11-18 was "yes",
+with no NPI.
+
+It came from the same webmail address the original inquiry came from, not an
+address at the practice's own domain. Section 9 and the 2026-11-16 note treat
+that as weaker than a domain address. Rich accepted it as confirmation: he
+asked the question, to that address, and the answer was the one he asked for.
+That is what `confirmed_how` records.
+
+The row, written to production on 2026-11-18 at Rich's instruction:
+
+| field | value |
+|---|---|
+| table | `nonregistry_listings` |
+| slug | `ca-costa-mesa-blooming-chiropractic` |
+| page | `/listing/ca-costa-mesa-blooming-chiropractic/` |
+| status | published |
+| practice type | Chiropractic |
+| address | 1525 Mesa Verde Dr E #210, Costa Mesa, CA 92626 |
+| phone | (657) 845-1669 |
+| website | https://www.bloomingchiropractic.com |
+| from the practice | "Gentle, effective chiropractic care for pregnancy, postpartum and pediatric needs, in Costa Mesa, Orange County." |
+| parent NPI | none: an independent practice, not a location of a registry clinic |
+| coordinates | none: not on the map, which listings never are |
+| confirmed | 2026-11-18, by email reply |
+| claim | linked to the 2026-10-21 inquiry row |
+
+The contact email is in the row's private column, not in this note, because
+this repository is public.
+
+This is the first real non-registry listing, so it is also the first test of
+the templates with real data rather than the two fictional samples.
+
+Still open:
+
+- The inquiry row in `claims` is still `new`. None of the claim statuses fits
+  well (`verified` is the one word a listing must never carry), so it is left
+  for Rich to set by hand.
+- The practice has not been told the page is live. That email is Rich's to
+  send.
