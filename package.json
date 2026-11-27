@@ -26,7 +26,8 @@
     "test:research": "node --test src/lib/research-rules.test.mjs scripts/lib/europepmc.test.mjs",
     "test:listings": "node --test src/lib/listing-rules.test.mjs",
     "research:find": "node scripts/find-research-candidates.mjs",
-    "research:scaffold": "node scripts/scaffold-research.mjs"
+    "research:scaffold": "node scripts/scaffold-research.mjs",
+    "test:meta": "node --test src/lib/page-meta.test.mjs"
   },
   "dependencies": {
     "@astrojs/rss": "^4.0.19",
