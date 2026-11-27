@@ -19,7 +19,11 @@ const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex, nofollow" />
   <title>PainBeacon · Admin</title>
-  <style>
+  <!-- is:global: nearly everything on this page is drawn by the script below
+       with innerHTML, and Astro scopes a plain <style> to the template markup
+       only (data-astro-cid). Scoped, none of the cards, lists or buttons were
+       styled. This page has its own <html>, so global costs nothing. -->
+  <style is:global>
     :root {
       --bg: #0e1113;
       --panel: #161a1d;
@@ -106,8 +110,8 @@ const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
       padding: 14px 16px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
     }
     .item.new { border-color: rgba(245,185,74,.4); }
-    :global(.item.resolved) { opacity: .5; }
-    :global(.item.resolved.new) { border-color: var(--border); }
+    .item.resolved { opacity: .5; }
+    .item.resolved.new { border-color: var(--line); }
     .item .main { flex: 1 1 240px; min-width: 0; }
     .item .name { font-weight: 700; }
     .item .meta { color: var(--muted); font-size: 13px; margin-top: 3px; word-break: break-word; }
@@ -162,6 +166,45 @@ const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
     .banner .txt { flex: 1 1 280px; font-size: 14px; }
     .banner .txt b { color: var(--ink); }
 
+    /* Overview stat groups (the bestraces.com/admin layout) */
+    .grp { margin-bottom: 18px; }
+    .grp h3 { font-size: 14px; margin: 0 0 8px; color: var(--ink); font-weight: 700; }
+    .card small { display: block; color: var(--muted); font-size: 12px; margin-top: 6px; line-height: 1.35; }
+    .hint { color: var(--muted); font-size: 13px; margin: 6px 0 0; }
+    .hint code { background: var(--panel-2); padding: 1px 5px; border-radius: 5px; font-size: 12px; }
+    .bars { display: flex; align-items: flex-end; gap: 10px; height: 120px; padding: 10px 12px 0; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
+    .bars .b { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 4px; }
+    .bars .stack { width: 100%; display: flex; gap: 3px; align-items: flex-end; height: 80px; }
+    .bars .stack i { flex: 1; border-radius: 4px 4px 0 0; min-height: 2px; display: block; }
+    .bars .lbl { font-size: 11px; color: var(--muted); padding-bottom: 6px; }
+    .key { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin: 0 5px 0 12px; vertical-align: middle; }
+    .key:first-child { margin-left: 0; }
+    .spark { width: 100%; height: 110px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); margin-top: 12px; }
+
+    /* Small tables and the archive sheet */
+    .two-col { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 14px; }
+    .tbl { min-width: 0; overflow-x: auto; }
+    .tbl h3 { font-size: 14px; margin: 0 0 8px; }
+    .tbl td:first-child { word-break: break-word; }
+    table.sheet, .tbl table { width: 100%; border-collapse: collapse; font-size: 13px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+    .sheet th, .sheet td, .tbl th, .tbl td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    .sheet th, .tbl th { color: var(--muted); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .4px; background: var(--panel-2); }
+    .sheet th { cursor: pointer; white-space: nowrap; user-select: none; }
+    .sheet th.sorted::after { content: ' ▾'; } .sheet th.sorted.asc::after { content: ' ▴'; }
+    .tbl td.n, .tbl th.n { text-align: right; font-variant-numeric: tabular-nums; }
+    .sheet tr:last-child td, .tbl tr:last-child td { border-bottom: 0; }
+    .sheet-wrap { overflow-x: auto; }
+    .sheet td.msg { max-width: 320px; color: var(--muted); }
+    .archive { margin-top: 0; }
+    .archive summary { cursor: pointer; list-style: none; }
+    .archive summary::-webkit-details-marker { display: none; }
+    .archive-bar { display: flex; gap: 10px; align-items: center; margin: 12px 0; flex-wrap: wrap; }
+    .archive-bar .ctl { flex: 1 1 260px; }
+    .claims-note { background: rgba(45,212,191,.1); border: 1px solid rgba(45,212,191,.35); color: var(--ink); border-radius: var(--radius); padding: 10px 14px; font-size: 14px; margin: 0 0 12px; }
+    .tag.listed, .tag.office { background: rgba(45,212,191,.16); color: var(--teal); }
+    .tag.declined { background: rgba(240,114,106,.14); color: var(--red); }
+    .tag.customer { background: rgba(245,185,74,.18); color: var(--amber); }
+
     .loading { padding: 60px 0; text-align: center; color: var(--muted); }
     .hidden { display: none !important; }
   </style>
@@ -195,14 +238,30 @@ const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
       <div id="loading" class="loading">Loading…</div>
 
       <div id="content" class="hidden">
+        <p id="asOf" class="who" style="margin:18px 0 0"></p>
+
+        <!-- Needs action first, as on bestraces.com/admin. Only open claims
+             (new, verifying) are here; anything decided moves to the archive
+             sheet at the bottom of the page. -->
         <section>
-          <div class="sec-head"><h2>Overview</h2></div>
-          <div id="cards" class="cards"></div>
+          <div class="sec-head"><h2>Claims to work</h2><span id="claimsPill" class="pill">0</span></div>
+          <p id="claimsNote" class="claims-note hidden"></p>
+          <div id="claims" class="list"></div>
         </section>
 
         <section>
-          <div class="sec-head"><h2>Claim requests</h2><span id="claimsPill" class="pill">0</span></div>
-          <div id="claims" class="list"></div>
+          <div class="sec-head"><h2>Overview</h2></div>
+          <div id="cards"></div>
+        </section>
+
+        <section>
+          <div class="sec-head"><h2>Traffic &amp; Google</h2></div>
+          <div id="traffic"></div>
+        </section>
+
+        <section>
+          <div class="sec-head"><h2>What people searched</h2></div>
+          <div id="searchTables" class="two-col"></div>
         </section>
 
         <section>
@@ -231,6 +290,9 @@ const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
               <label>Phone<input id="nr-phone" /></label>
               <label>Website<input id="nr-website" placeholder="https://" /></label>
               <label>Additional location of (registry NPI, optional)<input id="nr-parent_npi" inputmode="numeric" maxlength="10" /></label>
+              <label class="wide">Page on the practice's own website that lists this office (optional)<input id="nr-office_evidence_url" placeholder="https://theirpractice.com/locations/…" />
+                <span class="nr-note" style="display:block">With a parent NPI whose primary registration is pain medicine, this makes the office <b>ranked</b> on the practice's registry record
+                  (a clinic page, not a listing). Leave it empty and it stays listed, not ranked. Confirm the office with the practice's own email address, not an agency's.</span></label>
               <label>Latitude (optional)<input id="nr-latitude" inputmode="decimal" /></label>
               <label>Longitude (optional)<input id="nr-longitude" inputmode="decimal" /></label>
               <label class="wide">From the practice (optional, 400 characters, shown publicly)<textarea id="nr-description" rows="2" maxlength="400"></textarea></label>
@@ -251,6 +313,25 @@ const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
         <section>
           <div class="sec-head"><h2>Recent leads</h2><span id="leadsPill" class="pill">0</span></div>
           <div id="leads" class="list"></div>
+        </section>
+
+        <section>
+          <div class="sec-head"><h2>Outreach &amp; sponsors</h2></div>
+          <div id="outreachTables" class="two-col"></div>
+        </section>
+
+        <!-- Every decided claim, as a sheet: searchable, sortable, downloadable
+             as CSV for Excel or Google Sheets. Reopen puts a row back in
+             "Claims to work". -->
+        <section>
+          <details id="archiveWrap" class="archive">
+            <summary><span class="sec-head" style="display:inline-flex;margin:0"><h2>Claims archive</h2><span id="archivePill" class="pill">0</span></span></summary>
+            <div class="archive-bar">
+              <input id="archiveFilter" class="ctl" type="search" placeholder="Filter by practice, person, status…" />
+              <button id="archiveCsv" class="btn-mini" type="button">Download CSV</button>
+            </div>
+            <div class="sheet-wrap"><table id="archiveTable" class="sheet"></table></div>
+          </details>
         </section>
       </div>
     </main>
@@ -353,9 +434,11 @@ const TIERS = ['free', 'verified', 'enhanced', 'featured']; // shared tier list 
     async function load() {
       $('loading').classList.remove('hidden'); $('content').classList.add('hidden');
       try {
-        const [stats, claims, paid, leads, listed] = await Promise.all([
+        const [stats, claims, paid, leads, listed, overview, analytics] = await Promise.all([
           sb.rpc('admin_stats'),
-          sb.from('claims').select('*').order('created_at', { ascending: false }).limit(100),
+          // Every claim: the open ones are worked at the top, the rest fill the
+          // archive sheet. There are a handful a month; 1,000 is years of them.
+          sb.from('claims').select('*').order('created_at', { ascending: false }).limit(1000),
           // '*' rather than a column list: brand_name is read here, and naming a
           // column that a database has not been migrated to yet fails the whole
           // dashboard. This is the signed-in admin reading a handful of rows.
@@ -366,12 +449,19 @@ const TIERS = ['free', 'verified', 'enhanced', 'featured']; // shared tier list 
           // reads it: a database that has not had nonregistry_listings.sql run
           // shows a one-line notice in that section and the rest loads as usual.
           sb.from('nonregistry_listings').select('*').order('created_at', { ascending: false }).limit(200),
+          // Both resolve with { error } on a database that has not had
+          // admin_overview.sql / analytics_snapshots.sql run yet; the page then
+          // falls back to admin_stats and shows a one-line setup hint.
+          sb.rpc('admin_overview'),
+          sb.rpc('admin_analytics'),
         ]);
-        if (stats.error) throw new Error('stats: ' + stats.error.message);
-        renderCards(stats.data || {});
-        renderClaims(claims.data || []);
-        renderPaid(paid.data || []);
+        if (stats.error && overview.error) throw new Error('stats: ' + stats.error.message);
+        if (!overview.error && overview.data) renderOverview(overview.data);
+        else renderCards(stats.data || {});
+        renderTraffic(analytics.error ? null : (analytics.data || {}), analytics.error);
         claimRows = claims.data || [];
+        renderClaims(claimRows);
+        renderPaid(paid.data || []);
         renderListed(listed);
         renderLeads(leads.data || []);
         $('loading').classList.add('hidden'); $('content').classList.remove('hidden');
@@ -381,24 +471,174 @@ const TIERS = ['free', 'verified', 'enhanced', 'featured']; // shared tier list 
       }
     }
 
+    // Fallback, used only until admin_overview.sql has been run.
     function renderCards(s) {
       const live = (s.tier_enhanced || 0) + (s.tier_featured || 0);
-      $('cards').innerHTML =
+      $('cards').innerHTML = '<div class="cards">' +
         card(s.clinics_total, 'Clinics') +
         card(s.claims_total, 'Claim requests') +
         card(live, 'Paying listings') +
         card(s.leads_total, 'Leads (all time)') +
-        card(s.leads_30d, 'Leads · 30d');
+        card(s.leads_30d, 'Leads · 30d') + '</div>' +
+        '<p class="hint">More stats appear once <code>admin_overview.sql</code> has been run in Supabase.</p>';
+      $('searchTables').innerHTML = '';
+      $('outreachTables').innerHTML = '';
     }
 
-    function renderClaims(rows) {
-      const newCount = rows.filter(r => (r.status || 'new') === 'new').length;
-      const pill = $('claimsPill');
-      pill.textContent = newCount ? newCount + ' new' : rows.length;
-      pill.className = 'pill' + (newCount ? ' hot' : '');
-      if (!rows.length) { $('claims').innerHTML = '<div class="empty">No claim requests yet.</div>'; return; }
+    // ---- overview: stat groups, as on bestraces.com/admin -------------------
+    const tile = (n, l, sub = '') =>
+      `<div class="card"><div class="n">${typeof n === 'number' ? num(n) : esc(n)}</div><div class="l">${esc(l)}</div>${sub ? `<small>${esc(sub)}</small>` : ''}</div>`;
+    const group = (title, tiles) => `<div class="grp"><h3>${esc(title)}</h3><div class="cards">${tiles.join('')}</div></div>`;
+    const share = (a, b) => (b ? Math.round((100 * a) / b) + '%' : '—');
+    const smallTable = (title, cols, rows, numeric = []) => `<div class="tbl"><h3>${esc(title)}</h3>` + (rows.length
+      ? `<table><thead><tr>${cols.map((c, i) => `<th class="${numeric.includes(i) ? 'n' : ''}">${esc(c)}</th>`).join('')}</tr></thead><tbody>` +
+        rows.map(r => `<tr>${r.map((v, i) => `<td class="${numeric.includes(i) ? 'n' : ''}">${typeof v === 'number' ? num(v) : esc(v)}</td>`).join('')}</tr>`).join('') +
+        '</tbody></table>'
+      : '<div class="empty">Nothing yet.</div>') + '</div>';
 
-      const STATUSES = ['new', 'verifying', 'verified', 'customer', 'declined'];
+    function monthBars(months) {
+      if (!months || !months.length) return '';
+      const series = [['searches', 'var(--teal)'], ['leads', 'var(--amber)'], ['claims', 'var(--green)']];
+      const max = Math.max(1, ...months.flatMap(m => series.map(([k]) => m[k] || 0)));
+      const mon = (s) => new Date(s + '-15').toLocaleDateString(undefined, { month: 'short' });
+      return `<div class="grp"><h3>By month</h3><div class="bars">` + months.map(m =>
+        `<div class="b" title="${esc(m.month)}: ${series.map(([k]) => (m[k] || 0) + ' ' + k).join(', ')}"><div class="stack">` +
+        series.map(([k, c]) => `<i style="background:${c};height:${Math.round(80 * (m[k] || 0) / max)}px"></i>`).join('') +
+        `</div><div class="lbl">${esc(mon(m.month))}</div></div>`).join('') +
+        `</div><p class="hint">${series.map(([k, c]) => `<span class="key" style="background:${c}"></span>${k}`).join('')}` +
+        ' · searches are logged by the visitor\'s browser, so robots cannot add them</p></div>';
+    }
+
+    function renderOverview(o) {
+      const d = o.directory || {}, c = o.claims || {}, l = o.leads || {}, s = o.search || {}, out = o.outreach || {};
+      $('asOf').textContent = 'Data as of ' + new Date(o.generated_at).toLocaleString();
+      const paying = (d.enhanced || 0) + (d.featured || 0);
+      $('cards').innerHTML =
+        group('Patients', [
+          tile(s.total || 0, 'Searches on the site', `${s.last_7d || 0} this week · ${s.last_30d || 0} in 30 days`),
+          tile(s.matched_pct == null ? '—' : s.matched_pct + '%', 'Searches that found clinics', 'the rest found nothing'),
+          tile(l.total || 0, 'Leads', `${l.new_7d || 0} this week · ${l.new_30d || 0} in 30 days`),
+          tile(l.wants_contact || 0, 'Asked to be contacted', 'of all leads'),
+        ]) +
+        group('Practices', [
+          tile(c.active || 0, 'Open claims', `${c.new || 0} new · ${c.new_30d || 0} arrived in 30 days`),
+          tile(d.verified || 0, 'Verified listings', 'claimed and confirmed'),
+          tile(paying, 'Paying listings', `${d.enhanced || 0} enhanced · ${d.featured || 0} featured`),
+          tile(d.listings_published || 0, 'Listed, not ranked', `${d.listings_draft || 0} draft · ${d.offices || 0} ranked as offices`),
+        ]) +
+        group('Directory', [
+          tile(d.practices || 0, 'Practices', `${num(d.clinics || 0)} registry records, duplicates folded`),
+          tile(d.zones || 0, 'Area pages'),
+          tile(share(d.geocoded, d.clinics), 'On the map', `${num(d.geocoded || 0)} have a location`),
+          tile(share(d.rated, d.clinics), 'Have a Google rating', `${num(d.with_website || 0)} have a website`),
+        ]) +
+        monthBars(o.monthly);
+
+      const src = Object.entries(s.by_source || {}).map(([k, n]) => k + ' ' + n).join(' · ');
+      $('searchTables').innerHTML =
+        smallTable('Most searched' + (src ? ` (${src})` : ''), ['ZIP or city', 'Times', 'Found clinics'],
+          (s.top || []).map(t => [t.q, t.n, t.matched ? 'yes' : 'no']), [1]) +
+        smallTable('Searches that found nothing', ['What they typed', 'Times'],
+          (s.unmatched || []).map(t => [t.q, t.n]), [1]);
+
+      $('outreachTables').innerHTML =
+        smallTable('Postcards', ['Batch', 'Cards', 'Mailed', 'Scanned', 'Scans'],
+          (out.postcards || []).map(p => [p.batch || '(none)', p.total, p.mailed, p.scanned, p.scans]), [1, 2, 3, 4]) +
+        smallTable('Practice Kit & backlinks', ['What', 'Count'], [
+          ['Practice Kit downloads', out.kit_downloads || 0],
+          ['… in the last 30 days', out.kit_downloads_30d || 0],
+          ['Backlinks found', out.backlinks || 0],
+          ['… using the badge', out.badge_links || 0],
+        ], [1]) +
+        smallTable('Sponsors (robots excluded)', ['Sponsor', 'Views', 'Clicks', 'Views 30d', 'Clicks 30d'],
+          (o.sponsors || []).map(p => [p.sponsor, p.views, p.clicks, p.views_30d, p.clicks_30d]), [1, 2, 3, 4]) +
+        ((o.sponsors || []).length ? '<p class="hint" style="grid-column:1/-1">Sponsor clicks are known to over-count (more clicks than views). Fix the attribution before quoting them to a sponsor.</p>' : '');
+    }
+
+    // ---- traffic & Google: latest snapshots written by sync-analytics.mjs ----
+    function renderTraffic(a, err) {
+      const box = $('traffic');
+      const setup = '<p class="hint">Filled by <code>scripts/sync-analytics.mjs</code>, daily from GitHub Actions or by hand with ' +
+        '<code>node --env-file=.env scripts/sync-analytics.mjs</code>. Traffic needs <code>CLOUDFLARE_API_TOKEN</code>; ' +
+        'Search Console needs <code>GSC_SERVICE_ACCOUNT_JSON</code> and that account added as a user on the property.</p>';
+      if (err) {
+        box.innerHTML = '<div class="empty">Not set up yet: run <b>analytics_snapshots.sql</b> in Supabase.</div>' + setup;
+        return;
+      }
+      const t = a.traffic, k = a.keywords, r = a.referrers;
+      if (!t && !k) { box.innerHTML = '<div class="empty">No analytics snapshots yet.</div>' + setup; return; }
+      const asOf = (x) => new Date(x.captured_at).toLocaleDateString();
+      const delta = (p) => (p == null ? 'no earlier period' : `${p > 0 ? '+' : ''}${p}% vs previous 28 days`);
+      const tiles = [];
+      // Steady numbers (scripts/lib/gsc-steady.mjs): one-day bursts and
+      // page-eight positions out, so a flat month does not read as a halving.
+      // Older snapshots without them fall back to the raw totals below.
+      const st = k && k.steady;
+      if (st) {
+        const c = st.current, raw = k.totals;
+        tiles.push(tile(c.clicks, 'Google clicks, 28 days', delta(st.pct.clicks)));
+        tiles.push(tile(c.median_daily_impressions, 'Impressions on a typical day',
+          `${delta(st.pct.median_daily_impressions)} · median day; ${raw.impressions.toLocaleString()} in all`));
+        tiles.push(tile(c.page1_impressions, 'Shown on page one of Google', delta(st.pct.page1_impressions)));
+        tiles.push(tile(c.position == null ? '—' : c.position, 'Position when in the top ' + st.visible_position,
+          `previous ${st.previous.position == null ? '—' : st.previous.position} · ${raw.position == null ? '—' : raw.position} counting every result`));
+      } else if (k) {
+        tiles.push(tile(k.totals.clicks, 'Google clicks, 28 days', delta(k.pct && k.pct.clicks)));
+        tiles.push(tile(k.totals.impressions, 'Google impressions', delta(k.pct && k.pct.impressions)));
+        tiles.push(tile(k.totals.position == null ? '—' : k.totals.position, 'Average position',
+          k.totals.ctr == null ? '' : k.totals.ctr + '% click-through'));
+      }
+      if (t) tiles.push(tile(t.current.pageviews, 'Page views, 28 days', delta(t.pct && t.pct.pageviews) + ' · includes robots'));
+      let html = `<div class="cards">${tiles.join('')}</div>`;
+      if (st && st.spike_days.length) {
+        html += `<p class="hint">Left out as one-day bursts (not patients searching): ${st.spike_days
+          .map(d => `${esc(d.date)} (${d.impressions.toLocaleString()} impressions)`).join(', ')}.</p>`;
+      }
+      if (k && (k.daily || []).length > 1) {
+        const days = k.daily, W = 560, H = 100, P = 6, half = Math.floor(days.length / 2);
+        const max = Math.max(1, ...days.map(x => x.clicks));
+        const pts = (sl) => sl.map((x, i) => `${(P + i * (W - 2 * P) / Math.max(1, sl.length - 1)).toFixed(1)},${(H - P - x.clicks / max * (H - 2 * P)).toFixed(1)}`).join(' ');
+        html += `<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Google clicks per day, current 28 days over previous 28">
+          <polyline points="${pts(days.slice(0, half))}" fill="none" stroke="var(--line)" stroke-width="2"/>
+          <polyline points="${pts(days.slice(half))}" fill="none" stroke="var(--teal)" stroke-width="2.5"/></svg>
+          <p class="hint"><span class="key" style="background:var(--teal)"></span>Google clicks per day, last 28 days<span class="key" style="background:var(--line)"></span>the 28 before · Search Console, updated ${esc(asOf(k))}</p>`;
+      }
+      html += '<div class="two-col" style="margin-top:14px">';
+      if (k) html += smallTable('Top Google searches', ['Query', 'Clicks', 'Impr.', 'Pos.'],
+        (k.queries || []).map(q => [q.query, q.clicks, q.impressions, q.position]), [1, 2, 3]);
+      if (k) html += smallTable('Top pages from Google', ['Page', 'Clicks', 'Impr.'],
+        (k.pages || []).map(p => [p.page, p.clicks, p.impressions]), [1, 2]);
+      if (r) html += smallTable('Sites sending traffic', ['Referrer', 'Requests'],
+        (r.hosts || []).map(h => [h.host, h.requests]), [1]);
+      html += '</div>';
+      if (t) html += `<p class="hint">Cloudflare edge data, no on-page tracking, updated ${esc(asOf(t))}. Page views and IP counts on a 15,000-page directory are mostly crawlers; Google clicks and on-site searches are the visitor signals.</p>`;
+      box.innerHTML = html;
+    }
+
+    // Open claims are worked here; every other status is decided and lives in
+    // the archive sheet. 'listed' = an inquiry that became a "listed, not
+    // ranked" listing (or a ranked office), which is neither a verified claim
+    // nor a declined one.
+    const CLAIM_STATUSES = ['new', 'verifying', 'verified', 'customer', 'listed', 'declined'];
+    const isOpen = (r) => ['new', 'verifying'].includes(r.status || 'new');
+
+    // Move a claim to a new status in memory and redraw both lists. `note` is
+    // shown above the open claims, since the row it is about may have just
+    // left them.
+    function claimMoved(id, status, note) {
+      const row = claimRows.find(x => String(x.id) === String(id));
+      if (row) row.status = status;
+      renderClaims(claimRows);
+      if (note) { const n = $('claimsNote'); n.innerHTML = note; n.classList.remove('hidden'); }
+    }
+
+    function renderClaims(all) {
+      const rows = all.filter(isOpen);
+      renderArchive(all.filter(r => !isOpen(r)));
+      renderClaimsPill();
+      if (!rows.length) { $('claims').innerHTML = '<div class="empty">No open claims. Decided ones are in the archive at the bottom of the page.</div>'; return; }
+
+      const STATUSES = CLAIM_STATUSES;
       $('claims').innerHTML = rows.map(r => {
         const opts = STATUSES.map(st =>
           `<option value="${st}"${(r.status || 'new') === st ? ' selected' : ''}>${st}</option>`).join('');
@@ -423,6 +663,7 @@ const TIERS = ['free', 'verified', 'enhanced', 'featured']; // shared tier list 
               + esc(r.source_page || 'the inquiry form')
               + ' — not a claim on an existing listing, so there is no clinic record to link</div>' : '' }
             ${ r.message ? `<div class="meta">“${esc(r.message)}”</div>` : '' }
+            ${ r.notes ? `<div class="meta"><b>Notes:</b> ${esc(r.notes)}</div>` : '' }
           </div>
           <div class="claim-actions">
             ${ r.npi ? `<input class="ctl" data-brand="${esc(r.id)}" type="text" maxlength="80" value="${esc(brandFromMessage(r))}"
@@ -445,8 +686,9 @@ const TIERS = ['free', 'verified', 'enhanced', 'featured']; // shared tier list 
           const { error } = await sb.from('claims').update({ status: sel.value }).eq('id', id);
           sel.disabled = false;
           if (error) { alert('Could not save: ' + error.message); return; }
-          flash('cs-' + id);
-          renderClaimsPill();
+          const row = claimRows.find(x => String(x.id) === String(id)) || {};
+          if (['new', 'verifying'].includes(sel.value)) { row.status = sel.value; flash('cs-' + id); renderClaimsPill(); return; }
+          claimMoved(id, sel.value, `“${esc(row.clinic_name || 'Claim')}” marked <b>${esc(sel.value)}</b> and moved to the archive.`);
         });
       });
 
@@ -484,10 +726,7 @@ const TIERS = ['free', 'verified', 'enhanced', 'featured']; // shared tier list 
           if (r1.error) { btn.disabled = false; btn.textContent = '✓ Approve'; alert('Clinic update failed: ' + r1.error.message); return; }
           const r2 = await sb.from('claims').update({ status: 'verified' }).eq('id', id);
           if (r2.error) { alert('Clinic updated, but marking the claim failed: ' + r2.error.message); }
-          const d = $('cd-' + id); if (d) { d.hidden = false; d.textContent = 'approved ✓ — rebuild to publish · send the kit link: npm run kit:link -- ' + npi; }
-          const rowEl = $('claim-' + id); if (rowEl) { rowEl.classList.remove('new'); rowEl.classList.add('resolved'); }
-          const stSel = document.querySelector(`select[data-claim="${id}"]`); if (stSel) stSel.value = 'verified';
-          btn.textContent = '✓ Approved'; renderClaimsPill();
+          claimMoved(id, 'verified', `“${esc(row.clinic_name || npi)}” approved ✓ and moved to the archive. Rebuild to publish, then send the Practice Kit link: <code>npm run kit:link -- ${esc(npi)}</code>`);
           showRebuildBanner();
         });
       });
@@ -500,21 +739,88 @@ const TIERS = ['free', 'verified', 'enhanced', 'featured']; // shared tier list 
           const { error } = await sb.from('claims').update({ status: 'declined' }).eq('id', id);
           btn.disabled = false;
           if (error) { alert('Could not save: ' + error.message); return; }
-          const d = $('cd-' + id); if (d) { d.hidden = false; d.textContent = 'declined'; }
-          const rowEl = $('claim-' + id); if (rowEl) { rowEl.classList.remove('new'); rowEl.classList.add('resolved'); }
-          const stSel = document.querySelector(`select[data-claim="${id}"]`); if (stSel) stSel.value = 'declined';
-          renderClaimsPill();
-          showRebuildBanner();
+          const row = claimRows.find(x => String(x.id) === String(id)) || {};
+          claimMoved(id, 'declined', `“${esc(row.clinic_name || 'Claim')}” declined and moved to the archive.`);
         });
       });
     }
     function renderClaimsPill() {
-      const sels = [...document.querySelectorAll('select[data-claim]')];
-      const newCount = sels.filter(s => s.value === 'new').length;
+      const open = claimRows.filter(isOpen);
+      const newCount = open.filter(r => (r.status || 'new') === 'new').length;
       const pill = $('claimsPill');
-      pill.textContent = newCount ? newCount + ' new' : sels.length;
+      pill.textContent = newCount ? newCount + ' new · ' + open.length + ' open' : open.length + ' open';
       pill.className = 'pill' + (newCount ? ' hot' : '');
     }
+
+    // ---- claims archive: a sheet of every decided claim ---------------------
+    const ARCHIVE_COLS = [
+      ['created_at', 'Received'], ['clinic_name', 'Practice'], ['kind', 'Kind'], ['status', 'Status'],
+      ['contact_name', 'Contact'], ['work_email', 'Email'], ['phone', 'Phone'], ['npi', 'NPI'], ['notes', 'Notes'],
+    ];
+    let archiveRows = [], archiveSort = { key: 'created_at', asc: false };
+    const archiveVal = (r, k) => k === 'kind' ? (isInquiry(r) ? 'inquiry' : 'claim') : (r[k] == null ? '' : String(r[k]));
+    const archiveVisible = () => {
+      const f = ($('archiveFilter').value || '').toLowerCase().trim();
+      const rows = f ? archiveRows.filter(r => ARCHIVE_COLS.some(([k]) => archiveVal(r, k).toLowerCase().includes(f))
+        || (r.message || '').toLowerCase().includes(f)) : archiveRows.slice();
+      const { key, asc } = archiveSort;
+      rows.sort((a, b) => archiveVal(a, key).localeCompare(archiveVal(b, key), undefined, { numeric: true }) * (asc ? 1 : -1));
+      return rows;
+    };
+
+    function renderArchive(rows) {
+      archiveRows = rows;
+      $('archivePill').textContent = rows.length;
+      const visible = archiveVisible();
+      const head = '<thead><tr>' + ARCHIVE_COLS.map(([k, l]) =>
+        `<th data-sort="${k}" class="${archiveSort.key === k ? 'sorted' + (archiveSort.asc ? ' asc' : '') : ''}">${esc(l)}</th>`).join('') + '<th></th></tr></thead>';
+      const body = visible.length ? visible.map(r => `<tr>
+          <td>${esc(fmtDate(r.created_at))}</td>
+          <td><b>${esc(r.clinic_name || '')}</b>${r.clinic_slug ? ` <a href="https://painbeacon.com/clinic/${esc(r.clinic_slug)}/" target="_blank" rel="noopener">↗</a>` : ''}</td>
+          <td>${isInquiry(r) ? 'inquiry' : 'claim'}</td>
+          <td><span class="tag ${esc(r.status || '')}">${esc(r.status || '')}</span></td>
+          <td>${esc([r.contact_name, r.role].filter(Boolean).join(' · '))}</td>
+          <td>${esc(r.work_email || '')}</td>
+          <td>${esc(r.phone || '')}</td>
+          <td>${esc(r.npi || '')}</td>
+          <td class="msg">${esc(r.notes || '')}</td>
+          <td><button class="btn-mini" data-reopen="${esc(r.id)}" title="Put this back in Claims to work, as verifying">Reopen</button></td>
+        </tr>`).join('')
+        : `<tr><td colspan="${ARCHIVE_COLS.length + 1}" style="text-align:center;color:var(--muted)">${rows.length ? 'Nothing matches the filter.' : 'No decided claims yet.'}</td></tr>`;
+      $('archiveTable').innerHTML = head + '<tbody>' + body + '</tbody>';
+
+      $('archiveTable').querySelectorAll('th[data-sort]').forEach(th => th.addEventListener('click', () => {
+        const k = th.getAttribute('data-sort');
+        archiveSort = { key: k, asc: archiveSort.key === k ? !archiveSort.asc : k !== 'created_at' };
+        renderArchive(archiveRows);
+      }));
+      $('archiveTable').querySelectorAll('button[data-reopen]').forEach(btn => btn.addEventListener('click', async () => {
+        const id = btn.getAttribute('data-reopen');
+        btn.disabled = true;
+        const { error } = await sb.from('claims').update({ status: 'verifying' }).eq('id', id);
+        btn.disabled = false;
+        if (error) { alert('Could not save: ' + error.message); return; }
+        const row = claimRows.find(x => String(x.id) === String(id)) || {};
+        claimMoved(id, 'verifying', `“${esc(row.clinic_name || 'Claim')}” reopened as verifying.`);
+        $('claims').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }));
+    }
+    $('archiveFilter').addEventListener('input', () => renderArchive(archiveRows));
+
+    // The visible rows, with the full message, as CSV: opens in Excel or
+    // imports straight into Google Sheets.
+    $('archiveCsv').addEventListener('click', () => {
+      const cols = [...ARCHIVE_COLS, ['role', 'Role'], ['website', 'Website'], ['source_page', 'Source page'], ['message', 'Message']];
+      const cell = (v) => /[",\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+      const lines = [cols.map(([, l]) => l).join(',')].concat(archiveVisible().map(r => cols.map(([k]) =>
+        cell(k === 'created_at' ? (r.created_at || '').slice(0, 10) : archiveVal(r, k))).join(',')));
+      const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'painbeacon-claims-archive-' + new Date().toISOString().slice(0, 10) + '.csv';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    });
 
     function renderPaid(rows) {
       $('paidPill').textContent = rows.length;
@@ -583,7 +889,11 @@ const TIERS = ['free', 'verified', 'enhanced', 'featured']; // shared tier list 
     let listedRows = [];
     const NR_FIELDS = ['name', 'practice_type', 'address_1', 'address_2', 'city', 'state', 'postal_code', 'phone',
       'website', 'parent_npi', 'latitude', 'longitude', 'description', 'slug', 'contact_email', 'confirmed_on',
-      'confirmed_how', 'internal_notes'];
+      'confirmed_how', 'internal_notes', 'office_evidence_url'];
+    // office_evidence_url arrives with practice_offices.sql. Until then a row
+    // read back has no such key, and writing it would fail the whole save.
+    const nrHasEvidenceCol = () => !listedRows.length || listedRows.some(r => 'office_evidence_url' in r);
+    const isRankedOffice = (r) => r.parent_npi && r.office_evidence_url;
     const NR_STATUSES = ['draft', 'published', 'removed'];
     const nrVal = (f) => ($('nr-' + f).value || '').replace(/\s+/g, ' ').trim();
     // Same shape as listingSlug() in src/lib/listing-rules.js (this script is
@@ -627,10 +937,10 @@ const TIERS = ['free', 'verified', 'enhanced', 'featured']; // shared tier list 
           : '<span style="color:var(--amber)">not yet confirmed with the practice</span>';
         return `<div class="item ${r.status === 'removed' ? 'resolved' : ''}">
           <div class="main">
-            <div class="name"><span class="tag ${esc(r.status)}">${esc(r.status)}</span> ${esc(r.name)}
+            <div class="name"><span class="tag ${esc(r.status)}">${esc(r.status)}</span>${ isRankedOffice(r) ? '<span class="tag office" title="Ranked as an office of the parent practice, if the build confirms the rule (see the build log)">ranked office</span>' : '' } ${esc(r.name)}
               ${ r.practice_type ? `<span class="who" style="font-weight:500">${esc(r.practice_type)}</span>` : '' }</div>
             <div class="meta">${loc}${ r.parent_npi ? ' · additional location of NPI ' + esc(r.parent_npi) : '' }
-              ${ r.status === 'published' ? `· <a href="https://painbeacon.com/listing/${esc(r.slug)}/" target="_blank" rel="noopener">view listing ↗</a>` : '' }</div>
+              ${ r.status === 'published' ? `· <a href="https://painbeacon.com/${isRankedOffice(r) ? 'clinic' : 'listing'}/${esc(r.slug)}/" target="_blank" rel="noopener">view page ↗</a>` : '' }</div>
             <div class="meta">${conf}</div>
           </div>
           <div style="display:flex;align-items:center;gap:8px">
@@ -669,6 +979,13 @@ const TIERS = ['free', 'verified', 'enhanced', 'featured']; // shared tier list 
           row.status = sel.value;
           renderListed({ data: listedRows }); // redraws the row, so flash after it
           flash('ns-' + id);
+          // The inquiry this listing came from is settled once it is published:
+          // file it as 'listed' so it leaves Claims to work.
+          const claim = row.claim_id && claimRows.find(x => String(x.id) === String(row.claim_id));
+          if (sel.value === 'published' && claim && isOpen(claim)) {
+            const { error: ce } = await sb.from('claims').update({ status: 'listed' }).eq('id', claim.id);
+            if (!ce) claimMoved(claim.id, 'listed', `“${esc(row.name)}” published; its inquiry was filed as <b>listed</b> in the archive.`);
+          }
           if (was === 'published' || sel.value === 'published') showRebuildBanner();
         });
       });
@@ -700,6 +1017,14 @@ const TIERS = ['free', 'verified', 'enhanced', 'featured']; // shared tier list 
       }
       if ((row.latitude == null) !== (row.longitude == null)) errs.push('Give both latitude and longitude, or neither.');
       row.parent_npi = row.parent_npi ? Number(row.parent_npi) : null;
+      if (row.office_evidence_url && !/^https?:\/\/[^\/\s]+\.[a-z]{2,}(\/\S*)?$/i.test(row.office_evidence_url)) {
+        errs.push('The practice website page must be a full web address starting with https://.');
+      }
+      if (row.office_evidence_url && !row.parent_npi) errs.push('A practice website page only matters for an office: give the parent NPI too, or leave it empty.');
+      if (!nrHasEvidenceCol()) {
+        if (row.office_evidence_url) errs.push('Run practice_offices.sql in Supabase first: this database has no column for the practice website page yet.');
+        delete row.office_evidence_url;
+      }
       if (errs.length) { $('nrErr').textContent = errs.join('\n'); return; }
 
       row.updated_at = new Date().toISOString();

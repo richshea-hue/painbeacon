@@ -1,0 +1,42 @@
+name: Sync dashboard analytics
+
+# Writes Cloudflare traffic and Search Console snapshots to analytics_snapshots
+# for the admin dashboard (scripts/sync-analytics.mjs). Each source is skipped
+# with a note while its secret is missing, so this is safe to run before the
+# secrets exist.
+#
+# Secrets:
+#   SUPABASE_URL, SUPABASE_SERVICE_KEY   already set for the other jobs
+#   CLOUDFLARE_API_TOKEN                 Zone > Analytics : Read and Zone > Zone : Read
+#   GSC_SERVICE_ACCOUNT_KEY              the service account's JSON key, pasted whole
+
+on:
+  schedule:
+    - cron: '17 10 * * *'   # daily, 10:17 UTC
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Write the Search Console key to a file
+        env:
+          GSC_KEY: ${{ secrets.GSC_SERVICE_ACCOUNT_KEY }}
+        run: |
+          if [ -n "$GSC_KEY" ]; then
+            printf '%s' "$GSC_KEY" > "$RUNNER_TEMP/gsc.json"
+            echo "GSC_SERVICE_ACCOUNT_JSON=$RUNNER_TEMP/gsc.json" >> "$GITHUB_ENV"
+          fi
+
+      - name: Sync
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: node scripts/sync-analytics.mjs

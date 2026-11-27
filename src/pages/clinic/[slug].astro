@@ -19,18 +19,36 @@ export async function getStaticPaths() {
   // Extra locations of this practice that have no registry record of their own
   // (non-registry listings whose parent_npi is this clinic).
   const extraByNpi = await getListingsByParent();
+  // Ranked offices of this practice (data.js buildOffices), by parent NPI.
+  const officesByNpi = new Map();
+  for (const o of clinics.filter((x) => x.isOffice)) {
+    const k = String(o.officeOf.npi);
+    if (!officesByNpi.has(k)) officesByNpi.set(k, []);
+    officesByNpi.get(k).push(o);
+  }
   return clinics.map((c) => ({
     params: { slug: c.slug },
-    props: { clinic: c, byNpi, otherLocations: extraByNpi.get(String(c.npi)) || [] },
+    props: {
+      clinic: c, byNpi,
+      otherLocations: c.isOffice ? [] : extraByNpi.get(String(c.npi)) || [],
+      offices: c.isOffice ? [] : officesByNpi.get(String(c.npi)) || [],
+    },
   }));
 }
 
-const { clinic: c, byNpi, otherLocations = [] } = Astro.props;
+const { clinic: c, byNpi, otherLocations = [], offices = [] } = Astro.props;
+// An office of a registry practice (see buildOffices in src/lib/data.js): it
+// ranks on the practice's registry record, and every statement this page makes
+// from that record is made about the PRACTICE, by name.
+const office = c.isOffice ? c.officeOf : null;
 // The name patients know the practice by when a verified claim supplied one,
 // otherwise the registered name. registeredName is set only in the first case,
 // and is then printed beside it: see publicName in src/lib/data.js.
 const name = publicName(c);
 const registeredName = registeredAs(c);
+// Who the registry statements below are about: the practice itself, or, on an
+// office page, the registered practice it belongs to.
+const holder = office ? office.registeredName : name;
 const interventional = (c.all_taxonomy_codes || '').includes('208VP0014X');
 const { score } = scoreClinic(c);
 const band = scoreBand(score);
@@ -47,7 +65,7 @@ const yearsInPractice = c.enumeration_date
 // pointed at the primary listing instead of self-referencing, so search
 // engines see one authoritative page per practice instead of near-duplicates.
 // Falls back to self-reference if the primary record can't be found (data gap).
-const primaryClinic = (c.primary_npi && c.primary_npi !== c.npi)
+const primaryClinic = (!office && c.primary_npi && c.primary_npi !== c.npi)
   ? byNpi.get(c.primary_npi)
   : null;
 const canonicalUrl = primaryClinic
@@ -91,8 +109,10 @@ const isEnhanced = ['enhanced', 'featured'].includes(tier);
 
 // The followed website link — the claim perk. Verified tier + clean Safe
 // Browsing result, or nothing.
+// An office's link follows its practice: linked once the practice has claimed
+// its listing, the same perk on the same terms.
 const linkableWebsite =
-  (SITE.linkClinicWebsites && isVerified && c.websiteSafe === true && c.websiteHref) || '';
+  (SITE.linkClinicWebsites && (isVerified || (office && office.verified)) && c.websiteSafe === true && c.websiteHref) || '';
 
 // Embed-badge page link, pre-filled so the clinic lands on their own snippet.
 const badgeHref = `/verified-badge/?slug=${encodeURIComponent(c.slug)}&name=${encodeURIComponent(name)}`;
@@ -123,22 +143,26 @@ const fullAddr = [addr, `${c.cityLabel}, ${c.state} ${(c.postal_code || '').slic
 
 faqs.push({
   q: `Where is ${name} located?`,
-  a: `${name} is a pain medicine clinic located at ${fullAddr}.` +
-     (c.phone ? ` You can reach the office at ${c.phone}.` : '') +
-     (registeredName ? ` It is registered in the federal NPI registry as ${registeredName}.` : ''),
+  a: office
+    ? `${name} is an office of ${holder}, a pain medicine practice in the federal NPI registry, at ${fullAddr}.` +
+      (c.phone ? ` You can reach the office at ${c.phone}.` : '') +
+      ` The practice supplied this address and confirmed it with us; the registry lists the practice at its main address in ${office.cityLabel}, ${office.state}.`
+    : `${name} is a pain medicine clinic located at ${fullAddr}.` +
+      (c.phone ? ` You can reach the office at ${c.phone}.` : '') +
+      (registeredName ? ` It is registered in the federal NPI registry as ${registeredName}.` : ''),
 });
 
 faqs.push({
   q: `Does ${name} offer interventional pain management?`,
   a: interventional
-    ? `Yes — ${name} is registered under the Interventional Pain Medicine specialty in the federal NPI registry, which covers procedures such as injections, nerve blocks, and other image-guided pain treatments. Confirm the specific procedures offered directly with the clinic.`
-    : `${name} is registered under the Pain Medicine specialty in the federal NPI registry. Contact the clinic directly to confirm whether it offers interventional procedures such as injections or nerve blocks.`,
+    ? `Yes — ${holder} is registered under the Interventional Pain Medicine specialty in the federal NPI registry, which covers procedures such as injections, nerve blocks, and other image-guided pain treatments. Confirm the specific procedures offered directly with the clinic.`
+    : `${holder} is registered under the Pain Medicine specialty in the federal NPI registry. Contact the clinic directly to confirm whether it offers interventional procedures such as injections or nerve blocks.`,
 });
 
 if (yearsInPractice !== null) {
   faqs.push({
-    q: `How long has ${name} been an established pain practice?`,
-    a: `${name} has held a federal NPI as a pain medicine provider for about ${yearsInPractice} year${yearsInPractice === 1 ? '' : 's'}` +
+    q: `How long has ${holder} been an established pain practice?`,
+    a: `${holder} has held a federal NPI as a pain medicine provider for about ${yearsInPractice} year${yearsInPractice === 1 ? '' : 's'}` +
        (c.enumeration_date ? ` (registered ${new Date(c.enumeration_date).getFullYear()}).` : '.'),
   });
 }
@@ -184,7 +208,7 @@ if (ins.length > 0) {
 // every profile: no clinic has credentials on file, over half have no reviews,
 // and the reviews that exist are Google's, not ours to call verified.
 const listOf = (xs) => xs.length < 3 ? xs.join(' and ') : `${xs.slice(0, -1).join(', ')}, and ${xs.at(-1)}`;
-const description = `${name}${registeredName ? ` (registered as ${registeredName})` : ''}, a pain medicine practice in ${c.cityLabel}, ${c.state}: ` +
+const description = `${name}${office ? `, an office of ${holder}` : registeredName ? ` (registered as ${registeredName})` : ''}, a pain medicine practice in ${c.cityLabel}, ${c.state}: ` +
   listOf(['address', c.phone && 'phone', c.hours && 'hours', c.aggregate_rating && 'Google rating',
     acceptsMedicare != null && 'Medicare status'].filter(Boolean)) + '.';
 const fromGoogle = [c.latitude != null && 'map location', c.hours && 'hours',
@@ -201,7 +225,9 @@ const fromGoogle = [c.latitude != null && 'map location', c.hours && 'hours',
       <div>
         <p class="eyebrow">{specialtyLabel}</p>
         <h1 style="margin-bottom:0.25rem;">{name}</h1>
-        {registeredName && (
+        {office ? (
+          <p class="registered-as">An office of <a href={`/clinic/${office.slug}/`}><strong>{office.registeredName}</strong></a>, registered in the federal NPI registry</p>
+        ) : registeredName && (
           <p class="registered-as">Registered in the federal NPI registry as <strong>{registeredName}</strong></p>
         )}
         {isVerified && (
@@ -225,7 +251,7 @@ const fromGoogle = [c.latitude != null && 'map location', c.hours && 'hours',
             <div class="stars" style="font-size:1.3rem;">{'★'.repeat(Math.round(Number(c.aggregate_rating)))}</div>
             <div class="count">{c.aggregate_rating} · {c.review_count || 0} reviews</div>
           </>
-        ) : <div class="count">No reviews yet</div>}
+        ) : <div class="count">{office ? 'No rating for this office' : 'No reviews yet'}</div>}
       </div>
     </div>
 
@@ -240,7 +266,19 @@ const fromGoogle = [c.latitude != null && 'map location', c.hours && 'hours',
       {c.phone && <a class="btn ghost" href={`tel:${c.phone.replace(/[^0-9+]/g, '')}`}>Call</a>}
       <a class="btn ghost" href={googleSearchHref} rel="nofollow noopener" target="_blank">Find on Google</a>
     </div>
-    {linkableWebsite && (
+    {office && (
+      <div class="office-note">
+        <h2>About this office</h2>
+        <p>This is an office of <a href={`/clinic/${office.slug}/`}>{office.registeredName}</a>, a practice in the
+          federal NPI registry (NPI {office.npi}). The registry lists the practice at one address, in
+          {' '}{office.cityLabel}, {office.state}. The practice told us about this office, confirmed it with us
+          directly, and lists it on its own website.</p>
+        <p>Its specialty and years registered come from the practice's registry record, and it is ranked on those.
+          It has no rating of its own on file, so it earns none of the rating or review points.</p>
+        {c.description && <p><strong>From the practice:</strong> {c.description}</p>}
+      </div>
+    )}
+    {linkableWebsite && !office && (
       <p class="site-perk">✓ Verified website link · <span>free for verified clinics, limited time</span></p>
     )}
 
@@ -276,6 +314,19 @@ const fromGoogle = [c.latitude != null && 'map location', c.hours && 'hours',
     )}
 
     <ClinicMap markers={mapMarkers} height="320px" zoom={15} />
+
+    {offices.length > 0 && (
+      <section class="other-locations">
+        <h2>Other offices</h2>
+        <p class="muted">Offices of this practice that it confirmed with us and lists on its own website. Each is
+          ranked on this practice's registry record.</p>
+        <ul>
+          {offices.map((o) => (
+            <li><a href={`/clinic/${o.slug}/`}>{[o.address_1 && titleCase(o.address_1), o.cityLabel, o.state].filter(Boolean).join(', ')}</a></li>
+          ))}
+        </ul>
+      </section>
+    )}
 
     {otherLocations.length > 0 && (
       <section class="other-locations">
@@ -329,14 +380,28 @@ const fromGoogle = [c.latitude != null && 'map location', c.hours && 'hours',
         FAQ, before the provenance note — it is never part of the listing. */}
     <SponsorCard placement="clinic" state={c.state} />
 
+    {office ? (
+    <div class="notice">
+      Specialty and years registered are from the federal NPI registry record of {office.registeredName}.
+      This office's address and phone were supplied by the practice and confirmed with it.
+      See <a href="/how-we-rank/">how we rank</a>.
+      {c.nppes_last_updated && <> Practice record last updated {c.nppes_last_updated}.</>}
+    </div>
+    ) : (
     <div class="notice">
       Listing built from the federal NPI registry{fromGoogle.length > 0 && <>, with {listOf(fromGoogle)} from Google</>}{c.accepts_medicare_cms === true && <>, and Medicare enrollment from CMS</>}.
       {isVerified && <> Details confirmed by the clinic.</>}
       See <a href="/how-we-rank/">how we rank</a>.
       {c.nppes_last_updated && <> Provider record last updated {c.nppes_last_updated}.</>}
     </div>
+    )}
 
-    {isVerified ? (
+    {office ? (
+      <p class="claimed-line">
+        To update this office, or to claim it, go to the practice's listing:{' '}
+        <a href={`/clinic/${office.slug}/`}>{office.name} →</a>
+      </p>
+    ) : isVerified ? (
       <p class="claimed-line">
         ✓ This profile is claimed and managed by the clinic.{' '}
         <a href={badgeHref}>Get your “Verified by PainBeacon” badge for your website →</a>{' · '}
@@ -368,5 +433,8 @@ const fromGoogle = [c.latitude != null && 'map location', c.hours && 'hours',
   .faq summary::after { content:'+'; float:right; color:var(--teal,#23b3a3); font-weight:700; }
   .faq[open] summary::after { content:'–'; }
   .faq p { margin:0.6rem 0 0; color:var(--ink,#2a3b39); font-size:0.95rem; line-height:1.55; }
+  .office-note { margin:0 0 1.5rem; padding:1rem 1.15rem; border:1px solid var(--rule,#e4e9e8); border-left:4px solid var(--teal,#23b3a3); border-radius:8px; background:var(--surface,#fff); }
+  .office-note h2 { font-size:1rem; margin:0 0 0.4rem; }
+  .office-note p { margin:0.4rem 0 0; font-size:0.93rem; line-height:1.55; }
   .score-detail { font-size:0.82rem; font-weight:400; color:var(--ink-faint,#7c8a87); }
 </style>

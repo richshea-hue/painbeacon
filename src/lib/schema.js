@@ -50,6 +50,14 @@ export function clinicLd(c, canonicalUrl) {
     ld.legalName = registered;
     ld.alternateName = registered;
   }
+  // An office: the registered practice it belongs to is the organization.
+  if (c.isOffice) {
+    ld.parentOrganization = {
+      '@type': 'MedicalOrganization',
+      name: c.officeOf.registeredName,
+      url: new URL(`/clinic/${c.officeOf.slug}/`, SITE.url).href,
+    };
+  }
   if (c.phone) ld.telephone = c.phone;
   // sameAs only for URLs that passed the build-time Safe Browsing check —
   // an unvalidated or flagged URL never appears in structured data either.
